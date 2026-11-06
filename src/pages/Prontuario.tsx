@@ -42,6 +42,7 @@ import {
   AlertCircle,
 } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
+import { montarEnderecoTexto, enderecoDeRegistro } from '@/lib/endereco'
 
 export const ProntuarioPage: React.FC = () => {
   const { id } = useParams<{ id: string }>()
@@ -248,7 +249,7 @@ export const ProntuarioPage: React.FC = () => {
             </span>
             <span className="text-sm font-medium text-slate-800 flex items-center gap-1.5 mt-0.5 truncate">
               <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-              {paciente.endereco || 'Não informado'}
+              {montarEnderecoTexto(enderecoDeRegistro(paciente)) || 'Não informado'}
             </span>
           </div>
 

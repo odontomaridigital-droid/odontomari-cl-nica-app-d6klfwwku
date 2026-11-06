@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { pacientesService } from '@/services/clinica'
 import { Paciente } from '@/types'
@@ -28,8 +28,17 @@ import {
   MoreVertical,
   Edit2,
   Trash2,
+  Loader2,
 } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
+import {
+  EnderecoForm,
+  enderecoVazio,
+  formatCep,
+  buscarEnderecoPorCep,
+  montarEnderecoTexto,
+  enderecoDeRegistro,
+} from '@/lib/endereco'
 
 export const PacientesPage: React.FC = () => {
   const { isAdmin } = useAuth()
@@ -49,10 +58,57 @@ export const PacientesPage: React.FC = () => {
     email: '',
     data_nascimento: '',
     cpf: '',
-    endereco: '',
     observacoes: '',
   })
   const [saving, setSaving] = useState<boolean>(false)
+
+  // Endereço estruturado (CEP -> ViaCEP -> número)
+  const [enderecoForm, setEnderecoForm] = useState<EnderecoForm>(enderecoVazio)
+  const [cepStatus, setCepStatus] = useState<'idle' | 'loading' | 'ok' | 'error'>('idle')
+  const [cepMensagem, setCepMensagem] = useState<string>('')
+  const cepRequestRef = useRef<number>(0)
+  const numeroRef = useRef<HTMLInputElement>(null)
+
+  const resetCep = () => {
+    cepRequestRef.current += 1
+    setCepStatus('idle')
+    setCepMensagem('')
+  }
+
+  const buscarCep = async (cep: string) => {
+    const requestId = ++cepRequestRef.current
+    setCepStatus('loading')
+    setCepMensagem('')
+    try {
+      const dados = await buscarEnderecoPorCep(cep)
+      if (requestId !== cepRequestRef.current) return
+      setEnderecoForm((prev) => ({ ...prev, ...dados }))
+      setCepStatus('ok')
+      setCepMensagem('Endereço encontrado. Informe o número.')
+      setTimeout(() => numeroRef.current?.focus(), 0)
+    } catch (err: any) {
+      if (requestId !== cepRequestRef.current) return
+      setCepStatus('error')
+      setCepMensagem(err.message)
+    }
+  }
+
+  const handleCepChange = (value: string) => {
+    const cep = formatCep(value)
+    setEnderecoForm((prev) => ({ ...prev, cep }))
+    resetCep()
+    if (cep.replace(/\D/g, '').length === 8) {
+      buscarCep(cep)
+    }
+  }
+
+  const handleCepBlur = () => {
+    const digits = enderecoForm.cep.replace(/\D/g, '')
+    if (digits.length > 0 && digits.length < 8) {
+      setCepStatus('error')
+      setCepMensagem('CEP incompleto. Informe os 8 dígitos ou preencha o endereço manualmente.')
+    }
+  }
 
   const loadPacientes = async (query = '') => {
     setLoading(true)
@@ -87,22 +143,24 @@ export const PacientesPage: React.FC = () => {
       email: '',
       data_nascimento: '',
       cpf: '',
-      endereco: '',
       observacoes: '',
     })
+    setEnderecoForm(enderecoVazio)
+    resetCep()
     setDialogOpen(true)
   }
 
   const handleOpenEdit = (p: Paciente, e: React.MouseEvent) => {
     e.stopPropagation()
     setEditingPaciente(p)
+    setEnderecoForm(enderecoDeRegistro(p))
+    resetCep()
     setFormData({
       nome: p.nome || '',
       telefone: p.telefone || '',
       email: p.email || '',
       data_nascimento: p.data_nascimento ? p.data_nascimento.split(' ')[0].split('T')[0] : '',
       cpf: p.cpf || '',
-      endereco: p.endereco || '',
       observacoes: p.observacoes || '',
     })
     setDialogOpen(true)
@@ -123,6 +181,8 @@ export const PacientesPage: React.FC = () => {
     try {
       const payload: any = {
         ...formData,
+        ...enderecoForm,
+        endereco: montarEnderecoTexto(enderecoForm),
         nome: formData.nome.trim(),
         telefone: formData.telefone.trim(),
       }
@@ -418,17 +478,131 @@ export const PacientesPage: React.FC = () => {
                 />
               </div>
 
-              <div className="sm:col-span-2">
-                <Label htmlFor="endereco" className="text-xs">
-                  Endereço Completo
-                </Label>
-                <Input
-                  id="endereco"
-                  value={formData.endereco}
-                  onChange={(e) => setFormData({ ...formData, endereco: e.target.value })}
-                  placeholder="Rua, número, complemento, bairro, cidade"
-                  className="mt-1 text-xs sm:text-sm"
-                />
+              <div className="sm:col-span-2 space-y-3 rounded-lg border border-slate-200 bg-slate-50/40 p-3">
+                <p className="text-xs font-semibold text-slate-700">Endereço</p>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div>
+                    <Label htmlFor="cep" className="text-xs">
+                      CEP
+                    </Label>
+                    <div className="relative">
+                      <Input
+                        id="cep"
+                        inputMode="numeric"
+                        value={enderecoForm.cep}
+                        onChange={(e) => handleCepChange(e.target.value)}
+                        onBlur={handleCepBlur}
+                        placeholder="00000-000"
+                        className="mt-1 pr-8 text-xs sm:text-sm font-semibold"
+                      />
+                      {cepStatus === 'loading' && (
+                        <Loader2 className="w-4 h-4 text-teal-600 animate-spin absolute right-2.5 top-3" />
+                      )}
+                    </div>
+                    {cepMensagem && (
+                      <p
+                        className={`mt-1 text-[11px] ${
+                          cepStatus === 'error' ? 'text-red-600' : 'text-teal-700'
+                        }`}
+                      >
+                        {cepMensagem}
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="sm:col-span-2">
+                    <Label htmlFor="logradouro" className="text-xs">
+                      Rua / Logradouro
+                    </Label>
+                    <Input
+                      id="logradouro"
+                      value={enderecoForm.logradouro}
+                      onChange={(e) =>
+                        setEnderecoForm({ ...enderecoForm, logradouro: e.target.value })
+                      }
+                      placeholder="Rua, avenida, travessa..."
+                      className="mt-1 text-xs sm:text-sm"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div>
+                    <Label htmlFor="numero" className="text-xs">
+                      Número
+                    </Label>
+                    <Input
+                      id="numero"
+                      ref={numeroRef}
+                      value={enderecoForm.numero}
+                      onChange={(e) => setEnderecoForm({ ...enderecoForm, numero: e.target.value })}
+                      placeholder="Nº"
+                      className={`mt-1 text-xs sm:text-sm ${
+                        cepStatus === 'ok' && !enderecoForm.numero
+                          ? 'ring-2 ring-teal-500 border-teal-500'
+                          : ''
+                      }`}
+                    />
+                  </div>
+
+                  <div className="sm:col-span-2">
+                    <Label htmlFor="complemento" className="text-xs">
+                      Complemento
+                    </Label>
+                    <Input
+                      id="complemento"
+                      value={enderecoForm.complemento}
+                      onChange={(e) =>
+                        setEnderecoForm({ ...enderecoForm, complemento: e.target.value })
+                      }
+                      placeholder="Apto, bloco, sala..."
+                      className="mt-1 text-xs sm:text-sm"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
+                  <div className="sm:col-span-2">
+                    <Label htmlFor="bairro" className="text-xs">
+                      Bairro
+                    </Label>
+                    <Input
+                      id="bairro"
+                      value={enderecoForm.bairro}
+                      onChange={(e) => setEnderecoForm({ ...enderecoForm, bairro: e.target.value })}
+                      className="mt-1 text-xs sm:text-sm"
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="cidade" className="text-xs">
+                      Cidade
+                    </Label>
+                    <Input
+                      id="cidade"
+                      value={enderecoForm.cidade}
+                      onChange={(e) => setEnderecoForm({ ...enderecoForm, cidade: e.target.value })}
+                      className="mt-1 text-xs sm:text-sm"
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="uf" className="text-xs">
+                      UF
+                    </Label>
+                    <Input
+                      id="uf"
+                      maxLength={2}
+                      value={enderecoForm.uf}
+                      onChange={(e) =>
+                        setEnderecoForm({ ...enderecoForm, uf: e.target.value.toUpperCase() })
+                      }
+                      placeholder="SP"
+                      className="mt-1 text-xs sm:text-sm"
+                    />
+                  </div>
+                </div>
               </div>
 
               <div className="sm:col-span-2">

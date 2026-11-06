@@ -27,6 +27,13 @@ export interface Paciente {
   data_nascimento?: string
   cpf?: string
   endereco?: string
+  cep?: string
+  logradouro?: string
+  numero?: string
+  complemento?: string
+  bairro?: string
+  cidade?: string
+  uf?: string
   observacoes?: string
   created?: string
   updated?: string
