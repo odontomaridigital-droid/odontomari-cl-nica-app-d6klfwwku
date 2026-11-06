@@ -124,3 +124,19 @@ export interface ClinicaConfig {
   telefone_clinica: string
   mensagem_lembrete_padrao: string
 }
+
+import type { RespostasAnamnese } from '@/lib/anamneseModelo'
+
+export interface Anamnese {
+  id: string
+  paciente: string
+  autor?: string
+  modelo?: string
+  respostas: RespostasAnamnese
+  data: string
+  created?: string
+  updated?: string
+  expand?: {
+    autor?: User
+  }
+}

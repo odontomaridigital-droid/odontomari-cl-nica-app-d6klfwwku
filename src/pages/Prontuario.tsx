@@ -5,8 +5,9 @@ import {
   consultasService,
   prontuariosService,
   orcamentosService,
+  anamnesesService,
 } from '@/services/clinica'
-import { Paciente, Consulta, Prontuario, Orcamento } from '@/types'
+import { Paciente, Consulta, Prontuario, Orcamento, Anamnese } from '@/types'
 import { formatDateBr, formatCurrency, formatPhone } from '@/lib/formatters'
 import { useAuth } from '@/contexts/AuthContext'
 import { Button } from '@/components/ui/button'
@@ -43,17 +44,19 @@ import {
 } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { montarEnderecoTexto, enderecoDeRegistro } from '@/lib/endereco'
+import { AnamneseTab } from '@/components/anamnese/AnamneseTab'
 
 export const ProntuarioPage: React.FC = () => {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
-  const { isAdmin } = useAuth()
+  const { isAdmin, user } = useAuth()
   const { toast } = useToast()
 
   const [paciente, setPaciente] = useState<Paciente | null>(null)
   const [prontuarios, setProntuarios] = useState<Prontuario[]>([])
   const [consultas, setConsultas] = useState<Consulta[]>([])
   const [orcamentos, setOrcamentos] = useState<Orcamento[]>([])
+  const [anamneses, setAnamneses] = useState<Anamnese[]>([])
   const [loading, setLoading] = useState<boolean>(true)
 
   // New Prontuário Dialog (Admin only)
@@ -68,16 +71,18 @@ export const ProntuarioPage: React.FC = () => {
     if (!id) return
     setLoading(true)
     try {
-      const [pac, prontList, consList, orcList] = await Promise.all([
+      const [pac, prontList, consList, orcList, anmList] = await Promise.all([
         pacientesService.getById(id),
         prontuariosService.getByPaciente(id),
         consultasService.getByPaciente(id),
         orcamentosService.getByPaciente(id),
+        anamnesesService.getByPaciente(id),
       ])
       setPaciente(pac)
       setProntuarios(prontList)
       setConsultas(consList)
       setOrcamentos(orcList)
+      setAnamneses(anmList)
     } catch (err: any) {
       toast({
         title: 'Erro ao carregar prontuário',
@@ -276,6 +281,9 @@ export const ProntuarioPage: React.FC = () => {
           <TabsTrigger value="orcamentos" className="text-xs sm:text-sm">
             Planejamentos de Tratamento ({orcamentos.length})
           </TabsTrigger>
+          <TabsTrigger value="anamnese" className="text-xs sm:text-sm">
+            Anamnese ({anamneses.length})
+          </TabsTrigger>
         </TabsList>
 
         {/* Tab 1: Prontuário Clínico */}
@@ -459,6 +467,25 @@ export const ProntuarioPage: React.FC = () => {
               </Card>
             ))
           )}
+        </TabsContent>
+
+        {/* Tab 4: Anamnese */}
+        <TabsContent value="anamnese" className="pt-2">
+          <AnamneseTab
+            anamneses={anamneses}
+            isAdmin={isAdmin}
+            pacienteId={paciente.id}
+            pacienteNome={paciente.nome}
+            autorId={user?.id}
+            onSaved={() => {
+              toast({ title: 'Anamnese salva com sucesso!' })
+              loadData()
+            }}
+            onError={(title, description) => toast({ title, description, variant: 'destructive' })}
+            onViewError={(title, description) =>
+              toast({ title, description, variant: 'destructive' })
+            }
+          />
         </TabsContent>
       </Tabs>
 

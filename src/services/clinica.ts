@@ -7,7 +7,9 @@ import {
   Orcamento,
   BloqueioAgenda,
   ClinicaConfig,
+  Anamnese,
 } from '@/types'
+import type { RespostasAnamnese } from '@/lib/anamneseModelo'
 
 // =================== PACIENTES ===================
 export const pacientesService = {
@@ -260,6 +262,60 @@ export const orcamentosService = {
 
   async delete(id: string): Promise<boolean> {
     return await pb.collection('orcamentos').delete(id)
+  },
+}
+
+// =================== ANAMNESES ===================
+export const anamnesesService = {
+  async getByPaciente(pacienteId: string): Promise<Anamnese[]> {
+    return await pb.collection('anamneses').getFullList<Anamnese>({
+      filter: `paciente = "${pacienteId}"`,
+      expand: 'autor',
+      sort: '-data,-created',
+    })
+  },
+
+  async create(data: {
+    paciente: string
+    autor?: string
+    modelo?: string
+    respostas: RespostasAnamnese
+    data: string
+  }): Promise<Anamnese> {
+    const isoDate = data.data.includes('T') ? data.data : `${data.data} 00:00:00.000Z`
+    return await pb.collection('anamneses').create<Anamnese>(
+      {
+        ...data,
+        data: isoDate,
+      },
+      {
+        expand: 'autor',
+      },
+    )
+  },
+
+  async update(
+    id: string,
+    data: {
+      respostas?: RespostasAnamnese
+      data?: string
+      autor?: string
+    },
+  ): Promise<Anamnese> {
+    return await pb.collection('anamneses').update<Anamnese>(
+      id,
+      {
+        ...data,
+        ...(data.data && !data.data.includes('T') ? { data: `${data.data} 00:00:00.000Z` } : {}),
+      },
+      {
+        expand: 'autor',
+      },
+    )
+  },
+
+  async delete(id: string): Promise<boolean> {
+    return await pb.collection('anamneses').delete(id)
   },
 }
 
