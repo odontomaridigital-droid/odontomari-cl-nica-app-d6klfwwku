@@ -216,54 +216,96 @@ export const ProntuarioPage: React.FC = () => {
 
       {/* Patient Summary Card */}
       <Card className="border-slate-200 shadow-sm bg-white">
-        <CardContent className="p-4 sm:p-6 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-          <div>
-            <span className="text-[11px] uppercase tracking-wider text-slate-400 font-semibold block">
-              Telefone / WhatsApp
-            </span>
-            <span className="text-sm font-medium text-slate-800 flex items-center gap-1.5 mt-0.5">
-              <Phone className="w-3.5 h-3.5 text-teal-600" />
-              {formatPhone(paciente.telefone)}
-            </span>
+        <CardContent className="p-4 sm:p-5 space-y-4">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-10 h-10 rounded-full bg-teal-50 text-teal-700 flex items-center justify-center shrink-0">
+              <User className="w-5 h-5" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-[11px] uppercase tracking-wider text-slate-400 font-semibold">
+                Paciente
+              </p>
+              <h2 className="text-base sm:text-lg font-semibold text-slate-900 truncate">
+                {paciente.nome}
+              </h2>
+            </div>
           </div>
 
-          <div>
-            <span className="text-[11px] uppercase tracking-wider text-slate-400 font-semibold block">
-              E-mail
-            </span>
-            <span className="text-sm font-medium text-slate-800 flex items-center gap-1.5 mt-0.5">
-              <Mail className="w-3.5 h-3.5 text-slate-400" />
-              {paciente.email || 'Não informado'}
-            </span>
-          </div>
+          <dl className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-3 text-sm">
+            <div className="flex items-start gap-2 min-w-0">
+              <Phone className="w-4 h-4 mt-0.5 text-teal-600 shrink-0" />
+              <div className="min-w-0">
+                <dt className="text-[11px] uppercase tracking-wider text-slate-400 font-semibold">
+                  Telefone / WhatsApp
+                </dt>
+                <dd className="font-medium text-slate-800 break-words">
+                  {formatPhone(paciente.telefone)}
+                </dd>
+              </div>
+            </div>
 
-          <div>
-            <span className="text-[11px] uppercase tracking-wider text-slate-400 font-semibold block">
-              Data de Nascimento / CPF
-            </span>
-            <span className="text-sm font-medium text-slate-800 flex items-center gap-1.5 mt-0.5">
-              <Calendar className="w-3.5 h-3.5 text-slate-400" />
-              {formatDateBr(paciente.data_nascimento) || '—'}{' '}
-              {paciente.cpf ? `• ${paciente.cpf}` : ''}
-            </span>
-          </div>
+            {paciente.email && (
+              <div className="flex items-start gap-2 min-w-0">
+                <Mail className="w-4 h-4 mt-0.5 text-slate-400 shrink-0" />
+                <div className="min-w-0">
+                  <dt className="text-[11px] uppercase tracking-wider text-slate-400 font-semibold">
+                    E-mail
+                  </dt>
+                  <dd className="font-medium text-slate-800 break-all">{paciente.email}</dd>
+                </div>
+              </div>
+            )}
 
-          <div>
-            <span className="text-[11px] uppercase tracking-wider text-slate-400 font-semibold block">
-              Endereço
-            </span>
-            <span className="text-sm font-medium text-slate-800 flex items-center gap-1.5 mt-0.5 truncate">
-              <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-              {montarEnderecoTexto(enderecoDeRegistro(paciente)) || 'Não informado'}
-            </span>
-          </div>
+            {paciente.data_nascimento && (
+              <div className="flex items-start gap-2 min-w-0">
+                <Calendar className="w-4 h-4 mt-0.5 text-slate-400 shrink-0" />
+                <div className="min-w-0">
+                  <dt className="text-[11px] uppercase tracking-wider text-slate-400 font-semibold">
+                    Data de nascimento
+                  </dt>
+                  <dd className="font-medium text-slate-800">
+                    {formatDateBr(paciente.data_nascimento)}
+                  </dd>
+                </div>
+              </div>
+            )}
+
+            {paciente.cpf && (
+              <div className="flex items-start gap-2 min-w-0">
+                <FileText className="w-4 h-4 mt-0.5 text-slate-400 shrink-0" />
+                <div className="min-w-0">
+                  <dt className="text-[11px] uppercase tracking-wider text-slate-400 font-semibold">
+                    CPF
+                  </dt>
+                  <dd className="font-medium text-slate-800">{paciente.cpf}</dd>
+                </div>
+              </div>
+            )}
+
+            {montarEnderecoTexto(enderecoDeRegistro(paciente)) && (
+              <div className="flex items-start gap-2 min-w-0 sm:col-span-2 lg:col-span-4">
+                <MapPin className="w-4 h-4 mt-0.5 text-slate-400 shrink-0" />
+                <div className="min-w-0">
+                  <dt className="text-[11px] uppercase tracking-wider text-slate-400 font-semibold">
+                    Endereço
+                  </dt>
+                  <dd className="font-medium text-slate-800 break-words">
+                    {montarEnderecoTexto(enderecoDeRegistro(paciente))}
+                  </dd>
+                </div>
+              </div>
+            )}
+          </dl>
 
           {paciente.observacoes && (
-            <div className="sm:col-span-2 md:col-span-4 bg-amber-50/70 border border-amber-200 rounded-lg p-3 text-xs text-amber-900">
-              <span className="font-semibold text-amber-950 block mb-0.5">
-                Observações Clínicas e Alertas:
-              </span>
-              {paciente.observacoes}
+            <div className="flex items-start gap-2 rounded-md border-l-4 border-amber-400 bg-amber-50 px-3 py-2 text-xs text-amber-900">
+              <AlertCircle className="w-4 h-4 mt-px text-amber-600 shrink-0" />
+              <p className="min-w-0">
+                <span className="font-semibold text-amber-950">
+                  Observações Clínicas e Alertas:{' '}
+                </span>
+                <span className="break-words">{paciente.observacoes}</span>
+              </p>
             </div>
           )}
         </CardContent>
