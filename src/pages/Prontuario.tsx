@@ -271,7 +271,7 @@ export const ProntuarioPage: React.FC = () => {
 
       {/* Tabs: Prontuário Clínico vs Histórico de Consultas vs Planejamentos */}
       <Tabs defaultValue="prontuario" className="w-full">
-        <TabsList className="bg-white border border-slate-200 p-1">
+        <TabsList className="bg-white border border-slate-200 p-1 flex w-full flex-wrap h-auto justify-start gap-y-1">
           <TabsTrigger value="prontuario" className="text-xs sm:text-sm">
             Evolução Clínica & Procedimentos ({prontuarios.length})
           </TabsTrigger>
