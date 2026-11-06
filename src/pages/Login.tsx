@@ -72,7 +72,7 @@ export const LoginPage: React.FC = () => {
           </div>
           <h1 className="text-2xl font-bold tracking-tight text-slate-900">Odontomari Clínica</h1>
           <p className="text-sm text-slate-500">
-            Gestão integrada de consultas, pacientes e orçamentos
+            Gestão integrada de consultas, pacientes e planejamentos de tratamento
           </p>
         </div>
 

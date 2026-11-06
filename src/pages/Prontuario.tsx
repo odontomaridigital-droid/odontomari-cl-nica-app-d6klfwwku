@@ -263,7 +263,7 @@ export const ProntuarioPage: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* Tabs: Prontuário Clínico vs Histórico de Consultas vs Orçamentos */}
+      {/* Tabs: Prontuário Clínico vs Histórico de Consultas vs Planejamentos */}
       <Tabs defaultValue="prontuario" className="w-full">
         <TabsList className="bg-white border border-slate-200 p-1">
           <TabsTrigger value="prontuario" className="text-xs sm:text-sm">
@@ -273,7 +273,7 @@ export const ProntuarioPage: React.FC = () => {
             Histórico de Consultas ({consultas.length})
           </TabsTrigger>
           <TabsTrigger value="orcamentos" className="text-xs sm:text-sm">
-            Orçamentos ({orcamentos.length})
+            Planejamentos de Tratamento ({orcamentos.length})
           </TabsTrigger>
         </TabsList>
 
@@ -398,13 +398,13 @@ export const ProntuarioPage: React.FC = () => {
           )}
         </TabsContent>
 
-        {/* Tab 3: Orçamentos */}
+        {/* Tab 3: Planejamentos */}
         <TabsContent value="orcamentos" className="space-y-3 pt-2">
           {orcamentos.length === 0 ? (
             <Card className="border-dashed border-2 border-slate-200 shadow-none text-center p-8 bg-white">
               <DollarSign className="w-10 h-10 text-slate-300 mx-auto mb-2" />
               <p className="text-xs text-slate-500">
-                Nenhum orçamento cadastrado para este paciente.
+                Nenhum planejamento de tratamento cadastrado para este paciente.
               </p>
               <Button
                 size="sm"
@@ -412,7 +412,7 @@ export const ProntuarioPage: React.FC = () => {
                 onClick={() => navigate(`/orcamentos?pacienteId=${paciente.id}`)}
               >
                 <Plus className="w-3.5 h-3.5 mr-1" />
-                Criar Orçamento
+                Criar Planejamento
               </Button>
             </Card>
           ) : (

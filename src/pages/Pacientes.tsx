@@ -241,7 +241,7 @@ export const PacientesPage: React.FC = () => {
             <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
               {searchQuery
                 ? 'Nenhum resultado encontrado para a busca.'
-                : 'Cadastre os pacientes para gerenciar consultas, histórico e orçamentos.'}
+                : 'Cadastre os pacientes para gerenciar consultas, histórico e planejamentos.'}
             </p>
             <Button
               size="sm"

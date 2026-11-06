@@ -62,7 +62,7 @@ export default function Layout() {
       role: 'all',
     },
     {
-      title: 'Orçamentos',
+      title: 'Planejamentos de Tratamento',
       href: '/orcamentos',
       icon: FileText,
       role: 'all',

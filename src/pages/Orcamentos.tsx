@@ -80,7 +80,7 @@ export const OrcamentosPage: React.FC = () => {
       }
     } catch (err: any) {
       toast({
-        title: 'Erro ao carregar orçamentos',
+        title: 'Erro ao carregar planejamentos',
         description: err.message,
         variant: 'destructive',
       })
@@ -99,7 +99,7 @@ export const OrcamentosPage: React.FC = () => {
 
   const handleRemoveItem = (index: number) => {
     if (itens.length === 1) {
-      toast({ title: 'O orçamento precisa ter pelo menos um procedimento.' })
+      toast({ title: 'O planejamento precisa ter pelo menos um procedimento.' })
       return
     }
     setItens(itens.filter((_, i) => i !== index))
@@ -130,7 +130,7 @@ export const OrcamentosPage: React.FC = () => {
     if (!selectedPacienteId) {
       toast({
         title: 'Selecione o paciente',
-        description: 'É necessário vincular o orçamento a um paciente.',
+        description: 'É necessário vincular o planejamento a um paciente.',
         variant: 'destructive',
       })
       return
@@ -158,14 +158,14 @@ export const OrcamentosPage: React.FC = () => {
         observacoes: observacoes.trim(),
       })
 
-      toast({ title: 'Orçamento gerado com sucesso!' })
+      toast({ title: 'Planejamento gerado com sucesso!' })
       setCreateDialogOpen(false)
       setItens([{ procedimento: '', valor: 0, dente: '' }])
       setObservacoes('')
       loadData()
     } catch (err: any) {
       toast({
-        title: 'Erro ao gerar orçamento',
+        title: 'Erro ao gerar planejamento',
         description: err.message,
         variant: 'destructive',
       })
@@ -209,7 +209,7 @@ export const OrcamentosPage: React.FC = () => {
       )
       .join('\n')
 
-    const msg = `Olá ${pac.nome}, segue o resumo do seu orçamento na Clínica Odontomari emitido em ${formatDateBr(orc.data)}:\n\n${itensList}\n\n*Valor Total:* ${formatCurrency(orc.valor_total)}\nValidade da proposta: ${orc.validade_dias || 30} dias.\n\nFicamos à disposição para tirar qualquer dúvida e agendar o início do tratamento!`
+    const msg = `Olá ${pac.nome}, segue o resumo do seu Planejamento de Tratamento na Clínica Odontomari emitido em ${formatDateBr(orc.data)}:\n\n${itensList}\n\n*Valor Total:* ${formatCurrency(orc.valor_total)}\nValidade da proposta: ${orc.validade_dias || 30} dias.\n\nFicamos à disposição para tirar qualquer dúvida e agendar o início do tratamento!`
 
     window.open(createWhatsAppUrl(pac.telefone, msg), '_blank')
   }
@@ -226,7 +226,7 @@ export const OrcamentosPage: React.FC = () => {
         <div>
           <h1 className="text-xl sm:text-2xl font-bold text-slate-900 flex items-center gap-2">
             <DollarSign className="w-6 h-6 text-teal-600" />
-            Orçamentos de Tratamento
+            Planejamentos de Tratamento
           </h1>
           <p className="text-xs sm:text-sm text-slate-500">
             Criação de propostas por procedimentos, controle de aprovação e envio
@@ -241,7 +241,7 @@ export const OrcamentosPage: React.FC = () => {
           className="bg-teal-600 hover:bg-teal-700 text-white text-xs sm:text-sm h-9"
         >
           <Plus className="w-4 h-4 mr-1.5" />
-          Novo Orçamento
+          Novo Planejamento
         </Button>
       </div>
 
@@ -282,19 +282,20 @@ export const OrcamentosPage: React.FC = () => {
         </Button>
       </div>
 
-      {/* Orçamentos List */}
+      {/* Planejamentos List */}
       <div className="space-y-3">
         {loading ? (
           <div className="p-12 text-center bg-white rounded-xl border border-slate-200">
             <div className="w-8 h-8 border-3 border-teal-600 border-t-transparent rounded-full animate-spin mx-auto mb-2" />
-            <p className="text-xs text-slate-500">Carregando orçamentos...</p>
+            <p className="text-xs text-slate-500">Carregando planejamentos...</p>
           </div>
         ) : filteredOrcamentos.length === 0 ? (
           <Card className="border-dashed border-2 border-slate-200 shadow-none text-center p-8 bg-white">
             <FileText className="w-10 h-10 text-slate-300 mx-auto mb-2" />
-            <h3 className="font-medium text-slate-700 text-sm">Nenhum orçamento encontrado</h3>
+            <h3 className="font-medium text-slate-700 text-sm">Nenhum planejamento encontrado</h3>
             <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
-              Crie orçamentos detalhados para os pacientes com procedimentos e valores.
+              Crie planejamentos de tratamento detalhados para os pacientes com procedimentos e
+              valores.
             </p>
             <Button
               size="sm"
@@ -302,7 +303,7 @@ export const OrcamentosPage: React.FC = () => {
               onClick={() => setCreateDialogOpen(true)}
             >
               <Plus className="w-3.5 h-3.5 mr-1" />
-              Criar Primeiro Orçamento
+              Criar Primeiro Planejamento
             </Button>
           </Card>
         ) : (
@@ -409,7 +410,7 @@ export const OrcamentosPage: React.FC = () => {
       <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
         <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Novo Orçamento Odontológico</DialogTitle>
+            <DialogTitle>Novo Planejamento de Tratamento</DialogTitle>
           </DialogHeader>
 
           <form onSubmit={handleSaveOrcamento} className="space-y-4 py-2">
@@ -447,7 +448,7 @@ export const OrcamentosPage: React.FC = () => {
             <div className="space-y-2 pt-2">
               <div className="flex items-center justify-between">
                 <Label className="text-xs font-semibold uppercase tracking-wider text-slate-700">
-                  Procedimentos & Itens do Orçamento
+                  Procedimentos & Itens do Planejamento
                 </Label>
                 <Button
                   type="button"
@@ -537,7 +538,7 @@ export const OrcamentosPage: React.FC = () => {
               {/* Total Summary */}
               <div className="p-3 bg-teal-50 border border-teal-200 rounded-lg flex items-center justify-between">
                 <span className="text-xs font-semibold text-teal-900">
-                  Valor Total do Orçamento:
+                  Valor Total do Planejamento:
                 </span>
                 <span className="text-base font-bold text-teal-700">
                   {formatCurrency(totalCalculado)}
@@ -583,7 +584,7 @@ export const OrcamentosPage: React.FC = () => {
                 className="bg-teal-600 hover:bg-teal-700 text-white"
                 disabled={saving}
               >
-                {saving ? 'Criando...' : 'Salvar Orçamento'}
+                {saving ? 'Criando...' : 'Salvar Planejamento'}
               </Button>
             </DialogFooter>
           </form>
@@ -596,7 +597,7 @@ export const OrcamentosPage: React.FC = () => {
           <DialogContent className="sm:max-w-lg">
             <DialogHeader>
               <div className="flex items-center justify-between pr-4">
-                <DialogTitle>Orçamento Odontológico</DialogTitle>
+                <DialogTitle>Planejamento de Tratamento</DialogTitle>
                 <Badge
                   className={
                     activeOrcamento.status === 'aceito'
@@ -666,7 +667,7 @@ export const OrcamentosPage: React.FC = () => {
               {/* Status Change Controls */}
               <div className="space-y-1.5 pt-2">
                 <Label className="text-xs font-semibold text-slate-700">
-                  Alterar Status do Orçamento:
+                  Alterar Status do Planejamento:
                 </Label>
                 <div className="grid grid-cols-3 gap-2">
                   <Button
