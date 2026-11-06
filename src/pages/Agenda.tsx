@@ -2,15 +2,9 @@ import React, { useState, useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { consultasService, bloqueiosService, configuracoesService } from '@/services/clinica'
 import { Consulta, BloqueioAgenda, ClinicaConfig } from '@/types'
-import {
-  getTodayDateString,
-  formatDateBr,
-  isWeekend,
-  generateTimeSlots,
-  createWhatsAppUrl,
-} from '@/lib/formatters'
+import { getTodayDateString, formatDateBr, isWeekend, createWhatsAppUrl } from '@/lib/formatters'
 import { getWeekStart, getWeekDays, addDaysToDate, dateKeyOf } from '@/lib/semana'
-import { AgendaDiaColuna, StatusConsultaBadge } from '@/components/agenda/AgendaDiaColuna'
+import { AgendaGrade, AgendaDiaInfo, StatusConsultaBadge } from '@/components/agenda/AgendaGrade'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
@@ -204,15 +198,27 @@ export const AgendaPage: React.FC = () => {
     navigate(`/novo-agendamento?data=${data}${hora ? `&hora=${hora}` : ''}`)
   }
 
-  // Horários da clínica
-  const timeSlots = generateTimeSlots(
-    config?.horario_inicio || '08:00',
-    config?.horario_fim || '18:00',
-    config?.intervalo_minutos || 30,
-  )
-
   // Botão "Novo Agendamento" do topo: hoje se estiver na semana exibida, senão a segunda
   const dataNovoAgendamento = weekDays.includes(hoje) ? hoje : weekStart
+
+  // Informação de cada dia para a grade
+  const diasGrade: AgendaDiaInfo[] = useMemo(
+    () =>
+      weekDays.map((dia) => {
+        const st = getDiaStatus(dia)
+        return {
+          data: dia,
+          isHoje: dia === hoje,
+          consultas: consultasPorDia[dia] || [],
+          bloqueado: st.bloqueado,
+          isFds: st.isFds,
+          desbloqueadoFds: Boolean(st.weekendUnlocked),
+          motivoBloqueio: st.dayBlockRecord?.motivo,
+        }
+      }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [weekDays, consultasPorDia, bloqueiosPorDia, weekendDefaultBlocked, hoje],
+  )
 
   const selectedPac = selectedConsulta?.expand?.paciente
 
@@ -282,38 +288,25 @@ export const AgendaPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Loading or week grid */}
+      {/* Grade semanal de horários (estilo calendário) */}
       {loading ? (
         <div className="p-12 text-center bg-white rounded-xl border border-slate-200">
           <div className="w-8 h-8 border-3 border-teal-600 border-t-transparent rounded-full animate-spin mx-auto mb-2" />
           <p className="text-xs text-slate-500">Carregando agenda...</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 xl:grid-cols-7 gap-3">
-          {weekDays.map((dia) => {
-            const st = getDiaStatus(dia)
-            const bloqRec = st.dayBlockRecord
-            return (
-              <AgendaDiaColuna
-                key={dia}
-                data={dia}
-                isHoje={dia === hoje}
-                consultas={consultasPorDia[dia] || []}
-                bloqueado={st.bloqueado}
-                isFimDeSemana={st.isFds}
-                desbloqueadoFds={Boolean(st.weekendUnlocked)}
-                motivoBloqueio={bloqRec?.motivo}
-                timeSlots={timeSlots}
-                onOpenConsulta={(c) => {
-                  setSelectedConsulta(c)
-                  setStatusDialogOpen(true)
-                }}
-                onNovoAgendamento={(hora) => handleNovoAgendamento(dia, hora)}
-                onToggleBloqueio={() => setBlockTarget(dia)}
-              />
-            )
-          })}
-        </div>
+        <AgendaGrade
+          dias={diasGrade}
+          horarioInicio={config?.horario_inicio || '08:00'}
+          horarioFim={config?.horario_fim || '18:00'}
+          intervaloMinutos={config?.intervalo_minutos || 30}
+          onOpenConsulta={(c) => {
+            setSelectedConsulta(c)
+            setStatusDialogOpen(true)
+          }}
+          onNovoAgendamento={handleNovoAgendamento}
+          onToggleBloqueio={setBlockTarget}
+        />
       )}
 
       {/* Legenda */}
@@ -324,16 +317,20 @@ export const AgendaPage: React.FC = () => {
           {config?.horario_fim || '18:00'}
         </span>
         <span className="flex items-center gap-1">
-          <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block" />
-          Livre
-        </span>
-        <span className="flex items-center gap-1">
           <span className="w-2 h-2 rounded-full bg-teal-600 inline-block" />
-          Consulta marcada
+          Consulta agendada
         </span>
         <span className="flex items-center gap-1">
-          <span className="w-2 h-2 rounded-full bg-slate-300 inline-block" />
-          Bloqueado
+          <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block" />
+          Confirmada
+        </span>
+        <span className="flex items-center gap-1">
+          <span className="w-2 h-2 rounded-full bg-blue-500 inline-block" />
+          Realizada
+        </span>
+        <span className="flex items-center gap-1">
+          <span className="w-2 h-2 rounded-full bg-amber-500 inline-block" />
+          Faltou / Bloqueado
         </span>
       </div>
 
