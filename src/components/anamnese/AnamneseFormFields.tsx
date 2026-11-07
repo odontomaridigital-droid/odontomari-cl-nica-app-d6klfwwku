@@ -24,7 +24,7 @@ export const AnamneseFormFields: React.FC<AnamneseFormFieldsProps> = ({ resposta
         <Card key={secao.id} className="border-slate-200 shadow-sm bg-white">
           <CardHeader className="p-4 pb-2 border-b border-slate-100">
             <CardTitle className="text-sm font-bold text-slate-800 flex items-center gap-2">
-              <span className="bg-teal-100 text-teal-800 rounded-md px-1.5 py-0.5 text-[11px] font-bold">
+              <span className="bg-marca-vermelho-claro text-marca-vermelho-escuro rounded-md px-1.5 py-0.5 text-[11px] font-bold">
                 {idx + 1}
               </span>
               {secao.titulo}
@@ -70,8 +70,8 @@ export const AnamneseFormFields: React.FC<AnamneseFormFieldsProps> = ({ resposta
                         }
                         className={`px-3 py-1 rounded-md text-xs font-semibold border transition-colors ${
                           r.resposta === 'sim'
-                            ? 'bg-teal-600 border-teal-600 text-white'
-                            : 'bg-white border-slate-200 text-slate-600 hover:border-teal-400'
+                            ? 'bg-marca-vermelho border-marca-vermelho text-white'
+                            : 'bg-white border-slate-200 text-slate-600 hover:border-marca-vermelho'
                         }`}
                       >
                         Sim
@@ -118,7 +118,7 @@ export const AnamneseResumoRespostas: React.FC<{ respostas: RespostasAnamnese }>
   const total = totalQuestoes()
   return (
     <span className="text-[11px] text-slate-500 flex items-center gap-1">
-      <FileHeart className="w-3 h-3 text-teal-600" />
+      <FileHeart className="w-3 h-3 text-marca-vermelho" />
       {respondidas} de {total} perguntas respondidas
     </span>
   )

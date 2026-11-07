@@ -14,7 +14,7 @@ export const AnamneseRespostasView: React.FC<{ respostas: RespostasAnamnese }> =
         <Card key={secao.id} className="border-slate-200 shadow-sm bg-white">
           <CardHeader className="p-4 pb-2 border-b border-slate-100">
             <CardTitle className="text-sm font-bold text-slate-800 flex items-center gap-2">
-              <span className="bg-teal-100 text-teal-800 rounded-md px-1.5 py-0.5 text-[11px] font-bold">
+              <span className="bg-marca-vermelho-claro text-marca-vermelho-escuro rounded-md px-1.5 py-0.5 text-[11px] font-bold">
                 {idx + 1}
               </span>
               {secao.titulo}

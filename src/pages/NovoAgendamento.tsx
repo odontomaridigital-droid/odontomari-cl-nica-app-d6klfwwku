@@ -230,7 +230,7 @@ export const NovoAgendamentoPage: React.FC = () => {
     <div className="max-w-3xl mx-auto space-y-6 pb-16 md:pb-8">
       <div>
         <h1 className="text-xl sm:text-2xl font-bold text-slate-900 flex items-center gap-2">
-          <Calendar className="w-6 h-6 text-teal-600" />
+          <Calendar className="w-6 h-6 text-marca-vermelho" />
           Novo Agendamento de Consulta
         </h1>
         <p className="text-xs sm:text-sm text-slate-500">
@@ -251,14 +251,14 @@ export const NovoAgendamentoPage: React.FC = () => {
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
               <CardTitle className="text-base flex items-center gap-2">
-                <User className="w-4 h-4 text-teal-600" />
+                <User className="w-4 h-4 text-marca-vermelho" />
                 1. Identificação do Paciente
               </CardTitle>
               <Button
                 type="button"
                 variant="outline"
                 size="sm"
-                className="text-xs text-teal-700 border-teal-200 hover:bg-teal-50"
+                className="text-xs text-marca-vermelho-escuro border-marca-vermelho/40 hover:bg-marca-vermelho-claro"
                 onClick={() => setShowNewPatientModal(!showNewPatientModal)}
               >
                 <Plus className="w-3.5 h-3.5 mr-1" />
@@ -272,9 +272,9 @@ export const NovoAgendamentoPage: React.FC = () => {
           <CardContent className="space-y-4">
             {/* Quick new patient box */}
             {showNewPatientModal && (
-              <div className="p-4 bg-teal-50/60 border border-teal-200 rounded-lg space-y-3">
-                <h4 className="text-xs font-semibold text-teal-900 flex items-center gap-1.5">
-                  <Sparkles className="w-3.5 h-3.5 text-teal-600" />
+              <div className="p-4 bg-marca-vermelho-claro/60 border border-marca-vermelho/30 rounded-lg space-y-3">
+                <h4 className="text-xs font-semibold text-marca-vermelho-escuro flex items-center gap-1.5">
+                  <Sparkles className="w-3.5 h-3.5 text-marca-vermelho" />
                   Cadastro Rápido de Paciente
                 </h4>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -310,7 +310,7 @@ export const NovoAgendamentoPage: React.FC = () => {
                   <Button
                     type="button"
                     size="sm"
-                    className="bg-teal-600 hover:bg-teal-700 text-white text-xs h-8"
+                    className="bg-marca-vermelho hover:bg-marca-vermelho-escuro text-white text-xs h-8"
                     onClick={handleCreateQuickPaciente}
                     disabled={savingNewPac}
                   >
@@ -322,13 +322,13 @@ export const NovoAgendamentoPage: React.FC = () => {
 
             {/* Selected Paciente Display or Search */}
             {selectedPaciente ? (
-              <div className="p-3 bg-teal-50 border border-teal-200 rounded-lg flex items-center justify-between">
+              <div className="p-3 bg-marca-vermelho-claro/70 border border-marca-vermelho/30 rounded-lg flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-semibold text-teal-900 flex items-center gap-1.5">
-                    <Check className="w-4 h-4 text-teal-600" />
+                  <p className="text-sm font-semibold text-marca-vermelho-escuro flex items-center gap-1.5">
+                    <Check className="w-4 h-4 text-marca-vermelho" />
                     {selectedPaciente.nome}
                   </p>
-                  <p className="text-xs text-teal-700 mt-0.5">
+                  <p className="text-xs text-red-800/80 mt-0.5">
                     Tel: {selectedPaciente.telefone}
                     {selectedPaciente.email ? ` • ${selectedPaciente.email}` : ''}
                   </p>
@@ -372,7 +372,7 @@ export const NovoAgendamentoPage: React.FC = () => {
                           <p className="text-xs sm:text-sm font-medium text-slate-900">{p.nome}</p>
                           <p className="text-[11px] text-slate-500">{p.telefone}</p>
                         </div>
-                        <span className="text-xs text-teal-600 font-medium">Selecionar</span>
+                        <span className="text-xs text-marca-vermelho font-medium">Selecionar</span>
                       </button>
                     ))
                   )}
@@ -386,7 +386,7 @@ export const NovoAgendamentoPage: React.FC = () => {
         <Card className="border-slate-200 shadow-sm bg-white">
           <CardHeader className="pb-3">
             <CardTitle className="text-base flex items-center gap-2">
-              <Sparkles className="w-4 h-4 text-teal-600" />
+              <Sparkles className="w-4 h-4 text-marca-vermelho" />
               2. Procedimento / Tipo de Atendimento
             </CardTitle>
             <CardDescription className="text-xs">
@@ -404,7 +404,7 @@ export const NovoAgendamentoPage: React.FC = () => {
                     onClick={() => handleTipoChange(t.id)}
                     className={`p-3 rounded-lg border text-left transition-all ${
                       isSelected
-                        ? 'border-teal-600 bg-teal-50/70 shadow-sm'
+                        ? 'border-marca-vermelho bg-marca-vermelho-claro/60 shadow-sm'
                         : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50/50'
                     }`}
                   >
@@ -412,10 +412,10 @@ export const NovoAgendamentoPage: React.FC = () => {
                       <span className="text-xs sm:text-sm font-semibold text-slate-900">
                         {t.nome}
                       </span>
-                      {isSelected && <Check className="w-4 h-4 text-teal-600 shrink-0" />}
+                      {isSelected && <Check className="w-4 h-4 text-marca-vermelho shrink-0" />}
                     </div>
                     <div className="flex items-center justify-between text-xs text-slate-500 mt-1.5">
-                      <span className="flex items-center gap-1 font-medium text-teal-700">
+                      <span className="flex items-center gap-1 font-medium text-marca-vermelho-escuro">
                         <Clock className="w-3 h-3" />
                         {t.duracao_minutos} minutos
                       </span>
@@ -432,7 +432,7 @@ export const NovoAgendamentoPage: React.FC = () => {
         <Card className="border-slate-200 shadow-sm bg-white">
           <CardHeader className="pb-3">
             <CardTitle className="text-base flex items-center gap-2">
-              <Clock className="w-4 h-4 text-teal-600" />
+              <Clock className="w-4 h-4 text-marca-vermelho" />
               3. Data e Horário do Atendimento
             </CardTitle>
           </CardHeader>
@@ -460,7 +460,7 @@ export const NovoAgendamentoPage: React.FC = () => {
                   id="hora_inicio"
                   value={horaInicio}
                   onChange={(e) => setHoraInicio(e.target.value)}
-                  className="w-full h-10 px-3 py-2 text-xs sm:text-sm border border-slate-200 rounded-md bg-white mt-1 outline-none focus:ring-2 focus:ring-teal-600"
+                  className="w-full h-10 px-3 py-2 text-xs sm:text-sm border border-slate-200 rounded-md bg-white mt-1 outline-none focus:ring-2 focus:ring-marca-vermelho"
                 >
                   {availableSlots.map((slot) => (
                     <option key={slot} value={slot}>
@@ -495,7 +495,7 @@ export const NovoAgendamentoPage: React.FC = () => {
             <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-600 flex items-center justify-between">
               <span>
                 Horário reservado na agenda:{' '}
-                <strong className="text-teal-800">
+                <strong className="text-marca-vermelho-escuro">
                   {horaInicio} às {horaFim}
                 </strong>{' '}
                 ({duracaoMinutos} min)
@@ -531,7 +531,7 @@ export const NovoAgendamentoPage: React.FC = () => {
           </Button>
           <Button
             type="submit"
-            className="bg-teal-600 hover:bg-teal-700 text-white min-w-[140px]"
+            className="bg-marca-vermelho hover:bg-marca-vermelho-escuro text-white min-w-[140px]"
             disabled={submitting}
           >
             {submitting ? 'Gravando...' : 'Confirmar Agendamento'}

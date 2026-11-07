@@ -74,13 +74,13 @@ export const AgendaDiaColuna: React.FC<AgendaDiaColunaProps> = ({
   return (
     <div
       className={`flex flex-col min-w-0 bg-white rounded-xl border shadow-sm ${
-        isHoje ? 'border-teal-500 ring-2 ring-teal-200' : 'border-slate-200'
+        isHoje ? 'border-marca-vermelho ring-2 ring-red-200' : 'border-slate-200'
       }`}
     >
       <div
         className={`p-3 rounded-t-xl border-b ${
           isHoje
-            ? 'bg-teal-600 text-white border-teal-600'
+            ? 'bg-marca-vermelho text-white border-marca-vermelho'
             : 'bg-slate-50 text-slate-800 border-slate-200'
         }`}
       >
@@ -89,7 +89,7 @@ export const AgendaDiaColuna: React.FC<AgendaDiaColunaProps> = ({
             {getDiaSemanaCurto(data)}
           </span>
           {isHoje && (
-            <span className="text-[10px] bg-white text-teal-700 font-semibold px-1.5 py-0.5 rounded">
+            <span className="text-[10px] bg-white text-marca-vermelho font-semibold px-1.5 py-0.5 rounded">
               Hoje
             </span>
           )}
@@ -123,7 +123,7 @@ export const AgendaDiaColuna: React.FC<AgendaDiaColunaProps> = ({
           {!bloqueado && (
             <Button
               size="icon"
-              className="h-7 w-7 bg-teal-600 hover:bg-teal-700 text-white shrink-0"
+              className="h-7 w-7 bg-marca-vermelho hover:bg-marca-vermelho-escuro text-white shrink-0"
               onClick={() => onNovoAgendamento()}
               title="Novo agendamento neste dia"
             >
@@ -152,16 +152,18 @@ export const AgendaDiaColuna: React.FC<AgendaDiaColunaProps> = ({
             key={c.id}
             type="button"
             onClick={() => onOpenConsulta(c)}
-            className="w-full text-left rounded-lg border border-slate-200 hover:border-teal-300 hover:bg-teal-50/40 p-2 transition-colors"
+            className="w-full text-left rounded-lg border border-slate-200 hover:border-marca-vermelho/50 hover:bg-marca-vermelho-claro/50 p-2 transition-colors"
           >
             <div className="flex items-center justify-between gap-1">
-              <span className="font-mono text-xs font-bold text-teal-800">{c.hora_inicio}</span>
+              <span className="font-mono text-xs font-bold text-marca-vermelho">
+                {c.hora_inicio}
+              </span>
               <StatusConsultaBadge status={c.status} />
             </div>
             <p className="text-xs font-medium text-slate-900 truncate mt-0.5">
               {c.expand?.paciente?.nome || 'Paciente não identificado'}
             </p>
-            <p className="text-[10px] text-teal-700 truncate">
+            <p className="text-[10px] text-marca-vermelho-escuro truncate">
               {c.expand?.tipo_atendimento?.nome || 'Procedimento odontológico'}
             </p>
           </button>

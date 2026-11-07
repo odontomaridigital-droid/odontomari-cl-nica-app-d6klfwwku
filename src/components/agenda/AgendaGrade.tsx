@@ -82,7 +82,7 @@ const blockStyle = (status: Consulta['status']): string => {
     case 'faltou':
       return 'bg-amber-50 border-amber-300 hover:bg-amber-100 text-amber-900'
     default:
-      return 'bg-teal-50 border-teal-300 hover:bg-teal-100 text-teal-900'
+      return 'bg-marca-vermelho-claro border-marca-vermelho/50 hover:bg-red-100 text-red-900'
   }
 }
 
@@ -248,14 +248,14 @@ const ColunaDia: React.FC<ColunaDiaProps> = ({
               key={slot}
               type="button"
               className={cn(
-                'absolute left-0 right-0 border-t border-dashed border-transparent hover:border-teal-300 hover:bg-teal-50/50 group transition-colors',
+                'absolute left-0 right-0 border-t border-dashed border-transparent hover:border-marca-vermelho/50 hover:bg-marca-vermelho-claro/60 group transition-colors',
                 slotOcupado(slot) && 'pointer-events-none',
               )}
               style={{ top: yOf(slot), height: (intervaloMinutos / 60) * HOUR_PX }}
               onClick={() => onNovoAgendamento(dia.data, slot)}
               title={`Novo agendamento ${dia.data.slice(8, 10)}/${dia.data.slice(5, 7)} às ${slot}`}
             >
-              <Plus className="w-3 h-3 text-teal-400 opacity-0 group-hover:opacity-100 absolute right-1 top-1 pointer-events-none" />
+              <Plus className="w-3 h-3 text-marca-vermelho opacity-0 group-hover:opacity-100 absolute right-1 top-1 pointer-events-none" />
             </button>
           ))}
 
@@ -341,7 +341,7 @@ export const AgendaGrade: React.FC<AgendaGradeProps> = ({
                   className={cn(
                     'border-l border-slate-200 px-2 py-2',
                     d.isHoje
-                      ? 'bg-teal-600 text-white'
+                      ? 'bg-marca-vermelho text-white'
                       : d.bloqueado
                         ? 'bg-amber-50'
                         : 'bg-slate-50',
@@ -365,8 +365,8 @@ export const AgendaGrade: React.FC<AgendaGradeProps> = ({
                           className={cn(
                             'w-5 h-5 rounded flex items-center justify-center',
                             d.isHoje
-                              ? 'hover:bg-teal-500 text-white'
-                              : 'hover:bg-teal-100 text-teal-700',
+                              ? 'hover:bg-red-700 text-white'
+                              : 'hover:bg-marca-vermelho-claro text-marca-vermelho',
                           )}
                         >
                           <Plus className="w-3.5 h-3.5" />
@@ -379,7 +379,7 @@ export const AgendaGrade: React.FC<AgendaGradeProps> = ({
                         className={cn(
                           'w-5 h-5 rounded flex items-center justify-center',
                           d.isHoje
-                            ? 'hover:bg-teal-500 text-white'
+                            ? 'hover:bg-red-700 text-white'
                             : d.bloqueado
                               ? 'text-emerald-600 hover:bg-emerald-100'
                               : 'text-amber-600 hover:bg-amber-100',
@@ -398,7 +398,7 @@ export const AgendaGrade: React.FC<AgendaGradeProps> = ({
                       {ddmm}
                     </span>
                     {d.isHoje && (
-                      <span className="text-[9px] bg-white text-teal-700 font-semibold px-1 py-px rounded leading-none">
+                      <span className="text-[9px] bg-white text-marca-vermelho font-semibold px-1 py-px rounded leading-none">
                         HOJE
                       </span>
                     )}

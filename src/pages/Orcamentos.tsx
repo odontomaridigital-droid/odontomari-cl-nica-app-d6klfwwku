@@ -225,7 +225,7 @@ export const OrcamentosPage: React.FC = () => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-4 rounded-xl shadow-sm border border-slate-200">
         <div>
           <h1 className="text-xl sm:text-2xl font-bold text-slate-900 flex items-center gap-2">
-            <DollarSign className="w-6 h-6 text-teal-600" />
+            <DollarSign className="w-6 h-6 text-marca-vermelho" />
             Planejamentos de Tratamento
           </h1>
           <p className="text-xs sm:text-sm text-slate-500">
@@ -238,7 +238,7 @@ export const OrcamentosPage: React.FC = () => {
             setSelectedPacienteId(initialPacienteId || (pacientes[0]?.id ?? ''))
             setCreateDialogOpen(true)
           }}
-          className="bg-teal-600 hover:bg-teal-700 text-white text-xs sm:text-sm h-9"
+          className="bg-marca-vermelho hover:bg-marca-vermelho-escuro text-white text-xs sm:text-sm h-9"
         >
           <Plus className="w-4 h-4 mr-1.5" />
           Novo Planejamento
@@ -286,7 +286,7 @@ export const OrcamentosPage: React.FC = () => {
       <div className="space-y-3">
         {loading ? (
           <div className="p-12 text-center bg-white rounded-xl border border-slate-200">
-            <div className="w-8 h-8 border-3 border-teal-600 border-t-transparent rounded-full animate-spin mx-auto mb-2" />
+            <div className="w-8 h-8 border-3 border-marca-vermelho border-t-transparent rounded-full animate-spin mx-auto mb-2" />
             <p className="text-xs text-slate-500">Carregando planejamentos...</p>
           </div>
         ) : filteredOrcamentos.length === 0 ? (
@@ -299,7 +299,7 @@ export const OrcamentosPage: React.FC = () => {
             </p>
             <Button
               size="sm"
-              className="mt-4 bg-teal-600 hover:bg-teal-700 text-white text-xs"
+              className="mt-4 bg-marca-vermelho hover:bg-marca-vermelho-escuro text-white text-xs"
               onClick={() => setCreateDialogOpen(true)}
             >
               <Plus className="w-3.5 h-3.5 mr-1" />
@@ -454,7 +454,7 @@ export const OrcamentosPage: React.FC = () => {
                   type="button"
                   variant="outline"
                   size="sm"
-                  className="text-xs h-7 text-teal-700 border-teal-200"
+                  className="text-xs h-7 text-marca-vermelho-escuro border-marca-vermelho/40"
                   onClick={handleAddItem}
                 >
                   <Plus className="w-3 h-3 mr-1" /> Adicionar Procedimento
@@ -472,7 +472,7 @@ export const OrcamentosPage: React.FC = () => {
                       <div className="flex items-center gap-2">
                         {/* Quick fill from saved types */}
                         <select
-                          className="text-[11px] border border-slate-200 rounded px-1.5 py-0.5 bg-white text-teal-700"
+                          className="text-[11px] border border-slate-200 rounded px-1.5 py-0.5 bg-white text-marca-vermelho-escuro"
                           onChange={(e) => {
                             if (e.target.value)
                               handleSelectProcedimentoPredefinido(index, e.target.value)
@@ -536,11 +536,11 @@ export const OrcamentosPage: React.FC = () => {
               </div>
 
               {/* Total Summary */}
-              <div className="p-3 bg-teal-50 border border-teal-200 rounded-lg flex items-center justify-between">
-                <span className="text-xs font-semibold text-teal-900">
+              <div className="p-3 bg-marca-vermelho-claro/70 border border-marca-vermelho/30 rounded-lg flex items-center justify-between">
+                <span className="text-xs font-semibold text-marca-vermelho-escuro">
                   Valor Total do Planejamento:
                 </span>
-                <span className="text-base font-bold text-teal-700">
+                <span className="text-base font-bold text-marca-vermelho">
                   {formatCurrency(totalCalculado)}
                 </span>
               </div>
@@ -581,7 +581,7 @@ export const OrcamentosPage: React.FC = () => {
               </Button>
               <Button
                 type="submit"
-                className="bg-teal-600 hover:bg-teal-700 text-white"
+                className="bg-marca-vermelho hover:bg-marca-vermelho-escuro text-white"
                 disabled={saving}
               >
                 {saving ? 'Criando...' : 'Salvar Planejamento'}
@@ -651,9 +651,9 @@ export const OrcamentosPage: React.FC = () => {
                 </div>
               </div>
 
-              <div className="flex items-center justify-between p-3 bg-teal-50 border border-teal-200 rounded-lg">
-                <span className="text-xs font-bold text-teal-900">Total:</span>
-                <span className="text-base font-bold text-teal-700">
+              <div className="flex items-center justify-between p-3 bg-marca-vermelho-claro/70 border border-marca-vermelho/30 rounded-lg">
+                <span className="text-xs font-bold text-marca-vermelho-escuro">Total:</span>
+                <span className="text-base font-bold text-marca-vermelho">
                   {formatCurrency(activeOrcamento.valor_total)}
                 </span>
               </div>

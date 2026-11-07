@@ -237,7 +237,7 @@ export const PacientesPage: React.FC = () => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-4 rounded-xl shadow-sm border border-slate-200">
         <div>
           <h1 className="text-xl sm:text-2xl font-bold text-slate-900 flex items-center gap-2">
-            <Users className="w-6 h-6 text-teal-600" />
+            <Users className="w-6 h-6 text-marca-vermelho" />
             Pacientes
           </h1>
           <p className="text-xs sm:text-sm text-slate-500">
@@ -247,7 +247,7 @@ export const PacientesPage: React.FC = () => {
 
         <Button
           onClick={handleOpenCreate}
-          className="bg-teal-600 hover:bg-teal-700 text-white text-xs sm:text-sm h-9"
+          className="bg-marca-vermelho hover:bg-marca-vermelho-escuro text-white text-xs sm:text-sm h-9"
         >
           <Plus className="w-4 h-4 mr-1.5" />
           Novo Paciente
@@ -291,7 +291,7 @@ export const PacientesPage: React.FC = () => {
       <div className="space-y-3">
         {loading ? (
           <div className="p-12 text-center bg-white rounded-xl border border-slate-200">
-            <div className="w-8 h-8 border-3 border-teal-600 border-t-transparent rounded-full animate-spin mx-auto mb-2" />
+            <div className="w-8 h-8 border-3 border-marca-vermelho border-t-transparent rounded-full animate-spin mx-auto mb-2" />
             <p className="text-xs text-slate-500">Carregando lista de pacientes...</p>
           </div>
         ) : pacientes.length === 0 ? (
@@ -305,7 +305,7 @@ export const PacientesPage: React.FC = () => {
             </p>
             <Button
               size="sm"
-              className="mt-4 bg-teal-600 hover:bg-teal-700 text-white text-xs"
+              className="mt-4 bg-marca-vermelho hover:bg-marca-vermelho-escuro text-white text-xs"
               onClick={handleOpenCreate}
             >
               <Plus className="w-3.5 h-3.5 mr-1" />
@@ -323,12 +323,12 @@ export const PacientesPage: React.FC = () => {
                 <CardContent className="p-4 flex flex-col justify-between h-full space-y-3">
                   <div className="flex items-start justify-between">
                     <div>
-                      <h3 className="text-sm sm:text-base font-semibold text-slate-900 group-hover:text-teal-600 transition-colors">
+                      <h3 className="text-sm sm:text-base font-semibold text-slate-900 group-hover:text-marca-vermelho transition-colors">
                         {p.nome}
                       </h3>
                       <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500 mt-1">
                         <span className="flex items-center gap-1 font-medium text-slate-700">
-                          <Phone className="w-3 h-3 text-teal-600" />
+                          <Phone className="w-3 h-3 text-marca-vermelho" />
                           {formatPhone(p.telefone)}
                         </span>
                         {p.email && (
@@ -377,7 +377,7 @@ export const PacientesPage: React.FC = () => {
                   )}
 
                   <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-xs">
-                    <span className="text-teal-600 font-medium flex items-center gap-1">
+                    <span className="text-marca-vermelho font-medium flex items-center gap-1">
                       <FileText className="w-3.5 h-3.5" />
                       Abrir Prontuário & Histórico →
                     </span>
@@ -497,13 +497,13 @@ export const PacientesPage: React.FC = () => {
                         className="mt-1 pr-8 text-xs sm:text-sm font-semibold"
                       />
                       {cepStatus === 'loading' && (
-                        <Loader2 className="w-4 h-4 text-teal-600 animate-spin absolute right-2.5 top-3" />
+                        <Loader2 className="w-4 h-4 text-marca-vermelho animate-spin absolute right-2.5 top-3" />
                       )}
                     </div>
                     {cepMensagem && (
                       <p
                         className={`mt-1 text-[11px] ${
-                          cepStatus === 'error' ? 'text-red-600' : 'text-teal-700'
+                          cepStatus === 'error' ? 'text-red-600' : 'text-marca-vermelho-escuro'
                         }`}
                       >
                         {cepMensagem}
@@ -540,7 +540,7 @@ export const PacientesPage: React.FC = () => {
                       placeholder="Nº"
                       className={`mt-1 text-xs sm:text-sm ${
                         cepStatus === 'ok' && !enderecoForm.numero
-                          ? 'ring-2 ring-teal-500 border-teal-500'
+                          ? 'ring-2 ring-marca-vermelho border-marca-vermelho'
                           : ''
                       }`}
                     />
@@ -631,7 +631,7 @@ export const PacientesPage: React.FC = () => {
               </Button>
               <Button
                 type="submit"
-                className="bg-teal-600 hover:bg-teal-700 text-white"
+                className="bg-marca-vermelho hover:bg-marca-vermelho-escuro text-white"
                 disabled={saving}
               >
                 {saving ? 'Salvando...' : 'Salvar Paciente'}

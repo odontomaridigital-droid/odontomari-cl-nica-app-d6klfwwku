@@ -85,7 +85,7 @@ export const AnamneseTab: React.FC<AnamneseTabProps> = ({
           {isAdmin && (
             <Button
               size="sm"
-              className="mt-4 bg-teal-600 hover:bg-teal-700 text-white text-xs"
+              className="mt-4 bg-marca-vermelho hover:bg-marca-vermelho-escuro text-white text-xs"
               onClick={abrirNova}
             >
               <Plus className="w-3.5 h-3.5 mr-1" />
@@ -103,7 +103,7 @@ export const AnamneseTab: React.FC<AnamneseTabProps> = ({
             {isAdmin && (
               <Button
                 size="sm"
-                className="bg-teal-600 hover:bg-teal-700 text-white text-xs"
+                className="bg-marca-vermelho hover:bg-marca-vermelho-escuro text-white text-xs"
                 onClick={abrirNova}
               >
                 <Plus className="w-3.5 h-3.5 mr-1" />
@@ -117,7 +117,7 @@ export const AnamneseTab: React.FC<AnamneseTabProps> = ({
               <Card key={anm.id} className="border-slate-200 shadow-sm bg-white">
                 <CardHeader className="p-4 pb-2 border-b border-slate-100 flex flex-row items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <Badge className="bg-teal-100 text-teal-800 hover:bg-teal-100 text-xs">
+                    <Badge className="bg-marca-vermelho-claro text-marca-vermelho-escuro hover:bg-marca-vermelho-claro text-xs">
                       {formatDateBr(anm.data)}
                     </Badge>
                     <Badge
@@ -198,7 +198,7 @@ export const AnamneseTab: React.FC<AnamneseTabProps> = ({
         <DialogContent className="sm:max-w-2xl max-h-[85vh] flex flex-col p-0 gap-0">
           <DialogHeader className="p-4 pb-3 border-b border-slate-100">
             <DialogTitle className="flex items-center gap-2 text-base sm:text-lg">
-              <FileHeart className="w-5 h-5 text-teal-600" />
+              <FileHeart className="w-5 h-5 text-marca-vermelho" />
               Anamnese de {formatDateBr(visualizando?.data)}
             </DialogTitle>
             <DialogDescription className="text-xs">

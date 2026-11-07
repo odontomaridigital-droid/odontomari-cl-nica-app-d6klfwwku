@@ -139,7 +139,7 @@ export const LembretesPage: React.FC = () => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-4 rounded-xl shadow-sm border border-slate-200">
         <div>
           <h1 className="text-xl sm:text-2xl font-bold text-slate-900 flex items-center gap-2">
-            <MessageSquare className="w-6 h-6 text-teal-600" />
+            <MessageSquare className="w-6 h-6 text-marca-vermelho" />
             Lembretes de Consultas (WhatsApp)
           </h1>
           <p className="text-xs sm:text-sm text-slate-500">
@@ -235,7 +235,7 @@ export const LembretesPage: React.FC = () => {
 
         {loading ? (
           <div className="p-12 text-center bg-white rounded-xl border border-slate-200">
-            <div className="w-8 h-8 border-3 border-teal-600 border-t-transparent rounded-full animate-spin mx-auto mb-2" />
+            <div className="w-8 h-8 border-3 border-marca-vermelho border-t-transparent rounded-full animate-spin mx-auto mb-2" />
             <p className="text-xs text-slate-500">Carregando consultas...</p>
           </div>
         ) : consultas.length === 0 ? (
@@ -293,7 +293,7 @@ export const LembretesPage: React.FC = () => {
                               </Badge>
                             )}
                           </div>
-                          <p className="text-xs text-teal-700 font-medium mt-0.5">
+                          <p className="text-xs text-marca-vermelho-escuro font-medium mt-0.5">
                             {tipo?.nome || 'Atendimento'} • Tel: {formatPhone(pac?.telefone)}
                           </p>
                         </div>

@@ -12,8 +12,9 @@ import {
   CardFooter,
 } from '@/components/ui/card'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Calendar, Stethoscope, AlertCircle, Sparkles, UserCheck } from 'lucide-react'
+import { Calendar, AlertCircle, Sparkles, UserCheck } from 'lucide-react'
 import pb from '@/lib/pocketbase/client'
+import { OdontomariLogoCompleta } from '@/components/OdontomariLogo'
 
 export const LoginPage: React.FC = () => {
   const { login } = useAuth()
@@ -66,12 +67,10 @@ export const LoginPage: React.FC = () => {
   return (
     <div className="min-h-screen flex items-center justify-center bg-slate-50 p-4 sm:p-6">
       <div className="w-full max-w-md space-y-6">
-        <div className="text-center space-y-2">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-teal-600 text-white shadow-lg shadow-teal-600/30">
-            <Stethoscope className="w-8 h-8" />
-          </div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900">Odontomari Clínica</h1>
-          <p className="text-sm text-slate-500">
+        <div className="flex flex-col items-center gap-3">
+          <OdontomariLogoCompleta altura={120} titulo="Odontomari — Clínica Odontológica" />
+          <h1 className="sr-only">Odontomari Clínica</h1>
+          <p className="text-sm text-slate-500 text-center">
             Gestão integrada de consultas, pacientes e planejamentos de tratamento
           </p>
         </div>
@@ -128,7 +127,7 @@ export const LoginPage: React.FC = () => {
                         setError(null)
                         setForgotSuccess(false)
                       }}
-                      className="text-xs text-teal-600 hover:text-teal-700 font-medium"
+                      className="text-xs text-marca-vermelho hover:text-marca-vermelho-escuro font-medium"
                     >
                       Esqueceu a senha?
                     </button>
@@ -144,7 +143,7 @@ export const LoginPage: React.FC = () => {
                 </div>
                 <Button
                   type="submit"
-                  className="w-full bg-teal-600 hover:bg-teal-700 text-white"
+                  className="w-full bg-marca-vermelho hover:bg-marca-vermelho-escuro text-white"
                   disabled={loading}
                 >
                   {loading ? 'Entrando...' : 'Entrar no Sistema'}
@@ -165,7 +164,7 @@ export const LoginPage: React.FC = () => {
                 </div>
                 <Button
                   type="submit"
-                  className="w-full bg-teal-600 hover:bg-teal-700 text-white"
+                  className="w-full bg-marca-vermelho hover:bg-marca-vermelho-escuro text-white"
                   disabled={forgotLoading}
                 >
                   {forgotLoading ? 'Enviando link...' : 'Enviar Link de Recuperação'}
@@ -189,7 +188,7 @@ export const LoginPage: React.FC = () => {
           {!showForgot && (
             <CardFooter className="flex flex-col border-t border-slate-100 pt-4 bg-slate-50/70 rounded-b-lg">
               <span className="text-xs text-slate-500 mb-2 font-medium flex items-center gap-1.5">
-                <UserCheck className="w-3.5 h-3.5 text-teal-600" />
+                <UserCheck className="w-3.5 h-3.5 text-marca-vermelho" />
                 Acesso rápido para testes dos perfis:
               </span>
               <div className="grid grid-cols-2 gap-2 w-full text-xs">

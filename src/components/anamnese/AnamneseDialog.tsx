@@ -99,7 +99,7 @@ export const AnamneseDialog: React.FC<AnamneseDialogProps> = ({
       <DialogContent className="sm:max-w-3xl max-h-[90vh] flex flex-col p-0 gap-0">
         <DialogHeader className="p-4 pb-3 border-b border-slate-100">
           <DialogTitle className="flex items-center gap-2 text-base sm:text-lg">
-            <FileHeart className="w-5 h-5 text-teal-600" />
+            <FileHeart className="w-5 h-5 text-marca-vermelho" />
             {isEdicao ? 'Editar Anamnese' : 'Nova Anamnese'}
           </DialogTitle>
           <DialogDescription className="text-xs">
@@ -131,7 +131,7 @@ export const AnamneseDialog: React.FC<AnamneseDialogProps> = ({
           </Button>
           <Button
             onClick={handleSave}
-            className="bg-teal-600 hover:bg-teal-700 text-white"
+            className="bg-marca-vermelho hover:bg-marca-vermelho-escuro text-white"
             disabled={saving}
           >
             {saving ? 'Salvando...' : isEdicao ? 'Salvar Alterações' : 'Salvar Anamnese'}

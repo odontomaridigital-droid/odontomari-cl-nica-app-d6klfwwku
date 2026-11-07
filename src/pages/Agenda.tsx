@@ -228,7 +228,7 @@ export const AgendaPage: React.FC = () => {
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-white p-4 rounded-xl shadow-sm border border-slate-200">
         <div>
           <h1 className="text-xl sm:text-2xl font-bold text-slate-900 flex items-center gap-2">
-            <CalendarIcon className="w-6 h-6 text-teal-600" />
+            <CalendarIcon className="w-6 h-6 text-marca-vermelho" />
             Agenda da Semana
           </h1>
           <p className="text-xs sm:text-sm text-slate-500">
@@ -278,7 +278,7 @@ export const AgendaPage: React.FC = () => {
 
           <Button
             size="sm"
-            className="bg-teal-600 hover:bg-teal-700 text-white h-9 text-xs"
+            className="bg-marca-vermelho hover:bg-marca-vermelho-escuro text-white h-9 text-xs"
             onClick={() => handleNovoAgendamento(dataNovoAgendamento)}
             disabled={getDiaStatus(dataNovoAgendamento).bloqueado}
           >
@@ -291,7 +291,7 @@ export const AgendaPage: React.FC = () => {
       {/* Grade semanal de horários (estilo calendário) */}
       {loading ? (
         <div className="p-12 text-center bg-white rounded-xl border border-slate-200">
-          <div className="w-8 h-8 border-3 border-teal-600 border-t-transparent rounded-full animate-spin mx-auto mb-2" />
+          <div className="w-8 h-8 border-3 border-marca-vermelho border-t-transparent rounded-full animate-spin mx-auto mb-2" />
           <p className="text-xs text-slate-500">Carregando agenda...</p>
         </div>
       ) : (
@@ -312,12 +312,12 @@ export const AgendaPage: React.FC = () => {
       {/* Legenda */}
       <div className="bg-white border border-slate-200 rounded-xl px-4 py-3 flex flex-wrap items-center gap-x-5 gap-y-2 text-[11px] text-slate-500">
         <span className="flex items-center gap-1">
-          <Clock className="w-3.5 h-3.5 text-teal-600" />
+          <Clock className="w-3.5 h-3.5 text-marca-vermelho" />
           Horário da clínica: {config?.horario_inicio || '08:00'} às{' '}
           {config?.horario_fim || '18:00'}
         </span>
         <span className="flex items-center gap-1">
-          <span className="w-2 h-2 rounded-full bg-teal-600 inline-block" />
+          <span className="w-2 h-2 rounded-full bg-marca-vermelho inline-block" />
           Consulta agendada
         </span>
         <span className="flex items-center gap-1">

@@ -272,7 +272,7 @@ export const ConfiguracoesPage: React.FC = () => {
       {/* Header */}
       <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
         <h1 className="text-xl sm:text-2xl font-bold text-slate-900 flex items-center gap-2">
-          <Settings className="w-6 h-6 text-teal-600" />
+          <Settings className="w-6 h-6 text-marca-vermelho" />
           Configurações da Clínica
         </h1>
         <p className="text-xs sm:text-sm text-slate-500">
@@ -299,7 +299,7 @@ export const ConfiguracoesPage: React.FC = () => {
             <Card className="border-slate-200 bg-white shadow-sm">
               <CardHeader className="pb-3">
                 <CardTitle className="text-base flex items-center gap-2">
-                  <Clock className="w-4 h-4 text-teal-600" />
+                  <Clock className="w-4 h-4 text-marca-vermelho" />
                   Horários de Atendimento da Agenda
                 </CardTitle>
                 <CardDescription className="text-xs">
@@ -358,7 +358,7 @@ export const ConfiguracoesPage: React.FC = () => {
                     type="checkbox"
                     checked={bloquearFds}
                     onChange={(e) => setBloquearFds(e.target.checked)}
-                    className="w-4 h-4 text-teal-600 rounded cursor-pointer"
+                    className="w-4 h-4 text-marca-vermelho rounded cursor-pointer"
                   />
                 </div>
               </CardContent>
@@ -367,7 +367,7 @@ export const ConfiguracoesPage: React.FC = () => {
             <Card className="border-slate-200 bg-white shadow-sm mt-4">
               <CardHeader className="pb-3">
                 <CardTitle className="text-base flex items-center gap-2">
-                  <Stethoscope className="w-4 h-4 text-teal-600" />
+                  <Stethoscope className="w-4 h-4 text-marca-vermelho" />
                   Dados da Clínica & Modelo de Mensagem WhatsApp
                 </CardTitle>
               </CardHeader>
@@ -409,7 +409,7 @@ export const ConfiguracoesPage: React.FC = () => {
                 <div className="flex justify-end pt-2">
                   <Button
                     type="submit"
-                    className="bg-teal-600 hover:bg-teal-700 text-white min-w-[150px]"
+                    className="bg-marca-vermelho hover:bg-marca-vermelho-escuro text-white min-w-[150px]"
                     disabled={savingConfig}
                   >
                     {savingConfig ? 'Salvando...' : 'Salvar Alterações'}
@@ -428,7 +428,7 @@ export const ConfiguracoesPage: React.FC = () => {
             </p>
             <Button
               size="sm"
-              className="bg-teal-600 hover:bg-teal-700 text-white text-xs h-8"
+              className="bg-marca-vermelho hover:bg-marca-vermelho-escuro text-white text-xs h-8"
               onClick={handleOpenTipoCreate}
             >
               <Plus className="w-3.5 h-3.5 mr-1" />
@@ -443,7 +443,7 @@ export const ConfiguracoesPage: React.FC = () => {
                   <div className="space-y-1">
                     <h3 className="text-sm font-semibold text-slate-900">{t.nome}</h3>
                     <div className="flex items-center gap-3 text-xs text-slate-500">
-                      <span className="font-semibold text-teal-700 flex items-center gap-1">
+                      <span className="font-semibold text-marca-vermelho flex items-center gap-1">
                         <Clock className="w-3.5 h-3.5" />
                         {t.duracao_minutos} minutos
                       </span>
@@ -484,7 +484,7 @@ export const ConfiguracoesPage: React.FC = () => {
             </p>
             <Button
               size="sm"
-              className="bg-teal-600 hover:bg-teal-700 text-white text-xs h-8"
+              className="bg-marca-vermelho hover:bg-marca-vermelho-escuro text-white text-xs h-8"
               onClick={() => setBloqueioDialogOpen(true)}
             >
               <Plus className="w-3.5 h-3.5 mr-1" />
@@ -606,7 +606,7 @@ export const ConfiguracoesPage: React.FC = () => {
               </Button>
               <Button
                 type="submit"
-                className="bg-teal-600 hover:bg-teal-700 text-white"
+                className="bg-marca-vermelho hover:bg-marca-vermelho-escuro text-white"
                 disabled={savingTipo}
               >
                 {savingTipo ? 'Salvando...' : 'Salvar Tipo'}

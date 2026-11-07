@@ -147,7 +147,7 @@ export const ProntuarioPage: React.FC = () => {
   if (loading) {
     return (
       <div className="p-12 text-center bg-white rounded-xl border border-slate-200">
-        <div className="w-8 h-8 border-3 border-teal-600 border-t-transparent rounded-full animate-spin mx-auto mb-2" />
+        <div className="w-8 h-8 border-3 border-marca-vermelho border-t-transparent rounded-full animate-spin mx-auto mb-2" />
         <p className="text-xs text-slate-500">Carregando prontuário do paciente...</p>
       </div>
     )
@@ -179,7 +179,7 @@ export const ProntuarioPage: React.FC = () => {
           </Button>
           <div>
             <h1 className="text-xl sm:text-2xl font-bold text-slate-900 flex items-center gap-2">
-              <FileText className="w-6 h-6 text-teal-600" />
+              <FileText className="w-6 h-6 text-marca-vermelho" />
               Prontuário Odontológico
             </h1>
             <p className="text-xs sm:text-sm text-slate-500">{paciente.nome}</p>
@@ -200,7 +200,7 @@ export const ProntuarioPage: React.FC = () => {
           {isAdmin ? (
             <Button
               size="sm"
-              className="bg-teal-600 hover:bg-teal-700 text-white text-xs h-9"
+              className="bg-marca-vermelho hover:bg-marca-vermelho-escuro text-white text-xs h-9"
               onClick={() => setDialogOpen(true)}
             >
               <Plus className="w-3.5 h-3.5 mr-1" />
@@ -218,7 +218,7 @@ export const ProntuarioPage: React.FC = () => {
       <Card className="border-slate-200 shadow-sm bg-white">
         <CardContent className="p-4 sm:p-5 space-y-4">
           <div className="flex items-center gap-3 min-w-0">
-            <div className="w-10 h-10 rounded-full bg-teal-50 text-teal-700 flex items-center justify-center shrink-0">
+            <div className="w-10 h-10 rounded-full bg-marca-vermelho-claro text-marca-vermelho flex items-center justify-center shrink-0">
               <User className="w-5 h-5" />
             </div>
             <div className="min-w-0">
@@ -233,7 +233,7 @@ export const ProntuarioPage: React.FC = () => {
 
           <dl className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-3 text-sm">
             <div className="flex items-start gap-2 min-w-0">
-              <Phone className="w-4 h-4 mt-0.5 text-teal-600 shrink-0" />
+              <Phone className="w-4 h-4 mt-0.5 text-marca-vermelho shrink-0" />
               <div className="min-w-0">
                 <dt className="text-[11px] uppercase tracking-wider text-slate-400 font-semibold">
                   Telefone / WhatsApp
@@ -354,7 +354,7 @@ export const ProntuarioPage: React.FC = () => {
               {isAdmin && (
                 <Button
                   size="sm"
-                  className="mt-4 bg-teal-600 hover:bg-teal-700 text-white text-xs"
+                  className="mt-4 bg-marca-vermelho hover:bg-marca-vermelho-escuro text-white text-xs"
                   onClick={() => setDialogOpen(true)}
                 >
                   <Plus className="w-3.5 h-3.5 mr-1" />
@@ -368,7 +368,7 @@ export const ProntuarioPage: React.FC = () => {
                 <Card key={item.id} className="border-slate-200 shadow-sm bg-white">
                   <CardHeader className="p-4 pb-2 border-b border-slate-100 flex flex-row items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <Badge className="bg-teal-100 text-teal-800 hover:bg-teal-100 text-xs">
+                      <Badge className="bg-marca-vermelho-claro text-marca-vermelho-escuro hover:bg-marca-vermelho-claro text-xs">
                         {formatDateBr(item.data)}
                       </Badge>
                       {item.dente_regiao && (
@@ -459,7 +459,7 @@ export const ProntuarioPage: React.FC = () => {
               </p>
               <Button
                 size="sm"
-                className="mt-4 bg-teal-600 hover:bg-teal-700 text-white text-xs"
+                className="mt-4 bg-marca-vermelho hover:bg-marca-vermelho-escuro text-white text-xs"
                 onClick={() => navigate(`/orcamentos?pacienteId=${paciente.id}`)}
               >
                 <Plus className="w-3.5 h-3.5 mr-1" />
@@ -493,7 +493,7 @@ export const ProntuarioPage: React.FC = () => {
                     </p>
                   </div>
                   <div className="text-right">
-                    <span className="text-sm font-bold text-teal-700 block">
+                    <span className="text-sm font-bold text-marca-vermelho block">
                       {formatCurrency(orc.valor_total)}
                     </span>
                     <Button
@@ -609,7 +609,7 @@ export const ProntuarioPage: React.FC = () => {
               </Button>
               <Button
                 type="submit"
-                className="bg-teal-600 hover:bg-teal-700 text-white"
+                className="bg-marca-vermelho hover:bg-marca-vermelho-escuro text-white"
                 disabled={saving}
               >
                 {saving ? 'Registrando...' : 'Gravar no Prontuário'}

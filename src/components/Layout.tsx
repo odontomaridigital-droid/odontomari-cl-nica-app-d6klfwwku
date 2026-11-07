@@ -12,7 +12,6 @@ import {
   LogOut,
   Menu,
   X,
-  Stethoscope,
   Shield,
   User,
   Clock,
@@ -20,6 +19,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
+import { OdontomariLogoSimbolo } from '@/components/OdontomariLogo'
 
 export default function Layout() {
   const { user, isAdmin, isRecepcao, logout, isLoading } = useAuth()
@@ -31,7 +31,7 @@ export default function Layout() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50">
         <div className="flex flex-col items-center gap-3">
-          <div className="w-10 h-10 border-4 border-teal-600 border-t-transparent rounded-full animate-spin" />
+          <div className="w-10 h-10 border-4 border-marca-vermelho border-t-transparent rounded-full animate-spin" />
           <p className="text-sm text-slate-500 font-medium">Carregando Odontomari...</p>
         </div>
       </div>
@@ -89,22 +89,22 @@ export default function Layout() {
   return (
     <div className="min-h-screen bg-slate-100 flex flex-col md:flex-row">
       {/* Desktop Sidebar */}
-      <aside className="hidden md:flex flex-col w-64 bg-slate-900 text-white shrink-0 border-r border-slate-800">
+      <aside className="hidden md:flex flex-col w-64 bg-marca-cinza-grafite text-white shrink-0 border-r border-black/40">
         {/* Brand */}
-        <div className="h-16 flex items-center px-6 gap-3 border-b border-slate-800">
-          <div className="w-9 h-9 rounded-xl bg-teal-500 flex items-center justify-center text-white shadow-sm">
-            <Stethoscope className="w-5 h-5" />
-          </div>
+        <div className="h-20 flex items-center px-5 gap-3 border-b border-white/10">
+          <OdontomariLogoSimbolo altura={44} titulo="Odontomari" />
           <div>
-            <h1 className="font-bold text-base leading-tight">Odontomari</h1>
-            <p className="text-[11px] text-teal-400 font-medium">Clínica Odontológica</p>
+            <h1 className="font-bold text-base leading-tight">
+              Odonto<span className="text-[#e86a72]">mari</span>
+            </h1>
+            <p className="text-[11px] text-slate-300 font-medium">Clínica Odontológica</p>
           </div>
         </div>
 
         {/* User Badge */}
-        <div className="p-4 mx-3 my-3 bg-slate-800/80 rounded-xl border border-slate-700/60 flex items-center justify-between">
+        <div className="p-4 mx-3 my-3 bg-white/5 rounded-xl border border-white/10 flex items-center justify-between">
           <div className="flex items-center gap-3 overflow-hidden">
-            <div className="w-9 h-9 rounded-full bg-slate-700 flex items-center justify-center text-slate-300 font-semibold shrink-0">
+            <div className="w-9 h-9 rounded-full bg-marca-vermelho flex items-center justify-center text-white font-semibold shrink-0">
               {user.name.charAt(0).toUpperCase()}
             </div>
             <div className="overflow-hidden">
@@ -115,11 +115,12 @@ export default function Layout() {
                   className={cn(
                     'text-[10px] px-1.5 py-0 font-normal',
                     isAdmin
-                      ? 'bg-teal-500/20 text-teal-300 border-teal-500/40'
-                      : 'bg-blue-500/20 text-blue-300 border-blue-500/40',
+                      ? 'bg-marca-vermelho/30 text-red-100 border-marca-vermelho/60'
+                      : 'bg-slate-500/20 text-slate-200 border-slate-400/40',
                   )}
                 >
                   {isAdmin ? 'Administrador' : 'Recepção'}
+                  <Shield className="w-2.5 h-2.5 ml-0.5" />
                 </Badge>
               </div>
             </div>
@@ -138,8 +139,8 @@ export default function Layout() {
                 className={cn(
                   'flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-sm font-medium transition-colors',
                   isActive
-                    ? 'bg-teal-600 text-white shadow-sm'
-                    : 'text-slate-300 hover:text-white hover:bg-slate-800',
+                    ? 'bg-marca-vermelho text-white shadow-sm'
+                    : 'text-slate-300 hover:text-white hover:bg-white/10',
                 )}
               >
                 <Icon className={cn('w-4 h-4', isActive ? 'text-white' : 'text-slate-400')} />
@@ -150,10 +151,10 @@ export default function Layout() {
         </nav>
 
         {/* Logout */}
-        <div className="p-3 border-t border-slate-800">
+        <div className="p-3 border-t border-white/10">
           <button
             onClick={() => logout()}
-            className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-sm font-medium text-slate-400 hover:text-red-300 hover:bg-slate-800 transition-colors"
+            className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-sm font-medium text-slate-400 hover:text-red-300 hover:bg-white/10 transition-colors"
           >
             <LogOut className="w-4 h-4" />
             <span>Sair do sistema</span>
@@ -162,14 +163,14 @@ export default function Layout() {
       </aside>
 
       {/* Mobile Header */}
-      <header className="md:hidden bg-slate-900 text-white border-b border-slate-800 px-4 py-3 flex items-center justify-between sticky top-0 z-40">
+      <header className="md:hidden bg-marca-cinza-grafite text-white border-b border-black/40 px-4 py-2.5 flex items-center justify-between sticky top-0 z-40">
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg bg-teal-500 flex items-center justify-center text-white">
-            <Stethoscope className="w-4 h-4" />
-          </div>
+          <OdontomariLogoSimbolo altura={34} titulo="Odontomari" />
           <div>
-            <h1 className="font-bold text-sm leading-none">Odontomari</h1>
-            <span className="text-[10px] text-teal-400">
+            <h1 className="font-bold text-sm leading-none">
+              Odonto<span className="text-[#e86a72]">mari</span>
+            </h1>
+            <span className="text-[10px] text-slate-300">
               {isAdmin ? 'Perfil Administrador' : 'Perfil Recepção'}
             </span>
           </div>
@@ -180,7 +181,7 @@ export default function Layout() {
             variant="ghost"
             size="icon"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="text-white hover:bg-slate-800"
+            className="text-white hover:bg-white/10"
           >
             {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </Button>
@@ -189,14 +190,14 @@ export default function Layout() {
 
       {/* Mobile Dropdown Navigation */}
       {mobileMenuOpen && (
-        <div className="md:hidden bg-slate-900 text-white border-b border-slate-800 px-4 py-3 space-y-1 sticky top-[57px] z-30 shadow-xl">
-          <div className="pb-2 mb-2 border-b border-slate-800 flex items-center justify-between">
-            <span className="text-xs text-slate-400">Logado como {user.name}</span>
+        <div className="md:hidden bg-marca-cinza-grafite text-white border-b border-black/40 px-4 py-3 space-y-1 sticky top-[57px] z-30 shadow-xl">
+          <div className="pb-2 mb-2 border-b border-white/10 flex items-center justify-between">
+            <span className="text-xs text-slate-300">Logado como {user.name}</span>
             <Badge
               variant="outline"
               className={cn(
                 'text-[10px] px-2 py-0.5',
-                isAdmin ? 'border-teal-400 text-teal-300' : 'border-blue-400 text-blue-300',
+                isAdmin ? 'border-red-300 text-red-100' : 'border-slate-400 text-slate-200',
               )}
             >
               {isAdmin ? 'Admin' : 'Recepção'}
@@ -208,12 +209,12 @@ export default function Layout() {
             const isActive = location.pathname === item.href
             return (
               <NavLink
-                key={item.href}
                 to={item.href}
+                key={item.href}
                 onClick={() => setMobileMenuOpen(false)}
                 className={cn(
                   'flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium',
-                  isActive ? 'bg-teal-600 text-white' : 'text-slate-300 hover:bg-slate-800',
+                  isActive ? 'bg-marca-vermelho text-white' : 'text-slate-300 hover:bg-white/10',
                 )}
               >
                 <Icon className="w-4 h-4" />
@@ -227,7 +228,7 @@ export default function Layout() {
               setMobileMenuOpen(false)
               logout()
             }}
-            className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-red-300 hover:bg-slate-800 rounded-lg pt-2"
+            className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-red-300 hover:bg-white/10 rounded-lg pt-2"
           >
             <LogOut className="w-4 h-4" />
             <span>Sair</span>
@@ -248,7 +249,9 @@ export default function Layout() {
           onClick={() => navigate('/agenda')}
           className={cn(
             'flex flex-col items-center gap-0.5 text-[10px] font-medium py-1 px-2 rounded',
-            location.pathname === '/agenda' ? 'text-teal-600 font-semibold' : 'text-slate-500',
+            location.pathname === '/agenda'
+              ? 'text-marca-vermelho font-semibold'
+              : 'text-slate-500',
           )}
         >
           <Calendar className="w-5 h-5" />
@@ -259,7 +262,7 @@ export default function Layout() {
           className={cn(
             'flex flex-col items-center gap-0.5 text-[10px] font-medium py-1 px-2 rounded',
             location.pathname === '/novo-agendamento'
-              ? 'text-teal-600 font-semibold'
+              ? 'text-marca-vermelho font-semibold'
               : 'text-slate-500',
           )}
         >
@@ -271,7 +274,7 @@ export default function Layout() {
           className={cn(
             'flex flex-col items-center gap-0.5 text-[10px] font-medium py-1 px-2 rounded',
             location.pathname.startsWith('/pacientes')
-              ? 'text-teal-600 font-semibold'
+              ? 'text-marca-vermelho font-semibold'
               : 'text-slate-500',
           )}
         >
@@ -282,7 +285,9 @@ export default function Layout() {
           onClick={() => navigate('/lembretes')}
           className={cn(
             'flex flex-col items-center gap-0.5 text-[10px] font-medium py-1 px-2 rounded',
-            location.pathname === '/lembretes' ? 'text-teal-600 font-semibold' : 'text-slate-500',
+            location.pathname === '/lembretes'
+              ? 'text-marca-vermelho font-semibold'
+              : 'text-slate-500',
           )}
         >
           <MessageSquare className="w-5 h-5" />

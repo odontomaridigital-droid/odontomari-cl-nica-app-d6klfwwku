@@ -81,6 +81,15 @@ export default {
           4: 'hsl(var(--chart-4))',
           5: 'hsl(var(--chart-5))',
         },
+        marca: {
+          vermelho: '#C8202E',
+          'vermelho-escuro': '#A31A26',
+          'vermelho-claro': '#FBE9EB',
+          cinza: '#A7A9AC',
+          'cinza-escuro': '#4B4F54',
+          'cinza-grafite': '#2B2F33',
+          preto: '#1D1F21',
+        },
       },
       borderRadius: {
         lg: 'var(--radius)',
