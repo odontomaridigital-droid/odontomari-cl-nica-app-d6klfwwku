@@ -19,7 +19,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
-import { OdontomariLogoSimbolo } from '@/components/OdontomariLogo'
+import { OdontomariLogoSimbolo, OdontomariSlogan } from '@/components/OdontomariLogo'
 
 export default function Layout() {
   const { user, isAdmin, isRecepcao, logout, isLoading } = useAuth()
@@ -98,6 +98,7 @@ export default function Layout() {
               Odonto<span className="text-[#e86a72]">mari</span>
             </h1>
             <p className="text-[11px] text-slate-300 font-medium">Clínica Odontológica</p>
+            <OdontomariSlogan sobreFundoEscuro className="text-[11px] mt-0.5" />
           </div>
         </div>
 
@@ -170,6 +171,7 @@ export default function Layout() {
             <h1 className="font-bold text-sm leading-none">
               Odonto<span className="text-[#e86a72]">mari</span>
             </h1>
+            <OdontomariSlogan sobreFundoEscuro className="text-[10px] leading-tight" />
             <span className="text-[10px] text-slate-300">
               {isAdmin ? 'Perfil Administrador' : 'Perfil Recepção'}
             </span>

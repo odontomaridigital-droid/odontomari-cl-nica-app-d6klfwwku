@@ -14,7 +14,7 @@ import {
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Calendar, AlertCircle, Sparkles, UserCheck } from 'lucide-react'
 import pb from '@/lib/pocketbase/client'
-import { OdontomariLogoCompleta } from '@/components/OdontomariLogo'
+import { OdontomariLogoCompleta, OdontomariSlogan } from '@/components/OdontomariLogo'
 
 export const LoginPage: React.FC = () => {
   const { login } = useAuth()
@@ -68,7 +68,8 @@ export const LoginPage: React.FC = () => {
     <div className="min-h-screen flex items-center justify-center bg-slate-50 p-4 sm:p-6">
       <div className="w-full max-w-md space-y-6">
         <div className="flex flex-col items-center gap-3">
-          <OdontomariLogoCompleta altura={120} titulo="Odontomari — Clínica Odontológica" />
+          <OdontomariLogoCompleta altura={110} titulo="Odontomari — Clínica Odontológica" />
+          <OdontomariSlogan className="text-sm -mt-1" />
           <h1 className="sr-only">Odontomari Clínica</h1>
           <p className="text-sm text-slate-500 text-center">
             Gestão integrada de consultas, pacientes e planejamentos de tratamento

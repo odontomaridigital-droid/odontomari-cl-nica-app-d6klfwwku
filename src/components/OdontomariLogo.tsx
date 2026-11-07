@@ -36,20 +36,55 @@ interface OdontomariLogoCompletaProps extends OdontomariLogoProps {
   /** Altura em px da logo completa (símbolo + texto). */
 }
 
-/** Logo completa com o texto "Odontomari" — para o login e telas de destaque. */
+/**
+ * Fração inferior da imagem (409×505 px) que contém o slogan "semeando sorrisos"
+ * embutido em preto — invisível em fundos escuros. Recortamos essa faixa via CSS
+ * (overflow-hidden) e o slogan é renderizado como texto do app
+ * (componente OdontomariSlogan), para nunca duplicar nem sumir.
+ */
+const FRACAO_SLOGAN_IMAGEM = 0.18
+
+/** Logo completa (símbolo + texto "Odontomari"), sem a faixa do slogan embutido. */
 export const OdontomariLogoCompleta: React.FC<OdontomariLogoCompletaProps> = ({
   altura = 96,
   className,
   titulo = 'Odontomari — Clínica Odontológica',
 }) => {
   return (
-    <img
-      src={logoUrl}
-      alt={titulo}
-      title={titulo}
+    <div
+      className={cn('overflow-hidden shrink-0', className)}
       style={{ height: altura }}
-      className={cn('w-auto object-contain', className)}
-      draggable={false}
-    />
+      title={titulo}
+    >
+      <img
+        src={logoUrl}
+        alt={titulo}
+        style={{ height: altura / (1 - FRACAO_SLOGAN_IMAGEM) }}
+        className="w-auto object-contain block max-w-none"
+        draggable={false}
+      />
+    </div>
   )
 }
+
+interface OdontomariSloganProps {
+  /** Use true quando o slogan ficar sobre fundo grafite (sidebar/header). */
+  sobreFundoEscuro?: boolean
+  className?: string
+}
+
+/** Slogan "semeando sorrisos" renderizado como texto do app — sempre legível. */
+export const OdontomariSlogan: React.FC<OdontomariSloganProps> = ({
+  sobreFundoEscuro = false,
+  className,
+}) => (
+  <p
+    className={cn(
+      'italic tracking-wide select-none',
+      sobreFundoEscuro ? 'text-white/80' : 'text-marca-vermelho',
+      className,
+    )}
+  >
+    semeando sorrisos
+  </p>
+)
