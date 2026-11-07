@@ -85,16 +85,20 @@ function desenharParagrafo(
 export async function gerarPdfReceita(
   receita: Receita,
   pacienteNome: string,
-  config?: Pick<ClinicaConfig, 'nome_clinica' | 'dentista_nome' | 'dentista_cro'>,
+  config?: Pick<ClinicaConfig, 'dentista_nome' | 'dentista_cro'>,
 ): Promise<void> {
   const doc = new jsPDF({ unit: 'mm', format: 'a4' })
   const itens = normalizarItensReceita(Array.isArray(receita.itens) ? receita.itens : [])
-  const nomeClinica = config?.nome_clinica || 'Clínica Odontomari'
 
   // ===== logo (asset da marca) =====
-  // PNG quadrado (409×505): a faixa inferior (~18%) contém o slogan embutido em
-  // preto — recortamos desenhando só a porção superior, como o componente
-  // OdontomariLogoCompleta faz via CSS overflow-hidden.
+  // PNG oficial: símbolo "m" + palavra "odontomari" (Odonto vermelho / mari cinza).
+  // A faixa inferior (~18%) contém o slogan embutido em preto — recortamos
+  // desenhando só a porção superior, como o componente OdontomariLogoCompleta
+  // faz via CSS overflow-hidden — e o slogan é desenhado como texto em vermelho.
+  const FRACAO_SLOGAN = 0.18
+  const ALTURA_LOGO = 20
+  const yLogo = MARGEM - 4
+  let logoDesenhada = false
   try {
     const img = new Image()
     img.src = logoUrl
@@ -103,11 +107,9 @@ export async function gerarPdfReceita(
       img.onerror = () => resolve() // segue sem logo em vez de falhar
     })
     if (img.complete && img.naturalWidth > 0) {
-      const fracaoSlogan = 0.18
-      const alturaVisivel = 22
-      const alturaDesenhada = alturaVisivel / (1 - fracaoSlogan)
+      const alturaDesenhada = ALTURA_LOGO / (1 - FRACAO_SLOGAN)
       const larguraLogo = alturaDesenhada * (img.naturalWidth / img.naturalHeight)
-      const pixelRatio = img.naturalHeight * fracaoSlogan
+      const pixelRatio = img.naturalHeight * FRACAO_SLOGAN
       const alturaPx = Math.max(1, Math.round(img.naturalHeight - pixelRatio))
       const canvas = document.createElement('canvas')
       canvas.width = img.naturalWidth
@@ -116,58 +118,71 @@ export async function gerarPdfReceita(
       if (ctx) {
         ctx.drawImage(img, 0, 0, img.naturalWidth, alturaPx, 0, 0, img.naturalWidth, alturaPx)
         const recortada = canvas.toDataURL('image/png')
-        doc.addImage(recortada, 'PNG', MARGEM, MARGEM - 4, larguraLogo, alturaVisivel)
+        doc.addImage(recortada, 'PNG', MARGEM, yLogo, larguraLogo, ALTURA_LOGO)
+        logoDesenhada = true
       }
     }
   } catch {
-    // sem logo, o documento segue com o texto do cabeçalho
+    // sem logo, o cabeçalho cai para o texto da marca
   }
 
   // ===== cabeçalho =====
-  doc.setFont('helvetica', 'bold')
-  doc.setFontSize(17)
-  doc.setTextColor(...GRAFITE)
-  doc.text(nomeClinica, MARGEM, MARGEM + 24)
+  let ySlogan: number
+  if (logoDesenhada) {
+    // slogan centrado sob a logo, em vermelho itálico (como na marca)
+    doc.setFont('helvetica', 'italic')
+    doc.setFontSize(9.5)
+    doc.setTextColor(...VERMELHO)
+    const larguraLogo = (ALTURA_LOGO / (1 - FRACAO_SLOGAN)) * (409 / 505)
+    doc.text('semeando sorrisos', MARGEM + larguraLogo / 2, yLogo + ALTURA_LOGO + 4.5, {
+      align: 'center',
+    })
+    ySlogan = yLogo + ALTURA_LOGO + 4.5
+  } else {
+    // fallback sem imagem: texto da marca em duas cores, como na logo oficial
+    doc.setFont('helvetica', 'bold')
+    doc.setFontSize(16)
+    const larguraOdonto = doc.getStringUnitWidth('Odonto') * 16
+    doc.setTextColor(...VERMELHO)
+    doc.text('Odonto', MARGEM, MARGEM + 6)
+    doc.setTextColor(...GRAFITE)
+    doc.text('mari', MARGEM + larguraOdonto, MARGEM + 6)
+    ySlogan = MARGEM + 12
+    doc.setFont('helvetica', 'italic')
+    doc.setFontSize(9.5)
+    doc.setTextColor(...VERMELHO)
+    doc.text('semeando sorrisos', MARGEM, ySlogan)
+  }
 
-  doc.setFont('helvetica', 'italic')
-  doc.setFontSize(10)
-  doc.setTextColor(...VERMELHO)
-  doc.text('semeando sorrisos', MARGEM, MARGEM + 30)
-
+  // tipo de documento à direita (sem competir com a marca)
   doc.setFont('helvetica', 'normal')
   doc.setFontSize(8)
   doc.setTextColor(...CINZA)
-  doc.text('Receituário Odontológico', 210 - MARGEM, MARGEM + 20, { align: 'right' })
+  doc.text('Receituário Odontológico', 210 - MARGEM, yLogo + 4, { align: 'right' })
   doc.setFont('helvetica', 'bold')
-  doc.setFontSize(10)
+  doc.setFontSize(11)
   doc.setTextColor(...VERMELHO)
-  doc.text('Receita', 210 - MARGEM, MARGEM + 26, { align: 'right' })
+  doc.text('Receita', 210 - MARGEM, yLogo + 10, { align: 'right' })
 
   // faixa vermelha separadora
+  const ySeparador = Math.max(ySlogan + 6, yLogo + 14) + 4
   doc.setDrawColor(...VERMELHO)
   doc.setLineWidth(0.8)
-  doc.line(MARGEM, MARGEM + 35, 210 - MARGEM, MARGEM + 35)
+  doc.line(MARGEM, ySeparador, 210 - MARGEM, ySeparador)
 
-  // ===== dados do paciente =====
-  let y = MARGEM + 45
+  // ===== dados do paciente (sem "emitida por": a assinatura já identifica) =====
+  let y = ySeparador + 10
   doc.setFontSize(7)
   doc.setTextColor(...CINZA_CLARO)
   doc.setFont('helvetica', 'normal')
   doc.text('PACIENTE', MARGEM, y)
   doc.text('DATA DE EMISSÃO', 78, y)
-  doc.text('EMITIDA POR', 210 - MARGEM, y, { align: 'right' })
 
   doc.setFontSize(10)
   doc.setTextColor(...GRAFITE)
   doc.setFont('helvetica', 'bold')
   doc.text(pacienteNome || '—', MARGEM, y + 5)
   doc.text(formatDateBr(receita.data) || '—', 78, y + 5)
-  doc.text(
-    receita.expand?.autor?.name || config?.dentista_nome || 'Dentista',
-    210 - MARGEM,
-    y + 5,
-    { align: 'right' },
-  )
 
   // ===== itens =====
   y += 14

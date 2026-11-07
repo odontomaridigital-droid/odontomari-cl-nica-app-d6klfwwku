@@ -33,19 +33,24 @@ export const ReceitaDocumento: React.FC<ReceitaDocumentoProps> = ({
         className,
       )}
     >
-      {/* Cabeçalho da clínica */}
-      <div className="flex items-center gap-4 border-b-2 border-marca-vermelho pb-4">
-        <OdontomariLogoCompleta altura={56} />
+      {/* Cabeçalho da clínica: logo da marca + slogan embaixo, tipo de documento à direita */}
+      <div className="flex items-start gap-4 border-b-2 border-marca-vermelho pb-4">
+        <div className="flex flex-col items-center">
+          <OdontomariLogoCompleta altura={48} />
+          <p className="italic text-marca-vermelho text-[11px] mt-0.5 tracking-wide">
+            semeando sorrisos
+          </p>
+        </div>
         <div className="ml-auto text-right">
           <p className="text-[11px] text-slate-500 uppercase tracking-wider font-medium">
             Receituário Odontológico
           </p>
-          <p className="text-sm font-semibold text-marca-vermelho">semeando sorrisos</p>
+          <p className="text-sm font-semibold text-marca-vermelho">Receita</p>
         </div>
       </div>
 
-      {/* Dados do paciente */}
-      <div className="mt-5 grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+      {/* Dados do paciente (sem "emitida por": a assinatura já identifica o profissional) */}
+      <div className="mt-5 grid grid-cols-2 gap-3 text-xs">
         <div>
           <p className="text-slate-400 uppercase text-[10px] tracking-wide">Paciente</p>
           <p className="font-semibold text-sm text-slate-900">{pacienteNome}</p>
@@ -53,12 +58,6 @@ export const ReceitaDocumento: React.FC<ReceitaDocumentoProps> = ({
         <div>
           <p className="text-slate-400 uppercase text-[10px] tracking-wide">Data de emissão</p>
           <p className="font-semibold text-sm text-slate-900">{formatDateBr(receita.data)}</p>
-        </div>
-        <div className="sm:text-right">
-          <p className="text-slate-400 uppercase text-[10px] tracking-wide">Emitida por</p>
-          <p className="font-semibold text-sm text-slate-900">
-            {receita.expand?.autor?.name || dentistaNome || 'Dentista'}
-          </p>
         </div>
       </div>
 
