@@ -25,6 +25,7 @@ import {
   X,
 } from 'lucide-react'
 import { ReceitaDocumento } from '@/components/receitas/ReceitaDocumento'
+import { ReceitaPosSalvarDialog } from '@/components/receitas/ReceitaPosSalvarDialog'
 import {
   medicamentosService,
   receitasService,
@@ -96,6 +97,8 @@ export const ReceitasTab: React.FC<ReceitasTabProps> = ({
   const [visualizando, setVisualizando] = useState<Receita | null>(null)
   const [confirmando, setConfirmando] = useState(false)
   const [editandoId, setEditandoId] = useState<string | null>(null)
+  // receita recém-salva: alimenta a pergunta "imprimir ou WhatsApp?"
+  const [posSalvar, setPosSalvar] = useState<Receita | null>(null)
 
   const abrirNova = () => {
     if (!isAdmin) {
@@ -206,11 +209,12 @@ export const ReceitasTab: React.FC<ReceitasTabProps> = ({
         orientacoes: orientacoes.trim() || undefined,
         data,
       }
+      let salva: Receita
       if (editandoId) {
-        await receitasService.update(editandoId, payload)
+        salva = await receitasService.update(editandoId, payload)
         toast({ title: 'Receita atualizada!' })
       } else {
-        await receitasService.create({
+        salva = await receitasService.create({
           ...payload,
           paciente: pacienteId,
           autor: autorId,
@@ -221,6 +225,7 @@ export const ReceitasTab: React.FC<ReceitasTabProps> = ({
       setConfirmando(false)
       setEditandoId(null)
       onSaved()
+      setPosSalvar(salva)
     } catch (err: any) {
       toast({
         title: 'Erro ao salvar receita',
@@ -253,6 +258,17 @@ export const ReceitasTab: React.FC<ReceitasTabProps> = ({
     setTimeout(() => {
       window.print()
     }, 150)
+  }
+
+  // ===== pós-salvamento: imprimir / WhatsApp / agora não =====
+  const posSalvarImprimir = (receita: Receita) => {
+    setPosSalvar(null)
+    imprimir(receita)
+  }
+
+  const posSalvarWhatsApp = (receita: Receita) => {
+    setPosSalvar(null)
+    enviarWhatsApp(receita)
   }
 
   return (
@@ -612,6 +628,15 @@ export const ReceitasTab: React.FC<ReceitasTabProps> = ({
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* ===== Pergunta pós-salvamento ===== */}
+      <ReceitaPosSalvarDialog
+        receita={posSalvar}
+        pacienteNome={pacienteNome}
+        onImprimir={posSalvarImprimir}
+        onWhatsApp={posSalvarWhatsApp}
+        onFechar={() => setPosSalvar(null)}
+      />
 
       {/* ===== Diálogo de visualização / impressão ===== */}
       <Dialog open={Boolean(visualizando)} onOpenChange={(o) => !o && setVisualizando(null)}>
