@@ -8,7 +8,7 @@ import {
   DialogDescription,
   DialogFooter,
 } from '@/components/ui/dialog'
-import { Printer, MessageCircle, CheckCircle2 } from 'lucide-react'
+import { Printer, MessageCircle, CheckCircle2, Download } from 'lucide-react'
 import { Receita } from '@/types'
 import { formatDateBr } from '@/lib/formatters'
 
@@ -17,18 +17,21 @@ interface ReceitaPosSalvarDialogProps {
   pacienteNome: string
   onImprimir: (receita: Receita) => void
   onWhatsApp: (receita: Receita) => void
+  onBaixarPdf?: (receita: Receita) => void
   onFechar: () => void
 }
 
 /**
  * Pergunta exibida logo após salvar uma receita: imprimir, enviar pelo WhatsApp
- * ou apenas fechar (a receita já fica salva no histórico).
+ * (baixa o PDF e abre a conversa), baixar só o PDF ou apenas fechar
+ * (a receita já fica salva no histórico).
  */
 export const ReceitaPosSalvarDialog: React.FC<ReceitaPosSalvarDialogProps> = ({
   receita,
   pacienteNome,
   onImprimir,
   onWhatsApp,
+  onBaixarPdf,
   onFechar,
 }) => {
   return (
@@ -64,6 +67,23 @@ export const ReceitaPosSalvarDialog: React.FC<ReceitaPosSalvarDialogProps> = ({
             Enviar WhatsApp
           </Button>
         </div>
+
+        <p className="text-[11px] text-slate-500 -mt-1">
+          No WhatsApp, o PDF da receita é baixado automaticamente para você anexar na conversa que
+          vai abrir — a mensagem curta já sai pronta.
+        </p>
+
+        {onBaixarPdf && (
+          <Button
+            type="button"
+            variant="outline"
+            className="w-full text-xs h-10"
+            onClick={() => receita && onBaixarPdf(receita)}
+          >
+            <Download className="w-4 h-4 mr-1.5" />
+            Baixar PDF
+          </Button>
+        )}
 
         <DialogFooter className="pt-2">
           <Button type="button" variant="ghost" className="text-xs" onClick={onFechar}>

@@ -23,6 +23,7 @@ import {
   Eye,
   Loader2,
   X,
+  Download,
 } from 'lucide-react'
 import { ReceitaDocumento } from '@/components/receitas/ReceitaDocumento'
 import { ReceitaPosSalvarDialog } from '@/components/receitas/ReceitaPosSalvarDialog'
@@ -34,7 +35,8 @@ import {
 } from '@/services/clinica'
 import { Medicamento, Receita, ItemReceita, ClinicaConfig } from '@/types'
 import { formatDateBr, getTodayDateString, createWhatsAppUrl } from '@/lib/formatters'
-import { montarTextoReceita, normalizarItensReceita } from '@/lib/receitas'
+import { normalizarItensReceita, montarMensagemWhatsApp } from '@/lib/receitas'
+import { gerarPdfReceita } from '@/lib/receitaPdf'
 import { useToast } from '@/hooks/use-toast'
 import { cn } from '@/lib/utils'
 
@@ -237,8 +239,39 @@ export const ReceitasTab: React.FC<ReceitasTabProps> = ({
     }
   }
 
-  // ===== WhatsApp =====
-  const enviarWhatsApp = (receita: Receita) => {
+  // ===== PDF + WhatsApp =====
+  const [gerandoPdf, setGerandoPdf] = useState(false)
+
+  const baixarPdf = async (receita: Receita) => {
+    setGerandoPdf(true)
+    try {
+      await gerarPdfReceita(receita, pacienteNome, config)
+    } catch (err: any) {
+      toast({
+        title: 'Erro ao gerar o PDF da receita',
+        description: err?.message || 'Tente novamente.',
+        variant: 'destructive',
+      })
+    } finally {
+      setGerandoPdf(false)
+    }
+  }
+
+  /**
+   * Gera o PDF da receita (baixa automaticamente) e abre o WhatsApp com uma
+   * mensagem curta — a recepção anexa o PDF baixado. Sem telefone, mostra o
+   * aviso e ainda assim baixa o PDF.
+   */
+  const enviarWhatsApp = async (receita: Receita) => {
+    try {
+      await gerarPdfReceita(receita, pacienteNome, config)
+    } catch (err: any) {
+      toast({
+        title: 'Erro ao gerar o PDF da receita',
+        description: err?.message || 'Tente novamente.',
+        variant: 'destructive',
+      })
+    }
     if (!pacienteTelefone) {
       toast({
         title: 'Paciente sem telefone',
@@ -247,8 +280,8 @@ export const ReceitasTab: React.FC<ReceitasTabProps> = ({
       })
       return
     }
-    const texto = montarTextoReceita(receita, pacienteNome, config)
-    window.open(createWhatsAppUrl(pacienteTelefone, texto), '_blank')
+    const mensagem = montarMensagemWhatsApp(pacienteNome)
+    window.open(createWhatsAppUrl(pacienteTelefone, mensagem), '_blank')
   }
 
   // ===== impressão =====
@@ -269,6 +302,11 @@ export const ReceitasTab: React.FC<ReceitasTabProps> = ({
   const posSalvarWhatsApp = (receita: Receita) => {
     setPosSalvar(null)
     enviarWhatsApp(receita)
+  }
+
+  const posSalvarBaixarPdf = (receita: Receita) => {
+    setPosSalvar(null)
+    baixarPdf(receita)
   }
 
   return (
@@ -364,7 +402,22 @@ export const ReceitasTab: React.FC<ReceitasTabProps> = ({
                       <Button
                         variant="outline"
                         size="sm"
+                        className="text-xs h-8"
+                        disabled={gerandoPdf}
+                        onClick={() => baixarPdf(r)}
+                      >
+                        {gerandoPdf ? (
+                          <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" />
+                        ) : (
+                          <Download className="w-3.5 h-3.5 mr-1" />
+                        )}
+                        Baixar PDF
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
                         className="text-xs h-8 text-green-700 border-green-200 hover:bg-green-50"
+                        disabled={gerandoPdf}
                         onClick={() => enviarWhatsApp(r)}
                       >
                         <MessageCircle className="w-3.5 h-3.5 mr-1" />
@@ -635,6 +688,7 @@ export const ReceitasTab: React.FC<ReceitasTabProps> = ({
         pacienteNome={pacienteNome}
         onImprimir={posSalvarImprimir}
         onWhatsApp={posSalvarWhatsApp}
+        onBaixarPdf={posSalvarBaixarPdf}
         onFechar={() => setPosSalvar(null)}
       />
 
@@ -659,6 +713,20 @@ export const ReceitasTab: React.FC<ReceitasTabProps> = ({
               >
                 <Printer className="w-3.5 h-3.5 mr-1" />
                 Imprimir
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                className="text-xs h-8"
+                disabled={gerandoPdf}
+                onClick={() => visualizando && baixarPdf(visualizando)}
+              >
+                {gerandoPdf ? (
+                  <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" />
+                ) : (
+                  <Download className="w-3.5 h-3.5 mr-1" />
+                )}
+                Baixar PDF
               </Button>
               <Button
                 size="sm"

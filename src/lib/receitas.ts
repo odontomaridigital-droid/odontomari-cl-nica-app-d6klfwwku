@@ -38,6 +38,13 @@ export function montarTextoReceita(
   return linhas.join('\n')
 }
 
+/** Mensagem curta que acompanha o PDF anexado no WhatsApp (a receita vai no PDF, não no texto). */
+export function montarMensagemWhatsApp(pacienteNome: string): string {
+  const primeiro = (pacienteNome || '').trim().split(/\s+/)[0] || ''
+  const saudacao = primeiro ? `Olá, ${primeiro}!` : 'Olá!'
+  return `${saudacao} Segue em anexo a sua receita 📄 Qualquer dúvida, estamos à disposição. Clínica Odontomari`
+}
+
 /** Normaliza um item antes de salvar (nomes sem espaços extras, sem itens vazios). */
 export function normalizarItensReceita(itens: ItemReceita[]): ItemReceita[] {
   return itens
