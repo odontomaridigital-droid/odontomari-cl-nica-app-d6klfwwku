@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { CatalogoMedicamentos } from '@/components/config/CatalogoMedicamentos'
 import {
   Dialog,
   DialogContent,
@@ -48,6 +49,8 @@ export const ConfiguracoesPage: React.FC = () => {
   const [nomeClinica, setNomeClinica] = useState('Clínica Odontomari')
   const [telefoneClinica, setTelefoneClinica] = useState('(11) 98765-4321')
   const [mensagemLembrete, setMensagemLembrete] = useState('')
+  const [dentistaNome, setDentistaNome] = useState('')
+  const [dentistaCro, setDentistaCro] = useState('')
   const [savingConfig, setSavingConfig] = useState(false)
 
   // Tipos Atendimento Dialog
@@ -88,6 +91,8 @@ export const ConfiguracoesPage: React.FC = () => {
       setNomeClinica(cfg.nome_clinica)
       setTelefoneClinica(cfg.telefone_clinica)
       setMensagemLembrete(cfg.mensagem_lembrete_padrao)
+      setDentistaNome(cfg.dentista_nome || '')
+      setDentistaCro(cfg.dentista_cro || '')
     } catch (err: any) {
       toast({
         title: 'Erro ao carregar configurações',
@@ -117,6 +122,8 @@ export const ConfiguracoesPage: React.FC = () => {
         nome_clinica: nomeClinica,
         telefone_clinica: telefoneClinica,
         mensagem_lembrete_padrao: mensagemLembrete,
+        dentista_nome: dentistaNome,
+        dentista_cro: dentistaCro,
       })
 
       toast({ title: 'Configurações gerais salvas com sucesso!' })
@@ -291,6 +298,9 @@ export const ConfiguracoesPage: React.FC = () => {
           <TabsTrigger value="bloqueios" className="text-xs sm:text-sm">
             Bloqueios de Agenda ({bloqueios.length})
           </TabsTrigger>
+          <TabsTrigger value="medicamentos" className="text-xs sm:text-sm">
+            Medicamentos
+          </TabsTrigger>
         </TabsList>
 
         {/* Tab 1: Horários & Geral */}
@@ -391,6 +401,27 @@ export const ConfiguracoesPage: React.FC = () => {
                   </div>
                 </div>
 
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <Label className="text-xs">Nome do(a) Dentista (assinatura de receitas)</Label>
+                    <Input
+                      placeholder="Ex.: Dra. Maria"
+                      value={dentistaNome}
+                      onChange={(e) => setDentistaNome(e.target.value)}
+                      className="mt-1 text-xs sm:text-sm"
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-xs">CRO do(a) Dentista</Label>
+                    <Input
+                      placeholder="Ex.: CRO-SP 12345"
+                      value={dentistaCro}
+                      onChange={(e) => setDentistaCro(e.target.value)}
+                      className="mt-1 text-xs sm:text-sm"
+                    />
+                  </div>
+                </div>
+
                 <div>
                   <div className="flex items-center justify-between">
                     <Label className="text-xs">Texto Padrão do Lembrete</Label>
@@ -474,6 +505,11 @@ export const ConfiguracoesPage: React.FC = () => {
               </Card>
             ))}
           </div>
+        </TabsContent>
+
+        {/* Tab 2.5: Catálogo de Medicamentos (para receitas) */}
+        <TabsContent value="medicamentos" className="space-y-4 pt-2">
+          <CatalogoMedicamentos />
         </TabsContent>
 
         {/* Tab 3: Bloqueios de Agenda */}

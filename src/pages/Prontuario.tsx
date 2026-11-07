@@ -45,6 +45,9 @@ import {
 import { useToast } from '@/hooks/use-toast'
 import { montarEnderecoTexto, enderecoDeRegistro } from '@/lib/endereco'
 import { AnamneseTab } from '@/components/anamnese/AnamneseTab'
+import { ReceitasTab } from '@/components/receitas/ReceitasTab'
+import { Receita } from '@/types'
+import { receitasService } from '@/services/clinica'
 
 export const ProntuarioPage: React.FC = () => {
   const { id } = useParams<{ id: string }>()
@@ -57,6 +60,7 @@ export const ProntuarioPage: React.FC = () => {
   const [consultas, setConsultas] = useState<Consulta[]>([])
   const [orcamentos, setOrcamentos] = useState<Orcamento[]>([])
   const [anamneses, setAnamneses] = useState<Anamnese[]>([])
+  const [receitas, setReceitas] = useState<Receita[]>([])
   const [loading, setLoading] = useState<boolean>(true)
 
   // New Prontuário Dialog (Admin only)
@@ -71,18 +75,20 @@ export const ProntuarioPage: React.FC = () => {
     if (!id) return
     setLoading(true)
     try {
-      const [pac, prontList, consList, orcList, anmList] = await Promise.all([
+      const [pac, prontList, consList, orcList, anmList, recList] = await Promise.all([
         pacientesService.getById(id),
         prontuariosService.getByPaciente(id),
         consultasService.getByPaciente(id),
         orcamentosService.getByPaciente(id),
         anamnesesService.getByPaciente(id),
+        receitasService.getByPaciente(id),
       ])
       setPaciente(pac)
       setProntuarios(prontList)
       setConsultas(consList)
       setOrcamentos(orcList)
       setAnamneses(anmList)
+      setReceitas(recList)
     } catch (err: any) {
       toast({
         title: 'Erro ao carregar prontuário',
@@ -326,6 +332,9 @@ export const ProntuarioPage: React.FC = () => {
           <TabsTrigger value="anamnese" className="text-xs sm:text-sm">
             Anamnese ({anamneses.length})
           </TabsTrigger>
+          <TabsTrigger value="receitas" className="text-xs sm:text-sm">
+            Receitas ({receitas.length})
+          </TabsTrigger>
         </TabsList>
 
         {/* Tab 1: Prontuário Clínico */}
@@ -527,6 +536,20 @@ export const ProntuarioPage: React.FC = () => {
             onViewError={(title, description) =>
               toast({ title, description, variant: 'destructive' })
             }
+          />
+        </TabsContent>
+
+        {/* Tab 5: Receitas */}
+        <TabsContent value="receitas" className="pt-2">
+          <ReceitasTab
+            receitas={receitas}
+            isAdmin={isAdmin}
+            pacienteId={paciente.id}
+            pacienteNome={paciente.nome}
+            pacienteTelefone={paciente.telefone}
+            autorId={user?.id}
+            onSaved={() => loadData()}
+            onError={(title, description) => toast({ title, description, variant: 'destructive' })}
           />
         </TabsContent>
       </Tabs>

@@ -291,3 +291,34 @@
     animation: spotlight 2s ease forwards;
   }
 }
+
+/* ===== Impressão de receituário ===== */
+@media print {
+  /* Esconde todo o app; só o documento da receita aparece na folha */
+  body * {
+    visibility: hidden;
+  }
+
+  .receita-documento,
+  .receita-documento * {
+    visibility: visible;
+  }
+
+  .receita-documento {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    max-width: none;
+    border: none !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+  }
+
+  /* Remove animações que podem sair cortadas na folha */
+  * {
+    animation: none !important;
+    transition: none !important;
+  }
+}

@@ -123,6 +123,9 @@ export interface ClinicaConfig {
   nome_clinica: string
   telefone_clinica: string
   mensagem_lembrete_padrao: string
+  /** Dados do dentista para assinatura de receitas */
+  dentista_nome?: string
+  dentista_cro?: string
 }
 
 import type { RespostasAnamnese } from '@/lib/anamneseModelo'
@@ -133,6 +136,42 @@ export interface Anamnese {
   autor?: string
   modelo?: string
   respostas: RespostasAnamnese
+  data: string
+  created?: string
+  updated?: string
+  expand?: {
+    autor?: User
+  }
+}
+
+/** Item de medicamento dentro de uma receita emitida */
+export interface ItemReceita {
+  /** id do medicamento do catálogo, quando escolhido de lá; ausente quando digitado livremente */
+  medicamento_id?: string
+  nome: string
+  apresentacao?: string
+  posologia: string
+}
+
+export interface Medicamento {
+  id: string
+  nome: string
+  apresentacao?: string
+  posologia_padrao?: string
+  ativo?: boolean
+  created?: string
+  updated?: string
+}
+
+export type ReceitaOrigem = 'manual' | 'birdid'
+
+export interface Receita {
+  id: string
+  paciente: string
+  autor?: string
+  itens: ItemReceita[]
+  orientacoes?: string
+  origem: ReceitaOrigem
   data: string
   created?: string
   updated?: string

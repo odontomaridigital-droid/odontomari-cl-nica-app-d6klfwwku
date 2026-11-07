@@ -8,6 +8,9 @@ import {
   BloqueioAgenda,
   ClinicaConfig,
   Anamnese,
+  Medicamento,
+  Receita,
+  ItemReceita,
 } from '@/types'
 import type { RespostasAnamnese } from '@/lib/anamneseModelo'
 
@@ -319,6 +322,95 @@ export const anamnesesService = {
   },
 }
 
+// =================== MEDICAMENTOS (CATÁLOGO) ===================
+export const medicamentosService = {
+  async getAll(somenteAtivos = true): Promise<Medicamento[]> {
+    const filter = somenteAtivos ? 'ativo = true' : ''
+    return await pb.collection('medicamentos').getFullList<Medicamento>({
+      filter,
+      sort: 'nome',
+    })
+  },
+
+  async search(query: string): Promise<Medicamento[]> {
+    const q = query.trim()
+    if (!q) return this.getAll()
+    return await pb.collection('medicamentos').getFullList<Medicamento>({
+      filter: `ativo = true && (nome ~ "${q}" || apresentacao ~ "${q}")`,
+      sort: 'nome',
+    })
+  },
+
+  async create(data: Omit<Medicamento, 'id' | 'created' | 'updated'>): Promise<Medicamento> {
+    return await pb.collection('medicamentos').create<Medicamento>(data)
+  },
+
+  async update(id: string, data: Partial<Medicamento>): Promise<Medicamento> {
+    return await pb.collection('medicamentos').update<Medicamento>(id, data)
+  },
+
+  async delete(id: string): Promise<boolean> {
+    return await pb.collection('medicamentos').delete(id)
+  },
+}
+
+// =================== RECEITAS ===================
+export const receitasService = {
+  async getByPaciente(pacienteId: string): Promise<Receita[]> {
+    return await pb.collection('receitas').getFullList<Receita>({
+      filter: `paciente = "${pacienteId}"`,
+      expand: 'autor',
+      sort: '-data,-created',
+    })
+  },
+
+  async create(data: {
+    paciente: string
+    autor?: string
+    itens: ItemReceita[]
+    orientacoes?: string
+    data: string
+    origem?: Receita['origem']
+  }): Promise<Receita> {
+    const isoDate = data.data.includes('T') ? data.data : `${data.data} 00:00:00.000Z`
+    return await pb.collection('receitas').create<Receita>(
+      {
+        ...data,
+        data: isoDate,
+        origem: data.origem || 'manual',
+      },
+      {
+        expand: 'autor',
+      },
+    )
+  },
+
+  async update(
+    id: string,
+    data: {
+      itens?: ItemReceita[]
+      orientacoes?: string
+      data?: string
+      autor?: string
+    },
+  ): Promise<Receita> {
+    return await pb.collection('receitas').update<Receita>(
+      id,
+      {
+        ...data,
+        ...(data.data && !data.data.includes('T') ? { data: `${data.data} 00:00:00.000Z` } : {}),
+      },
+      {
+        expand: 'autor',
+      },
+    )
+  },
+
+  async delete(id: string): Promise<boolean> {
+    return await pb.collection('receitas').delete(id)
+  },
+}
+
 // =================== BLOQUEIOS DE AGENDA ===================
 export const bloqueiosService = {
   async getByDate(dateStr: string): Promise<BloqueioAgenda[]> {
@@ -373,6 +465,8 @@ export const DEFAULT_CONFIGS: ClinicaConfig = {
   telefone_clinica: '(11) 98765-4321',
   mensagem_lembrete_padrao:
     'Olá {paciente}, confirmamos sua consulta odontológica na Clínica Odontomari no dia {data} às {hora}. Para confirmar ou remarcar, por favor responda esta mensagem.',
+  dentista_nome: '',
+  dentista_cro: '',
 }
 
 export const configuracoesService = {
