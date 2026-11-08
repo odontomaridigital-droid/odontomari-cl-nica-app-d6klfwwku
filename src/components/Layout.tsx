@@ -15,6 +15,7 @@ import {
   Shield,
   User,
   Clock,
+  Target,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -71,6 +72,12 @@ export default function Layout() {
       title: 'Lembretes WhatsApp',
       href: '/lembretes',
       icon: MessageSquare,
+      role: 'all',
+    },
+    {
+      title: 'Oportunidades',
+      href: '/oportunidades',
+      icon: Target,
       role: 'all',
     },
     {

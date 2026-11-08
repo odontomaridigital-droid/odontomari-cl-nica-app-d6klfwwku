@@ -79,6 +79,13 @@ export const tiposAtendimentoService = {
 
 // =================== CONSULTAS ===================
 export const consultasService = {
+  async getAll(): Promise<Consulta[]> {
+    return await pb.collection('consultas').getFullList<Consulta>({
+      expand: 'paciente,tipo_atendimento',
+      sort: 'data,hora_inicio',
+    })
+  },
+
   async getByDate(dateStr: string): Promise<Consulta[]> {
     // dateStr format: YYYY-MM-DD
     const startOfDay = `${dateStr} 00:00:00.000Z`
