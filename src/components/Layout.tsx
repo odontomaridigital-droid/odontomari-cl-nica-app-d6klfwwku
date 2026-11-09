@@ -16,6 +16,7 @@ import {
   User,
   Clock,
   Target,
+  ScrollText,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -84,6 +85,12 @@ export default function Layout() {
       title: 'Configurações',
       href: '/configuracoes',
       icon: Settings,
+      role: 'admin', // Admin only
+    },
+    {
+      title: 'Logs',
+      href: '/logs',
+      icon: ScrollText,
       role: 'admin', // Admin only
     },
   ]

@@ -13,6 +13,7 @@ import { OrcamentosPage } from './pages/Orcamentos'
 import { LembretesPage } from './pages/Lembretes'
 import { OportunidadesPage } from './pages/Oportunidades'
 import { ConfiguracoesPage } from './pages/Configuracoes'
+import { LogsPage } from './pages/Logs'
 import NotFound from './pages/NotFound'
 
 const App = () => (
@@ -32,6 +33,7 @@ const App = () => (
             <Route path="/lembretes" element={<LembretesPage />} />
             <Route path="/oportunidades" element={<OportunidadesPage />} />
             <Route path="/configuracoes" element={<ConfiguracoesPage />} />
+            <Route path="/logs" element={<LogsPage />} />
           </Route>
           <Route path="*" element={<NotFound />} />
         </Routes>

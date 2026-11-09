@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-08T15:38:42.783Z",
+  "generatedAt": "2026-11-09T00:28:00.583Z",
   "collections": [
     {
       "name": "users",
@@ -758,6 +758,89 @@
         "CREATE INDEX idx_receitas_paciente ON receitas (paciente)",
         "CREATE INDEX idx_receitas_data ON receitas (data)"
       ]
+    },
+    {
+      "name": "logs_auditoria",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != '' && @request.auth.role = 'admin'",
+        "view": "@request.auth.id != '' && @request.auth.role = 'admin'",
+        "create": "@request.auth.id != ''",
+        "update": null,
+        "delete": null
+      },
+      "fields": [
+        {
+          "name": "usuario_id",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "usuario_nome",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "papel",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": ["admin", "recepcao"]
+        },
+        {
+          "name": "acao",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": ["criou", "editou", "excluiu", "login"]
+        },
+        {
+          "name": "entidade",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": [
+            "paciente",
+            "consulta",
+            "planejamento",
+            "receita",
+            "anamnese",
+            "medicamento",
+            "tipo_atendimento",
+            "configuracoes",
+            "bloqueio"
+          ]
+        },
+        {
+          "name": "registro_id",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "descricao",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": ["CREATE INDEX idx_logs_auditoria_created ON logs_auditoria (created DESC)"]
     }
   ]
 }

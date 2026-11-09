@@ -204,7 +204,7 @@ export const ConfiguracoesPage: React.FC = () => {
   const handleDeleteTipo = async (id: string, nome: string) => {
     if (!confirm(`Deseja realmente remover o tipo de atendimento "${nome}"?`)) return
     try {
-      await tiposAtendimentoService.delete(id)
+      await tiposAtendimentoService.delete(id, nome)
       toast({ title: 'Tipo de atendimento removido.' })
       loadAll()
     } catch (err: any) {

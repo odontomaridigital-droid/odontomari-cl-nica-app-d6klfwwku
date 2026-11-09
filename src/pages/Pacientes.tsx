@@ -213,14 +213,34 @@ export const PacientesPage: React.FC = () => {
     }
   }
 
-  const handleDelete = async (id: string, nome: string, e: React.MouseEvent) => {
+  const [excluirAlvo, setExcluirAlvo] = useState<Paciente | null>(null)
+  const [motivoExclusao, setMotivoExclusao] = useState('')
+  const [excluindo, setExcluindo] = useState(false)
+
+  const abrirExclusao = (p: Paciente, e: React.MouseEvent) => {
     e.stopPropagation()
     if (!isAdmin) return
-    if (!confirm(`Tem certeza que deseja excluir o cadastro de ${nome}?`)) return
+    setExcluirAlvo(p)
+    setMotivoExclusao('')
+  }
 
+  const confirmarExclusao = async () => {
+    if (!excluirAlvo) return
+    const motivo = motivoExclusao.trim()
+    if (!motivo) {
+      toast({
+        title: 'Informe o motivo da exclusão',
+        description: 'O motivo fica registrado no log de auditoria.',
+        variant: 'destructive',
+      })
+      return
+    }
+
+    setExcluindo(true)
     try {
-      await pacientesService.delete(id)
+      await pacientesService.delete(excluirAlvo.id, motivo)
       toast({ title: 'Paciente removido.' })
+      setExcluirAlvo(null)
       loadPacientes(searchQuery)
     } catch (err: any) {
       toast({
@@ -228,6 +248,8 @@ export const PacientesPage: React.FC = () => {
         description: err.message,
         variant: 'destructive',
       })
+    } finally {
+      setExcluindo(false)
     }
   }
 
@@ -361,7 +383,7 @@ export const PacientesPage: React.FC = () => {
                           variant="ghost"
                           size="icon"
                           className="h-7 w-7 text-slate-400 hover:text-red-600"
-                          onClick={(e) => handleDelete(p.id, p.nome, e)}
+                          onClick={(e) => abrirExclusao(p, e)}
                           title="Excluir paciente"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
@@ -400,6 +422,55 @@ export const PacientesPage: React.FC = () => {
           </div>
         )}
       </div>
+
+      {/* Dialog de exclusão com motivo obrigatório */}
+      <Dialog open={!!excluirAlvo} onOpenChange={(open) => !open && setExcluirAlvo(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-red-700">
+              <Trash2 className="w-5 h-5 text-marca-vermelho" />
+              Excluir paciente
+            </DialogTitle>
+          </DialogHeader>
+
+          <p className="text-sm text-slate-600">
+            Tem certeza que deseja excluir o cadastro de{' '}
+            <span className="font-semibold text-slate-900">{excluirAlvo?.nome}</span>? Esta ação não
+            pode ser desfeita.
+          </p>
+
+          <div className="space-y-1.5 py-1">
+            <Label htmlFor="motivo-exclusao" className="text-xs">
+              Motivo da exclusão *
+            </Label>
+            <Textarea
+              id="motivo-exclusao"
+              rows={3}
+              value={motivoExclusao}
+              onChange={(e) => setMotivoExclusao(e.target.value)}
+              placeholder="Ex.: pedido do responsável, cadastro duplicado..."
+              className="text-xs sm:text-sm"
+              autoFocus
+            />
+            <p className="text-[11px] text-slate-500">
+              O motivo fica registrado no log de auditoria.
+            </p>
+          </div>
+
+          <DialogFooter className="gap-2 pt-2">
+            <Button variant="outline" onClick={() => setExcluirAlvo(null)} disabled={excluindo}>
+              Cancelar
+            </Button>
+            <Button
+              onClick={confirmarExclusao}
+              className="bg-marca-vermelho hover:bg-marca-vermelho-escuro text-white"
+              disabled={excluindo || !motivoExclusao.trim()}
+            >
+              {excluindo ? 'Excluindo...' : 'Excluir definitivamente'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Create / Edit Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>

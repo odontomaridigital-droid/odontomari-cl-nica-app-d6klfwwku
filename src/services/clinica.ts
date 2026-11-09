@@ -13,6 +13,22 @@ import {
   ItemReceita,
 } from '@/types'
 import type { RespostasAnamnese } from '@/lib/anamneseModelo'
+import { registrarLog } from '@/services/logsAuditoria'
+
+// =================== Helpers de formatação para o log ===================
+
+const formatarDataCurta = (iso?: string): string => {
+  if (!iso) return ''
+  try {
+    const d = new Date(iso)
+    if (isNaN(d.getTime())) return iso
+    return d.toLocaleDateString('pt-BR')
+  } catch {
+    return iso
+  }
+}
+
+const nomePaciente = (p?: Paciente | null): string => p?.nome || 'paciente'
 
 // =================== PACIENTES ===================
 export const pacientesService = {
@@ -36,15 +52,26 @@ export const pacientesService = {
   },
 
   async create(data: Omit<Paciente, 'id' | 'created' | 'updated'>): Promise<Paciente> {
-    return await pb.collection('pacientes').create<Paciente>(data)
+    const created = await pb.collection('pacientes').create<Paciente>(data)
+    registrarLog('criou', 'paciente', `Criou paciente ${created.nome || 'paciente'}`, created.id)
+    return created
   },
 
   async update(id: string, data: Partial<Paciente>): Promise<Paciente> {
-    return await pb.collection('pacientes').update<Paciente>(id, data)
+    const updated = await pb.collection('pacientes').update<Paciente>(id, data)
+    registrarLog('editou', 'paciente', `Editou paciente ${updated.nome || 'paciente'}`, updated.id)
+    return updated
   },
 
-  async delete(id: string): Promise<boolean> {
-    return await pb.collection('pacientes').delete(id)
+  async delete(id: string, motivo?: string): Promise<boolean> {
+    const ok = await pb.collection('pacientes').delete(id)
+    registrarLog(
+      'excluiu',
+      'paciente',
+      `Excluiu paciente (id ${id})${motivo ? ` - motivo: ${motivo}` : ''}`,
+      id,
+    )
+    return ok
   },
 }
 
@@ -65,15 +92,31 @@ export const tiposAtendimentoService = {
   async create(
     data: Omit<TipoAtendimento, 'id' | 'created' | 'updated'>,
   ): Promise<TipoAtendimento> {
-    return await pb.collection('tipos_atendimento').create<TipoAtendimento>(data)
+    const created = await pb.collection('tipos_atendimento').create<TipoAtendimento>(data)
+    registrarLog(
+      'criou',
+      'tipo_atendimento',
+      `Criou tipo de atendimento ${created.nome || ''}`,
+      created.id,
+    )
+    return created
   },
 
   async update(id: string, data: Partial<TipoAtendimento>): Promise<TipoAtendimento> {
-    return await pb.collection('tipos_atendimento').update<TipoAtendimento>(id, data)
+    const updated = await pb.collection('tipos_atendimento').update<TipoAtendimento>(id, data)
+    registrarLog(
+      'editou',
+      'tipo_atendimento',
+      `Editou tipo de atendimento ${updated.nome || ''}`,
+      updated.id,
+    )
+    return updated
   },
 
-  async delete(id: string): Promise<boolean> {
-    return await pb.collection('tipos_atendimento').delete(id)
+  async delete(id: string, nome?: string): Promise<boolean> {
+    const ok = await pb.collection('tipos_atendimento').delete(id)
+    registrarLog('excluiu', 'tipo_atendimento', `Excluiu tipo de atendimento ${nome || ''}`, id)
+    return ok
   },
 }
 
@@ -129,7 +172,7 @@ export const consultasService = {
   }): Promise<Consulta> {
     // Normalise data to ISO string if needed
     const isoDate = data.data.includes('T') ? data.data : `${data.data} 00:00:00.000Z`
-    return await pb.collection('consultas').create<Consulta>(
+    const created = await pb.collection('consultas').create<Consulta>(
       {
         ...data,
         data: isoDate,
@@ -139,26 +182,47 @@ export const consultasService = {
         expand: 'paciente,tipo_atendimento',
       },
     )
+    registrarLog(
+      'criou',
+      'consulta',
+      `Criou consulta de ${formatarDataCurta(created.data)} ${created.hora_inicio} - ${nomePaciente(created.expand?.paciente)}`,
+      created.id,
+    )
+    return created
   },
 
   async update(id: string, data: Partial<Consulta>): Promise<Consulta> {
-    return await pb.collection('consultas').update<Consulta>(id, data, {
+    const updated = await pb.collection('consultas').update<Consulta>(id, data, {
       expand: 'paciente,tipo_atendimento',
     })
+    registrarLog(
+      'editou',
+      'consulta',
+      `Editou consulta de ${formatarDataCurta(updated.data)} ${updated.hora_inicio} - ${nomePaciente(updated.expand?.paciente)}`,
+      updated.id,
+    )
+    return updated
   },
 
   async updateStatus(id: string, status: Consulta['status']): Promise<Consulta> {
-    return await pb.collection('consultas').update<Consulta>(
+    const updated = await pb.collection('consultas').update<Consulta>(
       id,
       { status },
       {
         expand: 'paciente,tipo_atendimento',
       },
     )
+    registrarLog(
+      'editou',
+      'consulta',
+      `Alterou status da consulta de ${formatarDataCurta(updated.data)} ${updated.hora_inicio} - ${nomePaciente(updated.expand?.paciente)} para ${status}`,
+      updated.id,
+    )
+    return updated
   },
 
   async markLembreteEnviado(id: string, enviadoPor: string): Promise<Consulta> {
-    return await pb.collection('consultas').update<Consulta>(
+    const updated = await pb.collection('consultas').update<Consulta>(
       id,
       {
         lembrete_enviado: true,
@@ -169,10 +233,24 @@ export const consultasService = {
         expand: 'paciente,tipo_atendimento',
       },
     )
+    registrarLog(
+      'editou',
+      'consulta',
+      `Marca lembrete enviado da consulta de ${formatarDataCurta(updated.data)} ${updated.hora_inicio} - ${nomePaciente(updated.expand?.paciente)}`,
+      updated.id,
+    )
+    return updated
   },
 
-  async delete(id: string): Promise<boolean> {
-    return await pb.collection('consultas').delete(id)
+  async delete(id: string, info?: string): Promise<boolean> {
+    const ok = await pb.collection('consultas').delete(id)
+    registrarLog(
+      'excluiu',
+      'consulta',
+      `Excluiu consulta${info ? ` - ${info}` : ` (id ${id})`}`,
+      id,
+    )
+    return ok
   },
 }
 
@@ -195,7 +273,7 @@ export const prontuariosService = {
     dente_regiao?: string
   }): Promise<Prontuario> {
     const isoDate = data.data.includes('T') ? data.data : `${data.data} 00:00:00.000Z`
-    return await pb.collection('prontuarios').create<Prontuario>(
+    const created = await pb.collection('prontuarios').create<Prontuario>(
       {
         ...data,
         data: isoDate,
@@ -204,16 +282,32 @@ export const prontuariosService = {
         expand: 'consulta',
       },
     )
+    registrarLog(
+      'criou',
+      'consulta',
+      `Criou prontuário de ${formatarDataCurta(created.data)} - ${created.procedimentos?.slice(0, 60) || 'atendimento'}`,
+      created.id,
+    )
+    return created
   },
 
   async update(id: string, data: Partial<Prontuario>): Promise<Prontuario> {
-    return await pb.collection('prontuarios').update<Prontuario>(id, data, {
+    const updated = await pb.collection('prontuarios').update<Prontuario>(id, data, {
       expand: 'consulta',
     })
+    registrarLog(
+      'editou',
+      'consulta',
+      `Editou prontuário de ${formatarDataCurta(updated.data)} - ${updated.procedimentos?.slice(0, 60) || 'atendimento'}`,
+      updated.id,
+    )
+    return updated
   },
 
   async delete(id: string): Promise<boolean> {
-    return await pb.collection('prontuarios').delete(id)
+    const ok = await pb.collection('prontuarios').delete(id)
+    registrarLog('excluiu', 'consulta', `Excluiu prontuário (id ${id})`, id)
+    return ok
   },
 }
 
@@ -243,7 +337,7 @@ export const orcamentosService = {
     validade_dias?: number
   }): Promise<Orcamento> {
     const isoDate = data.data.includes('T') ? data.data : `${data.data} 00:00:00.000Z`
-    return await pb.collection('orcamentos').create<Orcamento>(
+    const created = await pb.collection('orcamentos').create<Orcamento>(
       {
         ...data,
         data: isoDate,
@@ -252,26 +346,54 @@ export const orcamentosService = {
         expand: 'paciente',
       },
     )
+    registrarLog(
+      'criou',
+      'planejamento',
+      `Criou Planejamento de Tratamento de ${formatarDataCurta(created.data)} - ${nomePaciente(created.expand?.paciente)} (${created.itens?.length || 0} itens)`,
+      created.id,
+    )
+    return created
   },
 
   async update(id: string, data: Partial<Orcamento>): Promise<Orcamento> {
-    return await pb.collection('orcamentos').update<Orcamento>(id, data, {
+    const updated = await pb.collection('orcamentos').update<Orcamento>(id, data, {
       expand: 'paciente',
     })
+    registrarLog(
+      'editou',
+      'planejamento',
+      `Editou Planejamento de Tratamento de ${formatarDataCurta(updated.data)} - ${nomePaciente(updated.expand?.paciente)}`,
+      updated.id,
+    )
+    return updated
   },
 
   async updateStatus(id: string, status: Orcamento['status']): Promise<Orcamento> {
-    return await pb.collection('orcamentos').update<Orcamento>(
+    const updated = await pb.collection('orcamentos').update<Orcamento>(
       id,
       { status },
       {
         expand: 'paciente',
       },
     )
+    registrarLog(
+      'editou',
+      'planejamento',
+      `Alterou status do Planejamento de Tratamento de ${nomePaciente(updated.expand?.paciente)} para ${status}`,
+      updated.id,
+    )
+    return updated
   },
 
-  async delete(id: string): Promise<boolean> {
-    return await pb.collection('orcamentos').delete(id)
+  async delete(id: string, info?: string): Promise<boolean> {
+    const ok = await pb.collection('orcamentos').delete(id)
+    registrarLog(
+      'excluiu',
+      'planejamento',
+      `Excluiu Planejamento de Tratamento${info ? ` - ${info}` : ` (id ${id})`}`,
+      id,
+    )
+    return ok
   },
 }
 
@@ -293,7 +415,7 @@ export const anamnesesService = {
     data: string
   }): Promise<Anamnese> {
     const isoDate = data.data.includes('T') ? data.data : `${data.data} 00:00:00.000Z`
-    return await pb.collection('anamneses').create<Anamnese>(
+    const created = await pb.collection('anamneses').create<Anamnese>(
       {
         ...data,
         data: isoDate,
@@ -302,6 +424,13 @@ export const anamnesesService = {
         expand: 'autor',
       },
     )
+    registrarLog(
+      'criou',
+      'anamnese',
+      `Criou anamnese de ${formatarDataCurta(created.data)}`,
+      created.id,
+    )
+    return created
   },
 
   async update(
@@ -312,7 +441,7 @@ export const anamnesesService = {
       autor?: string
     },
   ): Promise<Anamnese> {
-    return await pb.collection('anamneses').update<Anamnese>(
+    const updated = await pb.collection('anamneses').update<Anamnese>(
       id,
       {
         ...data,
@@ -322,10 +451,19 @@ export const anamnesesService = {
         expand: 'autor',
       },
     )
+    registrarLog(
+      'editou',
+      'anamnese',
+      `Editou anamnese de ${formatarDataCurta(updated.data)}`,
+      updated.id,
+    )
+    return updated
   },
 
   async delete(id: string): Promise<boolean> {
-    return await pb.collection('anamneses').delete(id)
+    const ok = await pb.collection('anamneses').delete(id)
+    registrarLog('excluiu', 'anamnese', `Excluiu anamnese (id ${id})`, id)
+    return ok
   },
 }
 
@@ -349,15 +487,21 @@ export const medicamentosService = {
   },
 
   async create(data: Omit<Medicamento, 'id' | 'created' | 'updated'>): Promise<Medicamento> {
-    return await pb.collection('medicamentos').create<Medicamento>(data)
+    const created = await pb.collection('medicamentos').create<Medicamento>(data)
+    registrarLog('criou', 'medicamento', `Criou medicamento ${created.nome || ''}`, created.id)
+    return created
   },
 
   async update(id: string, data: Partial<Medicamento>): Promise<Medicamento> {
-    return await pb.collection('medicamentos').update<Medicamento>(id, data)
+    const updated = await pb.collection('medicamentos').update<Medicamento>(id, data)
+    registrarLog('editou', 'medicamento', `Editou medicamento ${updated.nome || ''}`, updated.id)
+    return updated
   },
 
-  async delete(id: string): Promise<boolean> {
-    return await pb.collection('medicamentos').delete(id)
+  async delete(id: string, nome?: string): Promise<boolean> {
+    const ok = await pb.collection('medicamentos').delete(id)
+    registrarLog('excluiu', 'medicamento', `Excluiu medicamento ${nome || ''}`, id)
+    return ok
   },
 }
 
@@ -380,7 +524,7 @@ export const receitasService = {
     origem?: Receita['origem']
   }): Promise<Receita> {
     const isoDate = data.data.includes('T') ? data.data : `${data.data} 00:00:00.000Z`
-    return await pb.collection('receitas').create<Receita>(
+    const created = await pb.collection('receitas').create<Receita>(
       {
         ...data,
         data: isoDate,
@@ -390,6 +534,13 @@ export const receitasService = {
         expand: 'autor',
       },
     )
+    registrarLog(
+      'criou',
+      'receita',
+      `Criou receita de ${formatarDataCurta(created.data)} (${created.itens?.length || 0} itens)`,
+      created.id,
+    )
+    return created
   },
 
   async update(
@@ -401,7 +552,7 @@ export const receitasService = {
       autor?: string
     },
   ): Promise<Receita> {
-    return await pb.collection('receitas').update<Receita>(
+    const updated = await pb.collection('receitas').update<Receita>(
       id,
       {
         ...data,
@@ -411,10 +562,19 @@ export const receitasService = {
         expand: 'autor',
       },
     )
+    registrarLog(
+      'editou',
+      'receita',
+      `Editou receita de ${formatarDataCurta(updated.data)}`,
+      updated.id,
+    )
+    return updated
   },
 
   async delete(id: string): Promise<boolean> {
-    return await pb.collection('receitas').delete(id)
+    const ok = await pb.collection('receitas').delete(id)
+    registrarLog('excluiu', 'receita', `Excluiu receita (id ${id})`, id)
+    return ok
   },
 }
 
@@ -449,16 +609,25 @@ export const bloqueiosService = {
     tipo?: 'bloqueio' | 'desbloqueio_fds'
   }): Promise<BloqueioAgenda> {
     const isoDate = data.data.includes('T') ? data.data : `${data.data} 00:00:00.000Z`
-    return await pb.collection('bloqueios_agenda').create<BloqueioAgenda>({
+    const created = await pb.collection('bloqueios_agenda').create<BloqueioAgenda>({
       ...data,
       data: isoDate,
       tipo: data.tipo || 'bloqueio',
       dia_inteiro: data.dia_inteiro ?? true,
     })
+    registrarLog(
+      'criou',
+      'bloqueio',
+      `Criou bloqueio de agenda em ${formatarDataCurta(created.data)}${created.hora_inicio ? ` ${created.hora_inicio}` : ' (dia inteiro)'}${created.motivo ? ` - ${created.motivo}` : ''}`,
+      created.id,
+    )
+    return created
   },
 
-  async delete(id: string): Promise<boolean> {
-    return await pb.collection('bloqueios_agenda').delete(id)
+  async delete(id: string, info?: string): Promise<boolean> {
+    const ok = await pb.collection('bloqueios_agenda').delete(id)
+    registrarLog('excluiu', 'bloqueio', `Excluiu bloqueio de agenda (id ${id})`, id)
+    return ok
   },
 }
 
@@ -474,6 +643,18 @@ export const DEFAULT_CONFIGS: ClinicaConfig = {
     'Olá {paciente}, confirmamos sua consulta odontológica na Clínica Odontomari no dia {data} às {hora}. Para confirmar ou remarcar, por favor responda esta mensagem.',
   dentista_nome: '',
   dentista_cro: '',
+}
+
+const ROTULOS_CONFIG: Partial<Record<keyof ClinicaConfig, string>> = {
+  horario_inicio: 'horário de início',
+  horario_fim: 'horário de fim',
+  intervalo_minutos: 'intervalo da agenda',
+  bloquear_fins_de_semana: 'bloqueio de fins de semana',
+  nome_clinica: 'nome da clínica',
+  telefone_clinica: 'telefone da clínica',
+  mensagem_lembrete_padrao: 'mensagem padrão de lembrete',
+  dentista_nome: 'nome do dentista',
+  dentista_cro: 'CRO do dentista',
 }
 
 export const configuracoesService = {
@@ -503,8 +684,10 @@ export const configuracoesService = {
     chave: K,
     valor: ClinicaConfig[K],
   ): Promise<void> {
+    let foiEdicao = false
     try {
       const existing = await pb.collection('configuracoes').getFirstListItem(`chave = "${chave}"`)
+      foiEdicao = true
       await pb.collection('configuracoes').update(existing.id, {
         valor: JSON.stringify(valor),
       })
@@ -514,6 +697,11 @@ export const configuracoesService = {
         valor: JSON.stringify(valor),
       })
     }
+    registrarLog(
+      foiEdicao ? 'editou' : 'criou',
+      'configuracoes',
+      `Alterou configuração: ${ROTULOS_CONFIG[chave] || chave}`,
+    )
   },
 
   async saveAllConfigs(configs: Partial<ClinicaConfig>): Promise<void> {
