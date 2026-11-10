@@ -35,9 +35,27 @@ export interface Paciente {
   cidade?: string
   uf?: string
   observacoes?: string
+  /** Preferência de horário de atendimento */
+  preferencia_horario_tipo?: PreferenciaHorarioTipo | ''
+  preferencia_horario_de?: string
+  preferencia_horario_ate?: string
+  preferencia_horario_obs?: string
+  /** Como o paciente chegou à clínica (marketing futuro) */
+  origem?: string
+  origem_complemento?: string
+  /** Foto do paciente (arquivo no PocketBase) */
+  foto?: string
   created?: string
   updated?: string
 }
+
+export type PreferenciaHorarioTipo =
+  | 'manha'
+  | 'tarde'
+  | 'apos17'
+  | 'manha_e_tarde'
+  | 'faixa'
+  | 'livre'
 
 export type ConsultaStatus = 'agendada' | 'confirmada' | 'realizada' | 'cancelada' | 'faltou'
 

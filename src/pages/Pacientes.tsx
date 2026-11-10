@@ -1,9 +1,19 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { pacientesService } from '@/services/clinica'
-import { Paciente } from '@/types'
+import { Paciente, PreferenciaHorarioTipo } from '@/types'
+import { HORAS_OPCOES } from '@/lib/pacienteCampos'
 import { formatDateBr, formatPhone } from '@/lib/formatters'
 import { useAuth } from '@/contexts/AuthContext'
+import {
+  PREFERENCIA_OPCOES,
+  ORIGENS,
+  textoPreferenciaHorario,
+  textoOrigem,
+} from '@/lib/pacienteCampos'
+import { comprimirImagem } from '@/lib/imagemUpload'
+import { pacienteFotoUrl } from '@/lib/pacienteFoto'
+import { PacienteAvatar } from '@/components/PacienteAvatar'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -29,6 +39,8 @@ import {
   Edit2,
   Trash2,
   Loader2,
+  ImagePlus,
+  Trash2 as TrashIcon,
 } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import {
@@ -60,7 +72,43 @@ export const PacientesPage: React.FC = () => {
     cpf: '',
     observacoes: '',
   })
+  const [preferencia, setPreferencia] = useState({
+    tipo: '',
+    de: '',
+    ate: '',
+    obs: '',
+  })
+  const [origem, setOrigem] = useState('')
+  const [origemComplemento, setOrigemComplemento] = useState('')
+  const [fotoPreview, setFotoPreview] = useState<string | null>(null)
+  const [fotoRemovida, setFotoRemovida] = useState<boolean>(false)
+  const fotoFileRef = useRef<File | null>(null)
+  const fotoInputRef = useRef<HTMLInputElement>(null)
   const [saving, setSaving] = useState<boolean>(false)
+
+  const handleFotoEscolhida = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    e.target.value = ''
+    if (!file) return
+    try {
+      const comprimida = await comprimirImagem(file, 500, 0.85)
+      fotoFileRef.current = comprimida
+      setFotoPreview(URL.createObjectURL(comprimida))
+      setFotoRemovida(false)
+    } catch (err: any) {
+      toast({
+        title: 'Foto inválida',
+        description: err.message || 'Não foi possível processar a imagem.',
+        variant: 'destructive',
+      })
+    }
+  }
+
+  const handleRemoverFoto = () => {
+    fotoFileRef.current = null
+    setFotoPreview(null)
+    setFotoRemovida(true)
+  }
 
   // Endereço estruturado (CEP -> ViaCEP -> número)
   const [enderecoForm, setEnderecoForm] = useState<EnderecoForm>(enderecoVazio)
@@ -145,6 +193,12 @@ export const PacientesPage: React.FC = () => {
       cpf: '',
       observacoes: '',
     })
+    setPreferencia({ tipo: '', de: '', ate: '', obs: '' })
+    setOrigem('')
+    setOrigemComplemento('')
+    setFotoPreview(null)
+    setFotoRemovida(false)
+    fotoFileRef.current = null
     setEnderecoForm(enderecoVazio)
     resetCep()
     setDialogOpen(true)
@@ -163,6 +217,17 @@ export const PacientesPage: React.FC = () => {
       cpf: p.cpf || '',
       observacoes: p.observacoes || '',
     })
+    setPreferencia({
+      tipo: p.preferencia_horario_tipo || '',
+      de: p.preferencia_horario_de || '',
+      ate: p.preferencia_horario_ate || '',
+      obs: p.preferencia_horario_obs || '',
+    })
+    setOrigem(p.origem || '')
+    setOrigemComplemento(p.origem_complemento || '')
+    setFotoPreview(pacienteFotoUrl(p) || null)
+    setFotoRemovida(false)
+    fotoFileRef.current = null
     setDialogOpen(true)
   }
 
@@ -185,18 +250,25 @@ export const PacientesPage: React.FC = () => {
         endereco: montarEnderecoTexto(enderecoForm),
         nome: formData.nome.trim(),
         telefone: formData.telefone.trim(),
+        preferencia_horario_tipo: preferencia.tipo || null,
+        preferencia_horario_de: preferencia.de || null,
+        preferencia_horario_ate: preferencia.ate || null,
+        preferencia_horario_obs: preferencia.obs.trim() || null,
+        origem: origem || null,
+        origem_complemento: origemComplemento.trim() || null,
       }
       if (formData.data_nascimento) {
         payload.data_nascimento = `${formData.data_nascimento} 00:00:00.000Z`
       } else {
         payload.data_nascimento = null
       }
+      if (fotoRemovida) payload.foto = null
 
       if (editingPaciente) {
-        await pacientesService.update(editingPaciente.id, payload)
+        await pacientesService.update(editingPaciente.id, payload, fotoFileRef.current || undefined)
         toast({ title: 'Paciente atualizado com sucesso!' })
       } else {
-        await pacientesService.create(payload)
+        await pacientesService.create(payload, fotoFileRef.current || undefined)
         toast({ title: 'Paciente cadastrado com sucesso!' })
       }
 
@@ -343,28 +415,31 @@ export const PacientesPage: React.FC = () => {
                 className="border-slate-200 shadow-sm hover:shadow-md transition-shadow cursor-pointer bg-white group"
               >
                 <CardContent className="p-4 flex flex-col justify-between h-full space-y-3">
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <h3 className="text-sm sm:text-base font-semibold text-slate-900 group-hover:text-marca-vermelho transition-colors">
-                        {p.nome}
-                      </h3>
-                      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500 mt-1">
-                        <span className="flex items-center gap-1 font-medium text-slate-700">
-                          <Phone className="w-3 h-3 text-marca-vermelho" />
-                          {formatPhone(p.telefone)}
-                        </span>
-                        {p.email && (
-                          <span className="flex items-center gap-1 text-slate-500">
-                            <Mail className="w-3 h-3 text-slate-400" />
-                            {p.email}
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex items-start gap-3 min-w-0">
+                      <PacienteAvatar paciente={p} className="w-10 h-10" textClassName="text-sm" />
+                      <div className="min-w-0">
+                        <h3 className="text-sm sm:text-base font-semibold text-slate-900 group-hover:text-marca-vermelho transition-colors">
+                          {p.nome}
+                        </h3>
+                        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500 mt-1">
+                          <span className="flex items-center gap-1 font-medium text-slate-700">
+                            <Phone className="w-3 h-3 text-marca-vermelho" />
+                            {formatPhone(p.telefone)}
                           </span>
-                        )}
-                        {p.data_nascimento && (
-                          <span className="flex items-center gap-1 text-slate-500">
-                            <Calendar className="w-3 h-3 text-slate-400" />
-                            Nasc: {formatDateBr(p.data_nascimento)}
-                          </span>
-                        )}
+                          {p.email && (
+                            <span className="flex items-center gap-1 text-slate-500">
+                              <Mail className="w-3 h-3 text-slate-400" />
+                              {p.email}
+                            </span>
+                          )}
+                          {p.data_nascimento && (
+                            <span className="flex items-center gap-1 text-slate-500">
+                              <Calendar className="w-3 h-3 text-slate-400" />
+                              Nasc: {formatDateBr(p.data_nascimento)}
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </div>
 
@@ -688,6 +763,164 @@ export const PacientesPage: React.FC = () => {
                   placeholder="Alergia a medicamentos, sensibilidade, histórico prévio..."
                   className="mt-1 text-xs sm:text-sm"
                 />
+              </div>
+
+              {/* Foto do paciente */}
+              <div className="sm:col-span-2 space-y-2 rounded-lg border border-slate-200 bg-slate-50/40 p-3">
+                <p className="text-xs font-semibold text-slate-700">Foto do paciente</p>
+                <div className="flex items-center gap-3">
+                  {fotoPreview ? (
+                    <img
+                      src={fotoPreview}
+                      alt="Pré-visualização da foto"
+                      className="w-16 h-16 rounded-full object-cover border border-slate-200"
+                    />
+                  ) : (
+                    <div className="w-16 h-16 rounded-full bg-white border border-dashed border-slate-300 flex items-center justify-center text-slate-300">
+                      <ImagePlus className="w-5 h-5" />
+                    </div>
+                  )}
+                  <div className="flex flex-col gap-1.5">
+                    <input
+                      ref={fotoInputRef}
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={handleFotoEscolhida}
+                    />
+                    <div className="flex gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="text-xs h-8"
+                        onClick={() => fotoInputRef.current?.click()}
+                      >
+                        <ImagePlus className="w-3.5 h-3.5 mr-1" />
+                        {fotoPreview ? 'Trocar foto' : 'Adicionar foto'}
+                      </Button>
+                      {fotoPreview && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="text-xs h-8 text-red-600 hover:text-red-700 hover:bg-red-50"
+                          onClick={handleRemoverFoto}
+                        >
+                          <TrashIcon className="w-3.5 h-3.5 mr-1" />
+                          Remover
+                        </Button>
+                      )}
+                    </div>
+                    <p className="text-[11px] text-slate-500">
+                      JPG ou PNG. A imagem é reduzida para ~500px automaticamente.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Preferência de horário */}
+              <div className="sm:col-span-2 space-y-2.5 rounded-lg border border-slate-200 bg-slate-50/40 p-3">
+                <p className="text-xs font-semibold text-slate-700">
+                  Preferência de horário para atendimento
+                </p>
+                <div className="flex flex-wrap gap-1.5">
+                  {PREFERENCIA_OPCOES.map((op) => (
+                    <button
+                      key={op.valor}
+                      type="button"
+                      onClick={() =>
+                        setPreferencia((prev) => ({
+                          ...prev,
+                          tipo: prev.tipo === op.valor ? '' : op.valor,
+                        }))
+                      }
+                      className={`text-[11px] sm:text-xs px-2.5 py-1 rounded-full border transition-colors ${
+                        preferencia.tipo === op.valor
+                          ? 'bg-marca-vermelho text-white border-marca-vermelho'
+                          : 'bg-white text-slate-600 border-slate-200 hover:border-marca-vermelho hover:text-marca-vermelho'
+                      }`}
+                    >
+                      {op.rotulo}
+                    </button>
+                  ))}
+                </div>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-[11px] text-slate-500">Ou uma faixa livre:</span>
+                  <span className="text-[11px] text-slate-500">entre</span>
+                  <select
+                    value={preferencia.de}
+                    onChange={(e) => setPreferencia((prev) => ({ ...prev, de: e.target.value }))}
+                    className="text-xs border border-slate-200 rounded-md px-1.5 py-1 bg-white text-slate-700"
+                  >
+                    <option value="">--:--</option>
+                    {HORAS_OPCOES.map((h) => (
+                      <option key={h} value={h}>
+                        {h}
+                      </option>
+                    ))}
+                  </select>
+                  <span className="text-[11px] text-slate-500">e</span>
+                  <select
+                    value={preferencia.ate}
+                    onChange={(e) => setPreferencia((prev) => ({ ...prev, ate: e.target.value }))}
+                    className="text-xs border border-slate-200 rounded-md px-1.5 py-1 bg-white text-slate-700"
+                  >
+                    <option value="">--:--</option>
+                    {HORAS_OPCOES.map((h) => (
+                      <option key={h} value={h}>
+                        {h}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <Input
+                  value={preferencia.obs}
+                  onChange={(e) => setPreferencia((prev) => ({ ...prev, obs: e.target.value }))}
+                  placeholder="Observação livre (opcional). Ex.: prefere a primeira consulta do dia"
+                  className="text-xs sm:text-sm"
+                />
+              </div>
+
+              {/* Origem / como chegou */}
+              <div className="sm:col-span-2 space-y-2 rounded-lg border border-slate-200 bg-slate-50/40 p-3">
+                <p className="text-xs font-semibold text-slate-700">Como chegou à clínica</p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <Label htmlFor="origem" className="text-xs">
+                      Origem
+                    </Label>
+                    <select
+                      id="origem"
+                      value={origem}
+                      onChange={(e) => setOrigem(e.target.value)}
+                      className="mt-1 w-full text-xs sm:text-sm border border-slate-200 rounded-md px-2 py-2 bg-white text-slate-700"
+                    >
+                      <option value="">Não informado</option>
+                      {ORIGENS.map((o) => (
+                        <option key={o} value={o}>
+                          {o}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <Label htmlFor="origem-complemento" className="text-xs">
+                      Complemento {origem === 'Outro' ? '*' : '(opcional)'}
+                    </Label>
+                    <Input
+                      id="origem-complemento"
+                      value={origemComplemento}
+                      onChange={(e) => setOrigemComplemento(e.target.value)}
+                      placeholder={
+                        origem === 'Outro'
+                          ? 'Descreva a origem'
+                          : 'Ex.: nome de quem indicou, @ do Instagram...'
+                      }
+                      className="mt-1 text-xs sm:text-sm"
+                    />
+                  </div>
+                </div>
               </div>
             </div>
 

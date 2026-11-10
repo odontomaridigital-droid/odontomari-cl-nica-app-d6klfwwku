@@ -51,14 +51,19 @@ export const pacientesService = {
     return await pb.collection('pacientes').getOne<Paciente>(id)
   },
 
-  async create(data: Omit<Paciente, 'id' | 'created' | 'updated'>): Promise<Paciente> {
-    const created = await pb.collection('pacientes').create<Paciente>(data)
+  async create(
+    data: Omit<Paciente, 'id' | 'created' | 'updated'>,
+    fotoFile?: File,
+  ): Promise<Paciente> {
+    const body = fotoFile ? { ...data, foto: fotoFile } : data
+    const created = await pb.collection('pacientes').create<Paciente>(body)
     registrarLog('criou', 'paciente', `Criou paciente ${created.nome || 'paciente'}`, created.id)
     return created
   },
 
-  async update(id: string, data: Partial<Paciente>): Promise<Paciente> {
-    const updated = await pb.collection('pacientes').update<Paciente>(id, data)
+  async update(id: string, data: Partial<Paciente>, fotoFile?: File): Promise<Paciente> {
+    const body = fotoFile ? { ...data, foto: fotoFile } : data
+    const updated = await pb.collection('pacientes').update<Paciente>(id, body)
     registrarLog('editou', 'paciente', `Editou paciente ${updated.nome || 'paciente'}`, updated.id)
     return updated
   },

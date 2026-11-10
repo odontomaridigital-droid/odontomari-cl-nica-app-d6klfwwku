@@ -44,6 +44,9 @@ import {
 } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { montarEnderecoTexto, enderecoDeRegistro } from '@/lib/endereco'
+import { textoPreferenciaHorario, textoOrigem } from '@/lib/pacienteCampos'
+import { PacienteAvatar } from '@/components/PacienteAvatar'
+import { aniversarioDePaciente, textoAniversario } from '@/lib/aniversario'
 import { AnamneseTab } from '@/components/anamnese/AnamneseTab'
 import { ReceitasTab } from '@/components/receitas/ReceitasTab'
 import { Receita } from '@/types'
@@ -224,9 +227,11 @@ export const ProntuarioPage: React.FC = () => {
       <Card className="border-slate-200 shadow-sm bg-white">
         <CardContent className="p-4 sm:p-5 space-y-4">
           <div className="flex items-center gap-3 min-w-0">
-            <div className="w-10 h-10 rounded-full bg-marca-vermelho-claro text-marca-vermelho flex items-center justify-center shrink-0">
-              <User className="w-5 h-5" />
-            </div>
+            <PacienteAvatar
+              paciente={paciente}
+              className="w-14 h-14 sm:w-16 sm:h-16"
+              textClassName="text-lg"
+            />
             <div className="min-w-0">
               <p className="text-[11px] uppercase tracking-wider text-slate-400 font-semibold">
                 Paciente
@@ -234,7 +239,40 @@ export const ProntuarioPage: React.FC = () => {
               <h2 className="text-base sm:text-lg font-semibold text-slate-900 truncate">
                 {paciente.nome}
               </h2>
+              {(() => {
+                const aniv = aniversarioDePaciente(paciente.data_nascimento)
+                if (!aniv || aniv.ehHoje) return null
+                return (
+                  <Badge
+                    variant="outline"
+                    className="mt-1 text-[10px] text-pink-700 border-pink-200 bg-pink-50"
+                  >
+                    🎂 {textoAniversario(aniv.diasAte, paciente.data_nascimento)}
+                  </Badge>
+                )
+              })()}
             </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2 text-xs">
+            {textoPreferenciaHorario(paciente) && (
+              <div className="flex items-start gap-2 text-slate-700">
+                <Clock className="w-3.5 h-3.5 mt-0.5 text-marca-vermelho shrink-0" />
+                <span>
+                  <span className="font-semibold text-slate-500">Prefere:</span>{' '}
+                  {textoPreferenciaHorario(paciente)}
+                </span>
+              </div>
+            )}
+            {textoOrigem(paciente) && (
+              <div className="flex items-start gap-2 text-slate-700">
+                <Compass className="w-3.5 h-3.5 mt-0.5 text-slate-400 shrink-0" />
+                <span>
+                  <span className="font-semibold text-slate-500">Como chegou:</span>{' '}
+                  {textoOrigem(paciente)}
+                </span>
+              </div>
+            )}
           </div>
 
           <dl className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-3 text-sm">
