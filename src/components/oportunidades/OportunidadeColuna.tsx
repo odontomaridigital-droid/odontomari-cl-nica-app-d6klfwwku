@@ -21,6 +21,7 @@ const ICONES: Record<TipoOportunidade, React.ElementType> = {
   faltou: UserX,
   cancelou: CalendarX,
   sem_voltar_6m: CalendarCheck,
+  sem_telefone: PhoneOff,
 }
 
 const CORES: Record<TipoOportunidade, { chip: string; iconeBox: string }> = {
@@ -39,6 +40,10 @@ const CORES: Record<TipoOportunidade, { chip: string; iconeBox: string }> = {
   sem_voltar_6m: {
     chip: 'bg-blue-50 text-blue-800 border-blue-200',
     iconeBox: 'bg-blue-50 text-blue-600',
+  },
+  sem_telefone: {
+    chip: 'bg-purple-50 text-purple-800 border-purple-200',
+    iconeBox: 'bg-purple-50 text-purple-600',
   },
 }
 

@@ -5,7 +5,12 @@ import { formatDateBr } from '@/lib/formatters'
 // Painel de listas de trabalho da recepção, calculadas a partir do histórico
 // de consultas e dos planejamentos de tratamento em aberto.
 
-export type TipoOportunidade = 'planejamento_aberto' | 'faltou' | 'cancelou' | 'sem_voltar_6m'
+export type TipoOportunidade =
+  | 'planejamento_aberto'
+  | 'faltou'
+  | 'cancelou'
+  | 'sem_voltar_6m'
+  | 'sem_telefone'
 
 export interface Oportunidade {
   tipo: TipoOportunidade
@@ -66,6 +71,8 @@ export function tituloLista(tipo: TipoOportunidade): string {
       return 'Cancelaram e não remarcaram'
     case 'sem_voltar_6m':
       return 'Sem voltar há 6+ meses'
+    case 'sem_telefone':
+      return 'Sem telefone cadastrado'
   }
 }
 
@@ -79,6 +86,8 @@ export function descricaoLista(tipo: TipoOportunidade): string {
       return 'Última consulta cancelada e nenhuma remarcada depois'
     case 'sem_voltar_6m':
       return 'Último atendimento realizado há 6 meses ou mais'
+    case 'sem_telefone':
+      return 'Cadastre um telefone ou WhatsApp para conseguir contactar'
   }
 }
 
@@ -94,6 +103,8 @@ export function mensagemWhatsApp(tipo: TipoOportunidade, nomePaciente: string): 
       return `Olá ${primeiroNome}! Notamos que sua consulta na Clínica Odontomari foi cancelada. Queremos ajudar a remarcá-la em um momento melhor para você. Posso te passar os horários disponíveis?`
     case 'sem_voltar_6m':
       return `Olá ${primeiroNome}! Já faz um tempinho desde sua última visita à Clínica Odontomari. 🦷 Que tal agendar um retorno para cuidar do seu sorriso? Posso verificar os horários disponíveis para você!`
+    case 'sem_telefone':
+      return `Olá ${primeiroNome}! Estamos atualizando nosso cadastro na Clínica Odontomari. 🦷 Pode me confirmar o seu número de WhatsApp, por favor? Assim conseguimos te avisar de lembretes e novidades.`
   }
 }
 
@@ -152,6 +163,7 @@ export function calcularOportunidades(
     faltou: [],
     cancelou: [],
     sem_voltar_6m: [],
+    sem_telefone: [],
   }
 
   const nomeDe = (id: string) => pacientes.find((p) => p.id === id)?.nome || ''
@@ -224,11 +236,19 @@ export function calcularOportunidades(
     }
   }
 
+  // -------- Pacientes sem telefone cadastrado
+  for (const p of pacientes) {
+    if (!(p.telefone || '').trim()) {
+      adicionar('sem_telefone', p.id, undefined)
+    }
+  }
+
   return {
     planejamento_aberto: ordenarMaisAntigoPrimeiro(resultado.planejamento_aberto),
     faltou: ordenarMaisAntigoPrimeiro(agruparPorPaciente(resultado.faltou)),
     cancelou: ordenarMaisAntigoPrimeiro(agruparPorPaciente(resultado.cancelou)),
     sem_voltar_6m: ordenarMaisAntigoPrimeiro(agruparPorPaciente(resultado.sem_voltar_6m)),
+    sem_telefone: ordenarMaisAntigoPrimeiro(resultado.sem_telefone),
   }
 }
 
@@ -238,7 +258,8 @@ export function totalOportunidades(funis: Record<TipoOportunidade, Oportunidade[
     funis.planejamento_aberto.length +
     funis.faltou.length +
     funis.cancelou.length +
-    funis.sem_voltar_6m.length
+    funis.sem_voltar_6m.length +
+    funis.sem_telefone.length
   )
 }
 

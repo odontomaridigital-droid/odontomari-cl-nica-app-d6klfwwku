@@ -41,6 +41,7 @@ import {
   Stethoscope,
   DollarSign,
   AlertCircle,
+  Compass,
 } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { montarEnderecoTexto, enderecoDeRegistro } from '@/lib/endereco'

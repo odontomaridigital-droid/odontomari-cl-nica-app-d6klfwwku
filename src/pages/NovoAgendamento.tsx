@@ -23,6 +23,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Calendar, Clock, User, Plus, AlertCircle, Search, Check, Sparkles } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
+import { textoPreferenciaHorario } from '@/lib/pacienteCampos'
+import { PacienteAvatar } from '@/components/PacienteAvatar'
 
 export const NovoAgendamentoPage: React.FC = () => {
   const navigate = useNavigate()
@@ -332,6 +334,15 @@ export const NovoAgendamentoPage: React.FC = () => {
                     Tel: {selectedPaciente.telefone}
                     {selectedPaciente.email ? ` • ${selectedPaciente.email}` : ''}
                   </p>
+                  {(() => {
+                    const pref = textoPreferenciaHorario(selectedPaciente)
+                    return pref ? (
+                      <p className="text-[11px] text-amber-800 mt-1 flex items-center gap-1 font-medium">
+                        <Clock className="w-3 h-3 shrink-0" />
+                        Paciente prefere: {pref}
+                      </p>
+                    ) : null
+                  })()}
                 </div>
                 <Button
                   type="button"
@@ -368,9 +379,23 @@ export const NovoAgendamentoPage: React.FC = () => {
                         onClick={() => setSelectedPacienteId(p.id)}
                         className="w-full text-left p-2.5 hover:bg-slate-50 flex items-center justify-between transition-colors"
                       >
-                        <div>
-                          <p className="text-xs sm:text-sm font-medium text-slate-900">{p.nome}</p>
-                          <p className="text-[11px] text-slate-500">{p.telefone}</p>
+                        <div className="flex items-center gap-2 min-w-0">
+                          <PacienteAvatar
+                            paciente={p}
+                            className="w-7 h-7"
+                            textClassName="text-[9px]"
+                          />
+                          <div className="min-w-0">
+                            <p className="text-xs sm:text-sm font-medium text-slate-900">
+                              {p.nome}
+                            </p>
+                            <p className="text-[11px] text-slate-500">{p.telefone}</p>
+                            {textoPreferenciaHorario(p) ? (
+                              <p className="text-[10px] text-amber-700">
+                                Prefere: {textoPreferenciaHorario(p)}
+                              </p>
+                            ) : null}
+                          </div>
                         </div>
                         <span className="text-xs text-marca-vermelho font-medium">Selecionar</span>
                       </button>

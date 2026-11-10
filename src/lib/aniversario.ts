@@ -12,6 +12,17 @@ export function extrairDiaMes(dataNascimento?: string | null): { mes: number; di
   return { mes, dia }
 }
 
+/** Ano de nascimento a partir de uma data ISO ("1990-05-12..." → 1990). null se ausente/inválido. */
+function extrairAno(dataNascimento?: string | null): number | null {
+  if (!dataNascimento) return null
+  const m = String(dataNascimento)
+    .trim()
+    .match(/^(\d{4})-/)
+  if (!m) return null
+  const ano = Number(m[1])
+  return ano >= 1900 && ano <= new Date().getFullYear() ? ano : null
+}
+
 /** Aniversário do paciente em relação a hoje (local). null se sem dia/mês. */
 export function aniversarioDePaciente(dataNascimento?: string | null, hoje = new Date()) {
   const dm = extrairDiaMes(dataNascimento)
@@ -31,7 +42,8 @@ export function aniversarioDePaciente(dataNascimento?: string | null, hoje = new
   const MS = 86400000
   const base = new Date(hoje.getFullYear(), hojeMes - 1, hojeDia)
   const diasAte = Math.round((alvo.getTime() - base.getTime()) / MS)
-  const idade = hoje.getFullYear() - Number(m[1])
+  const anoNasc = extrairAno(dataNascimento)
+  const idade = anoNasc ? hoje.getFullYear() - anoNasc : null
   const ehHoje = diasAte === 0
   return { mes: dm.mes, dia: dm.dia, diasAte, ehHoje, idade, anoAniversario: ano }
 }

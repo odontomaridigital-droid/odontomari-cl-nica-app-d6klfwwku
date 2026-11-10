@@ -1,10 +1,19 @@
 import React, { useState, useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { consultasService, bloqueiosService, configuracoesService } from '@/services/clinica'
-import { Consulta, BloqueioAgenda, ClinicaConfig } from '@/types'
+import {
+  consultasService,
+  bloqueiosService,
+  configuracoesService,
+  pacientesService,
+} from '@/services/clinica'
+import { Consulta, BloqueioAgenda, ClinicaConfig, Paciente } from '@/types'
 import { getTodayDateString, formatDateBr, isWeekend, createWhatsAppUrl } from '@/lib/formatters'
 import { getWeekStart, getWeekDays, addDaysToDate, dateKeyOf } from '@/lib/semana'
 import { AgendaGrade, AgendaDiaInfo, StatusConsultaBadge } from '@/components/agenda/AgendaGrade'
+import { aniversarioDePaciente, textoAniversario } from '@/lib/aniversario'
+import { PacienteAvatar } from '@/components/PacienteAvatar'
+import { useAuth } from '@/contexts/AuthContext'
+import { Cake, ClipboardList } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
@@ -33,6 +42,7 @@ import { useToast } from '@/hooks/use-toast'
 export const AgendaPage: React.FC = () => {
   const navigate = useNavigate()
   const { toast } = useToast()
+  const { isAdmin } = useAuth()
   const hoje = getTodayDateString()
 
   const [weekStart, setWeekStart] = useState<string>(getWeekStart(hoje))
@@ -42,6 +52,7 @@ export const AgendaPage: React.FC = () => {
   const [consultas, setConsultas] = useState<Consulta[]>([])
   const [bloqueios, setBloqueios] = useState<BloqueioAgenda[]>([])
   const [config, setConfig] = useState<ClinicaConfig | null>(null)
+  const [pacientes, setPacientes] = useState<Paciente[]>([])
   const [loading, setLoading] = useState<boolean>(true)
 
   // Bloqueio de dia: guarda a data que está sendo bloqueada/desbloqueada
@@ -56,14 +67,16 @@ export const AgendaPage: React.FC = () => {
   const loadData = async (inicio: string, fim: string) => {
     setLoading(true)
     try {
-      const [conf, cons, bloq] = await Promise.all([
+      const [conf, cons, bloq, pacs] = await Promise.all([
         configuracoesService.getConfigs(),
         consultasService.getByDateRange(inicio, fim),
         bloqueiosService.getByDateRange(inicio, fim),
+        pacientesService.getAll(),
       ])
       setConfig(conf)
       setConsultas(cons)
       setBloqueios(bloq)
+      setPacientes(pacs)
     } catch (err) {
       console.error('Erro ao carregar agenda:', err)
       toast({
@@ -162,13 +175,19 @@ export const AgendaPage: React.FC = () => {
     }
   }
 
+  const [posRealizada, setPosRealizada] = useState<{ navigateTo: string } | null>(null)
+
   const handleUpdateStatus = async (newStatus: Consulta['status']) => {
     if (!selectedConsulta) return
     try {
       await consultasService.updateStatus(selectedConsulta.id, newStatus)
       toast({ title: `Consulta marcada como: ${newStatus}` })
       setStatusDialogOpen(false)
+      const pacId = selectedConsulta.expand?.paciente?.id
       setSelectedConsulta(null)
+      if (newStatus === 'realizada' && isAdmin && pacId) {
+        setPosRealizada({ navigateTo: `/pacientes/${pacId}/prontuario` })
+      }
       recarregar()
     } catch (err: any) {
       toast({
@@ -221,6 +240,15 @@ export const AgendaPage: React.FC = () => {
   )
 
   const selectedPac = selectedConsulta?.expand?.paciente
+
+  // Pacientes que fazem aniversário hoje (banner do topo)
+  const aniversariantesHoje = useMemo(
+    () =>
+      pacientes
+        .map((p) => ({ p, aniv: aniversarioDePaciente(p.data_nascimento) }))
+        .filter((x) => x.aniv?.ehHoje),
+    [pacientes],
+  )
 
   return (
     <div className="space-y-6 pb-16 md:pb-8">
@@ -287,6 +315,39 @@ export const AgendaPage: React.FC = () => {
           </Button>
         </div>
       </div>
+
+      {/* Banner de aniversariantes do dia */}
+      {aniversariantesHoje.length > 0 && (
+        <div className="rounded-xl border border-pink-200 bg-pink-50 px-4 py-3 flex items-start gap-3">
+          <div className="w-9 h-9 rounded-lg bg-pink-100 text-pink-600 flex items-center justify-center shrink-0">
+            <Cake className="w-5 h-5" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-bold text-pink-900">
+              {aniversariantesHoje.length === 1
+                ? 'Aniversariante do dia!'
+                : `${aniversariantesHoje.length} aniversariantes hoje!`}
+            </p>
+            <div className="mt-1.5 flex flex-wrap items-center gap-2">
+              {aniversariantesHoje.map(({ p, aniv }) => (
+                <button
+                  key={p.id}
+                  type="button"
+                  onClick={() => navigate(`/pacientes/${p.id}/prontuario`)}
+                  className="flex items-center gap-2 rounded-full bg-white border border-pink-200 pl-1 pr-3 py-1 hover:border-pink-400 transition-colors"
+                  title={`Abrir prontuário de ${p.nome}`}
+                >
+                  <PacienteAvatar paciente={p} className="w-6 h-6" textClassName="text-[9px]" />
+                  <span className="text-xs font-semibold text-pink-900">{p.nome}</span>
+                  <span className="text-[10px] text-pink-600">
+                    {textoAniversario(0, p.data_nascimento)}
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Grade semanal de horários (estilo calendário) */}
       {loading ? (
@@ -480,6 +541,43 @@ export const AgendaPage: React.FC = () => {
               Cancelada
             </Button>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Pós-realização: abrir prontuário ou deixar para depois (só dentista/admin) */}
+      <Dialog
+        open={posRealizada !== null}
+        onOpenChange={(o) => {
+          if (!o) setPosRealizada(null)
+        }}
+      >
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <ClipboardList className="w-5 h-5 text-marca-vermelho" />
+              Registrar atendimento
+            </DialogTitle>
+            <DialogDescription>
+              Consulta marcada como realizada. Quer registrar agora a evolução/procedimentos no
+              prontuário do paciente?
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setPosRealizada(null)}>
+              Depois
+            </Button>
+            <Button
+              className="bg-marca-vermelho hover:bg-marca-vermelho-escuro text-white"
+              onClick={() => {
+                const destino = posRealizada?.navigateTo
+                setPosRealizada(null)
+                if (destino) navigate(destino)
+              }}
+            >
+              <FileEdit className="w-4 h-4 mr-1" />
+              Abrir prontuário
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

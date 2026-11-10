@@ -2,9 +2,11 @@ import React, { useMemo } from 'react'
 import { Consulta } from '@/types'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Plus, Lock, LockOpen, AlertTriangle } from 'lucide-react'
+import { Plus, Lock, LockOpen, AlertTriangle, Cake } from 'lucide-react'
 import { getDiaSemanaCurto } from '@/lib/semana'
 import { cn } from '@/lib/utils'
+import { ConsultaTooltip } from '@/components/agenda/ConsultaTooltip'
+import { aniversarioDePaciente } from '@/lib/aniversario'
 
 export const StatusConsultaBadge: React.FC<{ status: Consulta['status'] }> = ({ status }) => {
   switch (status) {
@@ -265,7 +267,7 @@ const ColunaDia: React.FC<ColunaDiaProps> = ({
               key={c.id}
               type="button"
               className={cn(
-                'absolute rounded-md border-l-4 border shadow-sm px-1.5 py-0.5 text-left overflow-hidden hover:shadow-md transition-shadow z-10',
+                'group absolute rounded-md border-l-4 border shadow-sm px-1.5 py-0.5 text-left overflow-visible hover:shadow-md transition-shadow z-10',
                 blockStyle(c.status),
               )}
               style={{
@@ -275,14 +277,32 @@ const ColunaDia: React.FC<ColunaDiaProps> = ({
                 width: `calc(${widthPct}% - 4px)`,
               }}
               onClick={() => onOpenConsulta(c)}
-              title={`${c.hora_inicio} - ${c.expand?.paciente?.nome || 'Paciente'}`}
+              aria-label={`Consulta de ${c.expand?.paciente?.nome || 'Paciente'} às ${c.hora_inicio}: ${c.expand?.tipo_atendimento?.nome || 'Procedimento odontológico'}`}
+              tabIndex={0}
             >
+              <ConsultaTooltip consulta={c} />
               <span className="block font-mono text-[10px] font-bold leading-tight">
                 {c.hora_inicio}
               </span>
               <span className="block text-[11px] font-semibold leading-tight truncate">
                 {c.expand?.paciente?.nome || 'Paciente não identificado'}
               </span>
+              {(() => {
+                const aniv = aniversarioDePaciente(c.expand?.paciente?.data_nascimento)
+                if (!aniv || aniv.diasAte > 5) return null
+                return (
+                  <span
+                    className={cn(
+                      'inline-flex items-center gap-0.5 mt-0.5 px-1 py-px rounded text-[9px] font-semibold leading-tight',
+                      aniv.ehHoje ? 'bg-pink-600 text-white' : 'bg-pink-100 text-pink-800',
+                    )}
+                    title={`🎂 ${aniv.ehHoje ? 'Aniversário hoje!' : `Faz aniversário em ${aniv.diasAte} ${aniv.diasAte === 1 ? 'dia' : 'dias'}`}`}
+                  >
+                    <Cake className="w-2.5 h-2.5" />
+                    {aniv.ehHoje ? 'Aniversário hoje' : `Aniv. em ${aniv.diasAte}d`}
+                  </span>
+                )
+              })()}
               {height > MIN_EVENT_PX + 10 && (
                 <span className="block text-[10px] leading-tight truncate opacity-80">
                   {c.expand?.tipo_atendimento?.nome || 'Procedimento odontológico'}
@@ -403,6 +423,37 @@ export const AgendaGrade: React.FC<AgendaGradeProps> = ({
                       </span>
                     )}
                   </div>
+                  {(() => {
+                    const anives = d.consultas
+                      .map((c) => c.expand?.paciente)
+                      .filter((p): p is NonNullable<typeof p> => !!p?.data_nascimento)
+                      .map((p) => ({ p, aniv: aniversarioDePaciente(p.data_nascimento) }))
+                      .filter((x) => x.aniv !== null)
+                    if (anives.length === 0) return null
+                    return (
+                      <div className="mt-0.5 flex flex-wrap gap-0.5">
+                        {anives.map(({ p, aniv }) => (
+                          <span
+                            key={p.id}
+                            className={cn(
+                              'inline-flex items-center gap-0.5 px-1 py-px rounded-full text-[9px] font-semibold leading-none max-w-full',
+                              aniv!.ehHoje
+                                ? d.isHoje
+                                  ? 'bg-white text-pink-700'
+                                  : 'bg-pink-600 text-white'
+                                : d.isHoje
+                                  ? 'bg-pink-100 text-pink-800'
+                                  : 'bg-pink-100 text-pink-800',
+                            )}
+                            title={`🎂 ${p.nome}: ${aniv!.ehHoje ? 'aniversário hoje!' : `aniversário em ${aniv!.diasAte} dia(s)`}`}
+                          >
+                            <Cake className="w-2.5 h-2.5 shrink-0" />
+                            <span className="truncate">{p.nome.split(' ')[0]}</span>
+                          </span>
+                        ))}
+                      </div>
+                    )
+                  })()}
                 </div>
               )
             })}
