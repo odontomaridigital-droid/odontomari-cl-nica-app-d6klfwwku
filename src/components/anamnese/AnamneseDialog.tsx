@@ -13,9 +13,11 @@ import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { FileHeart } from 'lucide-react'
 import { AnamneseFormFields } from '@/components/anamnese/AnamneseFormFields'
-import { anamnesesService } from '@/services/clinica'
-import { Anamnese } from '@/types'
+import { anamnesesService, anamneseModelosService } from '@/services/clinica'
+import { Anamnese, AnamneseModelo } from '@/types'
 import {
+  ANAMNESE_SECOES,
+  AnamneseSecao,
   MODELO_ANAMNESE,
   RespostasAnamnese,
   respostasVazias,
@@ -52,6 +54,9 @@ export const AnamneseDialog: React.FC<AnamneseDialogProps> = ({
   )
   const [respostas, setRespostas] = useState<RespostasAnamnese>(respostasVazias())
   const [saving, setSaving] = useState<boolean>(false)
+  /** Seções do modelo ativo (do banco); cai no modelo embutido se não houver */
+  const [secoes, setSecoes] = useState<AnamneseSecao[]>(ANAMNESE_SECOES)
+  const [modeloAtivo, setModeloAtivo] = useState<AnamneseModelo | null>(null)
 
   useEffect(() => {
     if (!open) return
@@ -61,6 +66,31 @@ export const AnamneseDialog: React.FC<AnamneseDialogProps> = ({
     } else {
       setRespostas(respostasVazias())
       setDataPreenchimento(new Date().toISOString().split('T')[0])
+    }
+  }, [open, anamnese])
+
+  // Carrega o modelo de anamnese padrão da clínica (editável em Configurações)
+  useEffect(() => {
+    if (!open) return
+    let vivo = true
+    anamneseModelosService
+      .getPadrao()
+      .then((modelo) => {
+        if (!vivo) return
+        setModeloAtivo(modelo)
+        const doBanco = modelo?.secoes
+        if (Array.isArray(doBanco) && doBanco.length > 0) {
+          setSecoes(doBanco as AnamneseSecao[])
+          if (!anamnese) setRespostas(respostasVaziasPara(doBanco as AnamneseSecao[]))
+        } else {
+          setSecoes(ANAMNESE_SECOES)
+        }
+      })
+      .catch(() => {
+        if (vivo) setSecoes(ANAMNESE_SECOES)
+      })
+    return () => {
+      vivo = false
     }
   }, [open, anamnese])
 
@@ -80,7 +110,7 @@ export const AnamneseDialog: React.FC<AnamneseDialogProps> = ({
         await anamnesesService.create({
           paciente: pacienteId,
           autor: autorId,
-          modelo: MODELO_ANAMNESE.id,
+          modelo: modeloAtivo?.id || MODELO_ANAMNESE.id,
           respostas,
           data: dataPreenchimento,
         })
@@ -103,7 +133,7 @@ export const AnamneseDialog: React.FC<AnamneseDialogProps> = ({
             {isEdicao ? 'Editar Anamnese' : 'Nova Anamnese'}
           </DialogTitle>
           <DialogDescription className="text-xs">
-            Paciente: {pacienteNome} • Modelo: {MODELO_ANAMNESE.nome}
+            Paciente: {pacienteNome} • Modelo: {modeloAtivo?.nome || MODELO_ANAMNESE.nome}
             {isEdicao && anamnese?.data ? ` • Original: ${formatDateBr(anamnese.data)}` : ''}
           </DialogDescription>
         </DialogHeader>
@@ -122,7 +152,7 @@ export const AnamneseDialog: React.FC<AnamneseDialogProps> = ({
             />
           </div>
 
-          <AnamneseFormFields respostas={respostas} onChange={setResposta} />
+          <AnamneseFormFields respostas={respostas} onChange={setResposta} secoes={secoes} />
         </div>
 
         <DialogFooter className="p-4 pt-3 border-t border-slate-100 gap-2">

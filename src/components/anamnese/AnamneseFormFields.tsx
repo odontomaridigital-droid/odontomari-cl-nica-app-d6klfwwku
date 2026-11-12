@@ -4,6 +4,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
   ANAMNESE_SECOES,
+  AnamneseSecao,
   RespostasAnamnese,
   RespostaSimNao,
   contarRespostas,
@@ -14,13 +15,20 @@ import { FileHeart } from 'lucide-react'
 interface AnamneseFormFieldsProps {
   respostas: RespostasAnamnese
   onChange: (questaoId: string, valor: RespostaSimNao | string) => void
+  /** Seções a exibir; sem esta prop usa o modelo embutido no app */
+  secoes?: AnamneseSecao[]
 }
 
 /** Todos os campos do modelo de anamnese, agrupados por seção (usado no diálogo) */
-export const AnamneseFormFields: React.FC<AnamneseFormFieldsProps> = ({ respostas, onChange }) => {
+export const AnamneseFormFields: React.FC<AnamneseFormFieldsProps> = ({
+  respostas,
+  onChange,
+  secoes,
+}) => {
+  const listaSecoes = secoes && secoes.length > 0 ? secoes : ANAMNESE_SECOES
   return (
     <div className="space-y-4">
-      {ANAMNESE_SECOES.map((secao, idx) => (
+      {listaSecoes.map((secao, idx) => (
         <Card key={secao.id} className="border-slate-200 shadow-sm bg-white">
           <CardHeader className="p-4 pb-2 border-b border-slate-100">
             <CardTitle className="text-sm font-bold text-slate-800 flex items-center gap-2">

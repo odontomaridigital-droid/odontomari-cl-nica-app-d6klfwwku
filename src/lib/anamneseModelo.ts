@@ -306,6 +306,17 @@ export function respostasVazias(): RespostasAnamnese {
   return respostas
 }
 
+/** Cria respostas vazias a partir de um conjunto de seções arbitrário (modelo do banco) */
+export function respostasVaziasPara(secoes: AnamneseSecao[]): RespostasAnamnese {
+  const respostas: RespostasAnamnese = {}
+  for (const secao of secoes) {
+    for (const q of secao.questoes) {
+      respostas[q.id] = q.tipo === 'simnao' ? { resposta: '', detalhe: '' } : ''
+    }
+  }
+  return respostas
+}
+
 /** Normaliza respostas carregadas do banco (garante a estrutura esperada pelo formulário) */
 export function normalizarRespostas(raw: unknown): RespostasAnamnese {
   const base = respostasVazias()

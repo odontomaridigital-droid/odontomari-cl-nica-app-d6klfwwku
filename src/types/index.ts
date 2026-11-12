@@ -123,6 +123,19 @@ export interface OdontogramaRegistro {
   }
 }
 
+/** Modelo de anamnese editável pela dentista */
+export interface AnamneseModelo {
+  id: string
+  nome: string
+  descricao?: string
+  /** Array de seções com questões (mesma forma de ANAMNESE_SECOES) */
+  secoes: unknown
+  ativo?: boolean
+  padrao?: boolean
+  created?: string
+  updated?: string
+}
+
 /** Modelo de documento (cuidados pós-cirúrgicos, orientações, atestado...) */
 export interface DocumentoModelo {
   id: string

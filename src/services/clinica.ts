@@ -14,6 +14,7 @@ import {
   OdontogramaRegistro,
   DocumentoModelo,
   DocumentoEmitido,
+  AnamneseModelo,
 } from '@/types'
 import type { RespostasAnamnese } from '@/lib/anamneseModelo'
 import type { CondicaoDente, FaceDente } from '@/lib/odontograma'
@@ -483,6 +484,62 @@ export const anamnesesService = {
   async delete(id: string): Promise<boolean> {
     const ok = await pb.collection('anamneses').delete(id)
     registrarLog('excluiu', 'anamnese', `Excluiu anamnese (id ${id})`, id)
+    return ok
+  },
+}
+
+// =================== MODELOS DE ANAMNESE (EDITÁVEIS) ===================
+export const anamneseModelosService = {
+  async getAll(somenteAtivos = true): Promise<AnamneseModelo[]> {
+    const filter = somenteAtivos ? 'ativo = true' : ''
+    return await pb.collection('anamnese_modelos').getFullList<AnamneseModelo>({
+      filter,
+      sort: '-padrao,nome',
+    })
+  },
+
+  /** Modelo marcado como padrão; se não houver, o primeiro ativo. */
+  async getPadrao(): Promise<AnamneseModelo | null> {
+    try {
+      const lista = await pb.collection('anamnese_modelos').getFullList<AnamneseModelo>({
+        filter: 'ativo = true',
+        sort: '-padrao',
+      })
+      return lista[0] || null
+    } catch {
+      return null
+    }
+  },
+
+  async create(data: {
+    nome: string
+    descricao?: string
+    secoes: unknown
+    ativo?: boolean
+    padrao?: boolean
+  }): Promise<AnamneseModelo> {
+    const criado = await pb.collection('anamnese_modelos').create<AnamneseModelo>({
+      ...data,
+      ativo: data.ativo ?? true,
+    })
+    registrarLog('criou', 'configuracoes', `Criou modelo de anamnese: ${criado.nome}`, criado.id)
+    return criado
+  },
+
+  async update(id: string, data: Partial<AnamneseModelo>): Promise<AnamneseModelo> {
+    const atualizado = await pb.collection('anamnese_modelos').update<AnamneseModelo>(id, data)
+    registrarLog(
+      'editou',
+      'configuracoes',
+      `Editou modelo de anamnese: ${atualizado.nome}`,
+      atualizado.id,
+    )
+    return atualizado
+  },
+
+  async delete(id: string): Promise<boolean> {
+    const ok = await pb.collection('anamnese_modelos').delete(id)
+    registrarLog('excluiu', 'configuracoes', `Excluiu modelo de anamnese (id ${id})`, id)
     return ok
   },
 }
