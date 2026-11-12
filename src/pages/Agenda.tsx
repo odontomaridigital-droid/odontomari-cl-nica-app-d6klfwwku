@@ -228,7 +228,7 @@ export const AgendaPage: React.FC = () => {
       navigate(`/pacientes/${pacienteId}/prontuario`)
     } catch (err: any) {
       toast({
-        title: 'Erro ao confirmar presença',
+        title: 'Erro ao registrar chegada',
         description: err?.message || 'Tente novamente.',
         variant: 'destructive',
       })
@@ -546,7 +546,7 @@ export const AgendaPage: React.FC = () => {
           >
             <UserCheck className="w-4 h-4 mr-2" />
             <span className="text-left leading-tight">
-              Cliente veio — abrir prontuário
+              Paciente veio — abrir prontuário
               <span className="block text-[10px] font-normal opacity-80">
                 Marca como realizada e vai direto para o atendimento
               </span>
