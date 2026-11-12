@@ -31,6 +31,7 @@ import {
   Stethoscope,
 } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
+import { BotaoDitar } from '@/components/voz/BotaoDitar'
 
 export const ConfiguracoesPage: React.FC = () => {
   const { isAdmin } = useAuth()
@@ -429,12 +430,27 @@ export const ConfiguracoesPage: React.FC = () => {
                       Variáveis: {'{paciente}'}, {'{data}'}, {'{hora}'}, {'{tipo}'}
                     </span>
                   </div>
-                  <Textarea
-                    rows={3}
-                    value={mensagemLembrete}
-                    onChange={(e) => setMensagemLembrete(e.target.value)}
-                    className="mt-1 text-xs sm:text-sm"
-                  />
+                  <div className="relative mt-1">
+                    <Textarea
+                      rows={3}
+                      value={mensagemLembrete}
+                      onChange={(e) => setMensagemLembrete(e.target.value)}
+                      className="text-xs sm:text-sm pr-10"
+                    />
+                    <div className="absolute right-1.5 top-1.5">
+                      <BotaoDitar
+                        titulo="Ditar a mensagem de lembrete"
+                        onErro={(m) =>
+                          toast({ title: 'Ditado', description: m, variant: 'destructive' })
+                        }
+                        onTexto={(texto) =>
+                          setMensagemLembrete((atual) =>
+                            atual.trim() ? `${atual.trimEnd()} ${texto}` : texto,
+                          )
+                        }
+                      />
+                    </div>
+                  </div>
                 </div>
 
                 <div className="flex justify-end pt-2">
@@ -622,13 +638,28 @@ export const ConfiguracoesPage: React.FC = () => {
 
             <div>
               <Label className="text-xs">Descrição / Instruções</Label>
-              <Textarea
-                rows={2}
-                placeholder="Detalhes ou protocolo do atendimento..."
-                value={tipoDescricao}
-                onChange={(e) => setTipoDescricao(e.target.value)}
-                className="mt-1 text-xs sm:text-sm"
-              />
+              <div className="relative mt-1">
+                <Textarea
+                  rows={2}
+                  placeholder="Detalhes ou protocolo do atendimento..."
+                  value={tipoDescricao}
+                  onChange={(e) => setTipoDescricao(e.target.value)}
+                  className="text-xs sm:text-sm pr-10"
+                />
+                <div className="absolute right-1.5 top-1.5">
+                  <BotaoDitar
+                    titulo="Ditar a descrição"
+                    onErro={(m) =>
+                      toast({ title: 'Ditado', description: m, variant: 'destructive' })
+                    }
+                    onTexto={(texto) =>
+                      setTipoDescricao((atual) =>
+                        atual.trim() ? `${atual.trimEnd()} ${texto}` : texto,
+                      )
+                    }
+                  />
+                </div>
+              </div>
             </div>
 
             <DialogFooter className="gap-2 pt-2">

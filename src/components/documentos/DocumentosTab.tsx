@@ -24,6 +24,7 @@ import { FileText, Plus, Printer, Send, Eye, Download } from 'lucide-react'
 import { DocumentoEmitido, DocumentoModelo } from '@/types'
 import { formatDateBr, createWhatsAppUrl } from '@/lib/formatters'
 import { gerarPdfDocumento, renderizarModelo } from '@/lib/documentoPdf'
+import { BotaoDitar } from '@/components/voz/BotaoDitar'
 import { documentosEmitidosService, documentosModelosService } from '@/services/clinica'
 import { useAuth } from '@/contexts/AuthContext'
 
@@ -409,14 +410,25 @@ export const DocumentosTab: React.FC<DocumentosTabProps> = ({
               <Label htmlFor="doc-corpo" className="text-xs">
                 Conteúdo *
               </Label>
-              <Textarea
-                id="doc-corpo"
-                rows={12}
-                value={corpo}
-                onChange={(e) => setCorpo(e.target.value)}
-                className="mt-1 text-xs sm:text-sm font-sans"
-                placeholder="Escolha um modelo acima ou escreva o documento do zero."
-              />
+              <div className="relative mt-1">
+                <Textarea
+                  id="doc-corpo"
+                  rows={12}
+                  value={corpo}
+                  onChange={(e) => setCorpo(e.target.value)}
+                  className="text-xs sm:text-sm font-sans pr-10"
+                  placeholder="Escolha um modelo acima ou escreva o documento do zero."
+                />
+                <div className="absolute right-1.5 top-1.5">
+                  <BotaoDitar
+                    titulo="Ditar o documento"
+                    onErro={(m) => onError('Ditado', m)}
+                    onTexto={(texto) =>
+                      setCorpo((atual) => (atual.trim() ? `${atual.trimEnd()} ${texto}` : texto))
+                    }
+                  />
+                </div>
+              </div>
             </div>
           </div>
 

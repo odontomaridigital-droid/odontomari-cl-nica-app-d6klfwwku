@@ -52,6 +52,7 @@ import { AnamneseTab } from '@/components/anamnese/AnamneseTab'
 import { ReceitasTab } from '@/components/receitas/ReceitasTab'
 import { OdontogramaTab } from '@/components/odontograma/OdontogramaTab'
 import { DitadorProntuario } from '@/components/prontuario/DitadorProntuario'
+import { BotaoDitar } from '@/components/voz/BotaoDitar'
 import { OdontogramaMapa } from '@/components/odontograma/OdontogramaMapa'
 import { DocumentosTab } from '@/components/documentos/DocumentosTab'
 import { CondicaoDente, FaceDente } from '@/lib/odontograma'
@@ -774,29 +775,59 @@ export const ProntuarioPage: React.FC = () => {
                 <Label htmlFor="proced" className="text-xs">
                   Procedimentos Realizados *
                 </Label>
-                <Textarea
-                  id="proced"
-                  required
-                  rows={3}
-                  value={procedimentos}
-                  onChange={(e) => setProcedimentos(e.target.value)}
-                  placeholder="Ex.: Aplicação de laserterapia 4J/cm² em região de aftas, restauração dente 16 com resina Z350 cor A2..."
-                  className="mt-1 text-xs sm:text-sm"
-                />
+                <div className="relative mt-1">
+                  <Textarea
+                    id="proced"
+                    required
+                    rows={3}
+                    value={procedimentos}
+                    onChange={(e) => setProcedimentos(e.target.value)}
+                    placeholder="Ex.: Aplicação de laserterapia 4J/cm² em região de aftas, restauração dente 16 com resina Z350 cor A2..."
+                    className="text-xs sm:text-sm pr-10"
+                  />
+                  <div className="absolute right-1.5 top-1.5">
+                    <BotaoDitar
+                      titulo="Ditar os procedimentos"
+                      onErro={(m) =>
+                        toast({ title: 'Ditado', description: m, variant: 'destructive' })
+                      }
+                      onTexto={(texto) =>
+                        setProcedimentos((atual) =>
+                          atual.trim() ? `${atual.trimEnd()} ${texto}` : texto,
+                        )
+                      }
+                    />
+                  </div>
+                </div>
               </div>
 
               <div className="sm:col-span-2">
                 <Label htmlFor="anot" className="text-xs">
                   Anotações do Dentista / Conduta / Próximos Passos
                 </Label>
-                <Textarea
-                  id="anot"
-                  rows={3}
-                  value={anotacoes}
-                  onChange={(e) => setAnotacoes(e.target.value)}
-                  placeholder="Ex.: Paciente referiu alívio imediato da dor. Prescrito bochecho. Retorno em 7 dias para avaliação..."
-                  className="mt-1 text-xs sm:text-sm"
-                />
+                <div className="relative mt-1">
+                  <Textarea
+                    id="anot"
+                    rows={3}
+                    value={anotacoes}
+                    onChange={(e) => setAnotacoes(e.target.value)}
+                    placeholder="Ex.: Paciente referiu alívio imediato da dor. Prescrito bochecho. Retorno em 7 dias para avaliação..."
+                    className="text-xs sm:text-sm pr-10"
+                  />
+                  <div className="absolute right-1.5 top-1.5">
+                    <BotaoDitar
+                      titulo="Ditar as anotações"
+                      onErro={(m) =>
+                        toast({ title: 'Ditado', description: m, variant: 'destructive' })
+                      }
+                      onTexto={(texto) =>
+                        setAnotacoes((atual) =>
+                          atual.trim() ? `${atual.trimEnd()} ${texto}` : texto,
+                        )
+                      }
+                    />
+                  </div>
+                </div>
               </div>
             </div>
 

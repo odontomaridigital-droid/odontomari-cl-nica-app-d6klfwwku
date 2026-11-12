@@ -11,6 +11,7 @@ import {
   totalQuestoes,
 } from '@/lib/anamneseModelo'
 import { FileHeart } from 'lucide-react'
+import { BotaoDitar } from '@/components/voz/BotaoDitar'
 
 interface AnamneseFormFieldsProps {
   respostas: RespostasAnamnese
@@ -46,14 +47,25 @@ export const AnamneseFormFields: React.FC<AnamneseFormFieldsProps> = ({
                     <Label htmlFor={`anm_${q.id}`} className="text-xs font-medium text-slate-700">
                       {q.texto}
                     </Label>
-                    <Textarea
-                      id={`anm_${q.id}`}
-                      rows={2}
-                      value={(respostas[q.id] as string) || ''}
-                      onChange={(e) => onChange(q.id, e.target.value)}
-                      placeholder={q.placeholder}
-                      className="mt-1 text-xs sm:text-sm"
-                    />
+                    <div className="relative mt-1">
+                      <Textarea
+                        id={`anm_${q.id}`}
+                        rows={2}
+                        value={(respostas[q.id] as string) || ''}
+                        onChange={(e) => onChange(q.id, e.target.value)}
+                        placeholder={q.placeholder}
+                        className="text-xs sm:text-sm pr-10"
+                      />
+                      <div className="absolute right-1.5 top-1.5">
+                        <BotaoDitar
+                          titulo="Ditar a resposta"
+                          onTexto={(texto) => {
+                            const atual = ((respostas[q.id] as string) || '').trim()
+                            onChange(q.id, atual ? `${atual} ${texto}` : texto)
+                          }}
+                        />
+                      </div>
+                    </div>
                   </div>
                 )
               }
@@ -100,13 +112,29 @@ export const AnamneseFormFields: React.FC<AnamneseFormFieldsProps> = ({
                     </div>
                   </div>
                   {r.resposta === 'sim' && (
-                    <Textarea
-                      rows={2}
-                      value={r.detalhe || ''}
-                      onChange={(e) => onChange(q.id, { resposta: 'sim', detalhe: e.target.value })}
-                      placeholder={q.detalhePlaceholder || 'Detalhe a resposta...'}
-                      className="mt-2 text-xs sm:text-sm bg-white"
-                    />
+                    <div className="relative mt-2">
+                      <Textarea
+                        rows={2}
+                        value={r.detalhe || ''}
+                        onChange={(e) =>
+                          onChange(q.id, { resposta: 'sim', detalhe: e.target.value })
+                        }
+                        placeholder={q.detalhePlaceholder || 'Detalhe a resposta...'}
+                        className="text-xs sm:text-sm bg-white pr-10"
+                      />
+                      <div className="absolute right-1.5 top-1.5">
+                        <BotaoDitar
+                          titulo="Ditar o detalhe"
+                          onTexto={(texto) => {
+                            const atual = (r.detalhe || '').trim()
+                            onChange(q.id, {
+                              resposta: 'sim',
+                              detalhe: atual ? `${atual} ${texto}` : texto,
+                            })
+                          }}
+                        />
+                      </div>
+                    </div>
                   )}
                 </div>
               )

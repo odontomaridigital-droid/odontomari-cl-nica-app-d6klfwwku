@@ -38,6 +38,7 @@ import { formatDateBr, getTodayDateString, createWhatsAppUrl } from '@/lib/forma
 import { normalizarItensReceita, montarMensagemWhatsApp } from '@/lib/receitas'
 import { gerarPdfReceita } from '@/lib/receitaPdf'
 import { useToast } from '@/hooks/use-toast'
+import { BotaoDitar } from '@/components/voz/BotaoDitar'
 import { cn } from '@/lib/utils'
 
 interface ReceitasTabProps {
@@ -584,13 +585,27 @@ export const ReceitasTab: React.FC<ReceitasTabProps> = ({
                       placeholder="Apresentação (ex.: 500mg, caixa 21 comprimidos)"
                       className="h-8 text-xs"
                     />
-                    <Textarea
-                      rows={2}
-                      value={item.posologia}
-                      onChange={(e) => atualizarItem(idx, 'posologia', e.target.value)}
-                      placeholder="Posologia (ex.: Tomar 1 comprimido a cada 8 horas por 7 dias)"
-                      className="text-xs"
-                    />
+                    <div className="relative">
+                      <Textarea
+                        rows={2}
+                        value={item.posologia}
+                        onChange={(e) => atualizarItem(idx, 'posologia', e.target.value)}
+                        placeholder="Posologia (ex.: Tomar 1 comprimido a cada 8 horas por 7 dias)"
+                        className="text-xs pr-10"
+                      />
+                      <div className="absolute right-1.5 top-1.5">
+                        <BotaoDitar
+                          titulo="Ditar a posologia"
+                          onErro={(m) =>
+                            toast({ title: 'Ditado', description: m, variant: 'destructive' })
+                          }
+                          onTexto={(texto) => {
+                            const atual = (item.posologia || '').trim()
+                            atualizarItem(idx, 'posologia', atual ? `${atual} ${texto}` : texto)
+                          }}
+                        />
+                      </div>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -599,13 +614,26 @@ export const ReceitasTab: React.FC<ReceitasTabProps> = ({
             {/* Orientações gerais */}
             <div>
               <Label className="text-xs">Orientações gerais (opcional)</Label>
-              <Textarea
-                rows={2}
-                placeholder="Ex.: retornar em 7 dias para reavaliação; evitar alimentos muito quentes hoje."
-                value={orientacoes}
-                onChange={(e) => setOrientacoes(e.target.value)}
-                className="mt-1 text-xs sm:text-sm"
-              />
+              <div className="relative mt-1">
+                <Textarea
+                  rows={2}
+                  placeholder="Ex.: retornar em 7 dias para reavaliação; evitar alimentos muito quentes hoje."
+                  value={orientacoes}
+                  onChange={(e) => setOrientacoes(e.target.value)}
+                  className="text-xs sm:text-sm pr-10"
+                />
+                <div className="absolute right-1.5 top-1.5">
+                  <BotaoDitar
+                    titulo="Ditar as orientações"
+                    onErro={(m) =>
+                      toast({ title: 'Ditado', description: m, variant: 'destructive' })
+                    }
+                    onTexto={(texto) =>
+                      setOrientacoes((atual) => (atual.trim() ? `${atual.trim()} ${texto}` : texto))
+                    }
+                  />
+                </div>
+              </div>
             </div>
           </div>
 

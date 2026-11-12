@@ -36,6 +36,7 @@ import {
   Edit,
 } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
+import { BotaoDitar } from '@/components/voz/BotaoDitar'
 
 export const OrcamentosPage: React.FC = () => {
   const [searchParams] = useSearchParams()
@@ -560,13 +561,28 @@ export const OrcamentosPage: React.FC = () => {
 
               <div className="sm:col-span-2">
                 <Label className="text-xs">Observações / Condições de Pagamento</Label>
-                <Textarea
-                  rows={2}
-                  value={observacoes}
-                  onChange={(e) => setObservacoes(e.target.value)}
-                  placeholder="Ex.: Parcelamento em até 6x no cartão de crédito sem juros..."
-                  className="mt-1 text-xs sm:text-sm"
-                />
+                <div className="relative mt-1">
+                  <Textarea
+                    rows={2}
+                    value={observacoes}
+                    onChange={(e) => setObservacoes(e.target.value)}
+                    placeholder="Ex.: Parcelamento em até 6x no cartão de crédito sem juros..."
+                    className="text-xs sm:text-sm pr-10"
+                  />
+                  <div className="absolute right-1.5 top-1.5">
+                    <BotaoDitar
+                      titulo="Ditar as observações"
+                      onErro={(m) =>
+                        toast({ title: 'Ditado', description: m, variant: 'destructive' })
+                      }
+                      onTexto={(texto) =>
+                        setObservacoes((atual) =>
+                          atual.trim() ? `${atual.trimEnd()} ${texto}` : texto,
+                        )
+                      }
+                    />
+                  </div>
+                </div>
               </div>
             </div>
 
