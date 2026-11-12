@@ -30,7 +30,7 @@ export interface CondicaoInfo {
 }
 
 export const CONDICOES: CondicaoInfo[] = [
-  { id: 'higido', label: 'Hígido (saudável)', cor: '#ffffff', texto: '#334155', sigla: '' },
+  { id: 'higido', label: 'Hígido (saudável)', cor: '#fffdf7', texto: '#334155', sigla: '' },
   { id: 'carie', label: 'Cárie', cor: '#dc2626', texto: '#ffffff', sigla: 'C' },
   { id: 'restaurado', label: 'Restaurado', cor: '#2563eb', texto: '#ffffff', sigla: 'R' },
   {

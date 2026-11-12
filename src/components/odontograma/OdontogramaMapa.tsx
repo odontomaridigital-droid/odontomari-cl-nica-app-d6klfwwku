@@ -30,10 +30,10 @@ const LARGURA = PASSO * (TOTAL - 1) + 120 // 810
 const ALTURA = 460
 const CX = LARGURA / 2
 
-const CY_SUP = 168 // linha de referência do arco superior
-const CY_INF = 292 // linha de referência do arco inferior
-const CURVA = 34 // quanto as pontas do arco sobem/descem
-const INCLINACAO = 15 // graus de inclinação máxima nas pontas
+const CY_SUP = 172 // linha de referência do arco superior
+const CY_INF = 290 // linha de referência do arco inferior
+const CURVA = 58 // quanto as pontas do arco sobem/descem
+const INCLINACAO = 26 // graus de inclinação máxima nas pontas
 
 type TipoDente = 'incisivo' | 'canino' | 'premolar' | 'molar'
 
@@ -113,6 +113,25 @@ function caminhoCoroa(w: number, h: number, tipo: TipoDente): string {
   ].join(' ')
 }
 
+/** Contorno da gengiva: uma faixa curva atrás dos dentes de cada arco. */
+function caminhoGengiva(arcada: 'superior' | 'inferior'): string {
+  const xIni = 18
+  const xFim = LARGURA - 18
+  const altitude = 62 // altura da faixa de gengiva
+  const base = arcada === 'superior' ? CY_SUP - 26 : CY_INF + 26
+  const dir = arcada === 'superior' ? -1 : 1
+
+  // Curva acompanhando a arcada, mais alta nas pontas
+  const y = (t: number) => base + dir * (CURVA * t * t) * -1
+
+  return [
+    `M ${xIni} ${y(-1) + dir * altitude * 0.2}`,
+    `Q ${CX} ${y(0) + dir * altitude * 1.5} ${xFim} ${y(1) + dir * altitude * 0.2}`,
+    `Q ${CX} ${y(0) + dir * altitude * 0.55} ${xIni} ${y(-1) + dir * altitude * 0.2}`,
+    'Z',
+  ].join(' ')
+}
+
 /** Posição e inclinação de cada dente no arco. */
 function posicaoDente(indice: number, arcada: 'superior' | 'inferior') {
   // t vai de -1 (extremo esquerdo da tela) a +1 (extremo direito)
@@ -166,7 +185,7 @@ export const OdontogramaMapa: React.FC<OdontogramaMapaProps> = ({
           <path
             d={caminhoCoroa(w, h, tipo)}
             fill={info.cor}
-            stroke={alterado ? '#94a3b8' : '#cbd5e1'}
+            stroke={alterado ? '#94a3b8' : '#d8b48c'}
             strokeWidth={1.3}
             className={cn('transition-all duration-100', !somenteLeitura && 'hover:brightness-95')}
           />
@@ -219,6 +238,11 @@ export const OdontogramaMapa: React.FC<OdontogramaMapaProps> = ({
         aria-label="Odontograma — arcada superior e inferior"
         preserveAspectRatio="xMidYMid meet"
       >
+        {/* Gengiva do arco superior */}
+        <path d={caminhoGengiva('superior')} fill="#fde8e8" stroke="#f8d0d3" strokeWidth={1} />
+        {/* Gengiva do arco inferior */}
+        <path d={caminhoGengiva('inferior')} fill="#fde8e8" stroke="#f8d0d3" strokeWidth={1} />
+
         {/* Arcada superior */}
         {ARCADA_SUPERIOR.map((d, i) => desenharDente(d, i, 'superior'))}
 
