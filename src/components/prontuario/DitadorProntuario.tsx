@@ -188,17 +188,64 @@ export const DitadorProntuario: React.FC<DitadorProntuarioProps> = ({
     }
   }
 
+  // Sem suporte a voz: mantém a caixa de texto e a IA, que continua útil
+  // (o dentista digita em linguagem livre e a IA separa nos campos).
   if (!suportado) {
     return (
-      <div className="rounded-lg border border-amber-200 bg-amber-50 p-3">
-        <p className="text-[11px] font-semibold text-amber-900 flex items-center gap-1.5">
-          <MicOff className="w-3.5 h-3.5" />
-          Ditado indisponível neste navegador
+      <div className="rounded-lg border border-slate-200 bg-slate-50/70 p-3 space-y-2.5">
+        <p className="text-[11px] font-semibold text-slate-700 flex items-center gap-1.5">
+          <Sparkles className="w-3.5 h-3.5 text-marca-vermelho" />
+          Descrever o atendimento e organizar com IA
         </p>
-        <p className="text-[11px] text-amber-800 mt-0.5">
-          O ditado funciona no Chrome, Edge e Safari. Abra o sistema em um desses navegadores — ou
-          digite normalmente.
+        <p className="text-[10px] text-amber-800 bg-amber-50 border border-amber-200 rounded-md p-2 leading-relaxed">
+          <MicOff className="w-3 h-3 inline mr-1" />
+          Este navegador não tem ditado por voz (funciona no Chrome, Edge e Safari). Escreva abaixo
+          do jeito que preferir — a IA organiza nos campos.
         </p>
+        <textarea
+          value={transcrito}
+          onChange={(e) => {
+            setTranscrito(e.target.value)
+            textoFinalRef.current = e.target.value
+            onTextoChange?.(e.target.value)
+          }}
+          rows={3}
+          placeholder="Ex.: restauração em resina no dente 16 face oclusal, paciente relatou sensibilidade ao frio, retorno em 7 dias"
+          className="w-full rounded-md border border-slate-300 bg-white p-2 text-[11px] leading-relaxed text-slate-700 outline-none focus:border-marca-vermelho"
+        />
+        <div className="flex items-center gap-1.5">
+          <Button
+            type="button"
+            size="sm"
+            onClick={estruturar}
+            disabled={estruturando || !transcrito.trim()}
+            className="h-8 text-[11px] bg-emerald-600 hover:bg-emerald-700 text-white"
+          >
+            {estruturando ? (
+              <>
+                <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" />
+                Organizando...
+              </>
+            ) : (
+              <>
+                <Sparkles className="w-3.5 h-3.5 mr-1" />
+                Organizar com IA
+              </>
+            )}
+          </Button>
+          {transcrito && (
+            <Button
+              type="button"
+              size="sm"
+              variant="ghost"
+              onClick={limpar}
+              disabled={estruturando}
+              className="h-8 text-[11px] text-slate-500"
+            >
+              Limpar
+            </Button>
+          )}
+        </div>
       </div>
     )
   }
