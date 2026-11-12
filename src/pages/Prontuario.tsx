@@ -79,7 +79,18 @@ export const ProntuarioPage: React.FC = () => {
   const [procedimentos, setProcedimentos] = useState<string>('')
   const [anotacoes, setAnotacoes] = useState<string>('')
   const [denteRegiao, setDenteRegiao] = useState<string>('')
+  const [retornoDias, setRetornoDias] = useState<string>('')
   const [saving, setSaving] = useState<boolean>(false)
+
+  /** Data de retorno calculada a partir da data do atendimento + dias informados */
+  const retornoCalculado = React.useMemo(() => {
+    const dias = Number(retornoDias)
+    if (!retornoDias || isNaN(dias) || dias <= 0) return ''
+    const base = new Date(`${dataRegistro}T12:00:00`)
+    if (isNaN(base.getTime())) return ''
+    base.setDate(base.getDate() + dias)
+    return base.toISOString().split('T')[0]
+  }, [retornoDias, dataRegistro])
 
   const loadData = async () => {
     if (!id) return
@@ -146,6 +157,8 @@ export const ProntuarioPage: React.FC = () => {
         procedimentos: procedimentos.trim(),
         anotacoes: anotacoes.trim(),
         dente_regiao: denteRegiao.trim(),
+        retorno_dias: retornoDias ? Number(retornoDias) : undefined,
+        retorno_data: retornoCalculado || undefined,
       })
 
       toast({ title: 'Anotação clínica registrada com sucesso no prontuário!' })
@@ -153,6 +166,7 @@ export const ProntuarioPage: React.FC = () => {
       setProcedimentos('')
       setAnotacoes('')
       setDenteRegiao('')
+      setRetornoDias('')
       loadData()
     } catch (err: any) {
       toast({
@@ -704,6 +718,27 @@ export const ProntuarioPage: React.FC = () => {
                   placeholder="Ex.: 16, 21 ou Arcada Superior"
                   className="mt-1 text-xs sm:text-sm"
                 />
+              </div>
+
+              <div>
+                <Label htmlFor="retorno" className="text-xs">
+                  Retorno em (dias)
+                </Label>
+                <Input
+                  id="retorno"
+                  type="number"
+                  min={0}
+                  max={3650}
+                  value={retornoDias}
+                  onChange={(e) => setRetornoDias(e.target.value)}
+                  placeholder="Ex.: 7, 30, 180"
+                  className="mt-1 text-xs sm:text-sm"
+                />
+                {retornoCalculado && (
+                  <p className="text-[10px] text-marca-vermelho font-medium mt-1">
+                    Retorno previsto: {formatDateBr(retornoCalculado)}
+                  </p>
+                )}
               </div>
 
               <div className="sm:col-span-2">
