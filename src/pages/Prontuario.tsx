@@ -50,8 +50,12 @@ import { PacienteAvatar } from '@/components/PacienteAvatar'
 import { aniversarioDePaciente, textoAniversario } from '@/lib/aniversario'
 import { AnamneseTab } from '@/components/anamnese/AnamneseTab'
 import { ReceitasTab } from '@/components/receitas/ReceitasTab'
-import { Receita } from '@/types'
-import { receitasService } from '@/services/clinica'
+import { OdontogramaTab } from '@/components/odontograma/OdontogramaTab'
+import { OdontogramaMapa } from '@/components/odontograma/OdontogramaMapa'
+import { DocumentosTab } from '@/components/documentos/DocumentosTab'
+import { CondicaoDente, FaceDente } from '@/lib/odontograma'
+import { Receita, OdontogramaRegistro, DocumentoEmitido } from '@/types'
+import { receitasService, odontogramaService, documentosEmitidosService } from '@/services/clinica'
 
 export const ProntuarioPage: React.FC = () => {
   const { id } = useParams<{ id: string }>()
@@ -65,6 +69,8 @@ export const ProntuarioPage: React.FC = () => {
   const [orcamentos, setOrcamentos] = useState<Orcamento[]>([])
   const [anamneses, setAnamneses] = useState<Anamnese[]>([])
   const [receitas, setReceitas] = useState<Receita[]>([])
+  const [odontograma, setOdontograma] = useState<OdontogramaRegistro[]>([])
+  const [documentos, setDocumentos] = useState<DocumentoEmitido[]>([])
   const [loading, setLoading] = useState<boolean>(true)
 
   // New Prontuário Dialog (Admin only)
@@ -79,20 +85,25 @@ export const ProntuarioPage: React.FC = () => {
     if (!id) return
     setLoading(true)
     try {
-      const [pac, prontList, consList, orcList, anmList, recList] = await Promise.all([
-        pacientesService.getById(id),
-        prontuariosService.getByPaciente(id),
-        consultasService.getByPaciente(id),
-        orcamentosService.getByPaciente(id),
-        anamnesesService.getByPaciente(id),
-        receitasService.getByPaciente(id),
-      ])
+      const [pac, prontList, consList, orcList, anmList, recList, odoList, docList] =
+        await Promise.all([
+          pacientesService.getById(id),
+          prontuariosService.getByPaciente(id),
+          consultasService.getByPaciente(id),
+          orcamentosService.getByPaciente(id),
+          anamnesesService.getByPaciente(id),
+          receitasService.getByPaciente(id),
+          odontogramaService.getByPaciente(id),
+          documentosEmitidosService.getByPaciente(id),
+        ])
       setPaciente(pac)
       setProntuarios(prontList)
       setConsultas(consList)
       setOrcamentos(orcList)
       setAnamneses(anmList)
       setReceitas(recList)
+      setOdontograma(odoList)
+      setDocumentos(docList)
     } catch (err: any) {
       toast({
         title: 'Erro ao carregar prontuário',
@@ -359,8 +370,11 @@ export const ProntuarioPage: React.FC = () => {
       {/* Tabs: Prontuário Clínico vs Histórico de Consultas vs Planejamentos */}
       <Tabs defaultValue="prontuario" className="w-full">
         <TabsList className="bg-white border border-slate-200 p-1 flex w-full flex-wrap h-auto justify-start gap-y-1">
+          <TabsTrigger value="odontograma" className="text-xs sm:text-sm">
+            Odontograma
+          </TabsTrigger>
           <TabsTrigger value="prontuario" className="text-xs sm:text-sm">
-            Evolução Clínica & Procedimentos ({prontuarios.length})
+            Evolução Clínica ({prontuarios.length})
           </TabsTrigger>
           <TabsTrigger value="consultas" className="text-xs sm:text-sm">
             Histórico de Consultas ({consultas.length})
@@ -374,7 +388,55 @@ export const ProntuarioPage: React.FC = () => {
           <TabsTrigger value="receitas" className="text-xs sm:text-sm">
             Receitas ({receitas.length})
           </TabsTrigger>
+          <TabsTrigger value="documentos" className="text-xs sm:text-sm">
+            Documentos ({documentos.length})
+          </TabsTrigger>
         </TabsList>
+
+        {/* Tab 0: Odontograma */}
+        <TabsContent value="odontograma" className="space-y-4 pt-2">
+          <OdontogramaTab
+            registros={odontograma}
+            isAdmin={isAdmin}
+            pacienteNome={paciente.nome}
+            onAviso={(title, message) =>
+              toast({ title, description: message, variant: 'destructive' })
+            }
+            onSalvar={async ({ dente, condicao, faces, observacao }) => {
+              try {
+                await odontogramaService.salvar({
+                  paciente: id!,
+                  dente,
+                  condicao: condicao as CondicaoDente,
+                  faces: faces as FaceDente[],
+                  observacao,
+                  registrado_por: user?.id,
+                })
+                toast({ title: `Dente ${dente} atualizado no odontograma.` })
+                loadData()
+              } catch (err: any) {
+                toast({
+                  title: 'Erro ao salvar odontograma',
+                  description: err.message,
+                  variant: 'destructive',
+                })
+              }
+            }}
+            onRemover={async (registroId, dente) => {
+              try {
+                await odontogramaService.remover(registroId, dente)
+                toast({ title: `Registro do dente ${dente} removido.` })
+                loadData()
+              } catch (err: any) {
+                toast({
+                  title: 'Erro ao remover registro',
+                  description: err.message,
+                  variant: 'destructive',
+                })
+              }
+            }}
+          />
+        </TabsContent>
 
         {/* Tab 1: Prontuário Clínico */}
         <TabsContent value="prontuario" className="space-y-4 pt-2">
@@ -582,6 +644,20 @@ export const ProntuarioPage: React.FC = () => {
         <TabsContent value="receitas" className="pt-2">
           <ReceitasTab
             receitas={receitas}
+            isAdmin={isAdmin}
+            pacienteId={paciente.id}
+            pacienteNome={paciente.nome}
+            pacienteTelefone={paciente.telefone}
+            autorId={user?.id}
+            onSaved={() => loadData()}
+            onError={(title, description) => toast({ title, description, variant: 'destructive' })}
+          />
+        </TabsContent>
+
+        {/* Tab: Documentos emitidos para o paciente */}
+        <TabsContent value="documentos" className="pt-2">
+          <DocumentosTab
+            documentos={documentos}
             isAdmin={isAdmin}
             pacienteId={paciente.id}
             pacienteNome={paciente.nome}

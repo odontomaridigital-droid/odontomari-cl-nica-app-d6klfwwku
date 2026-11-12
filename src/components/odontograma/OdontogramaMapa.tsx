@@ -80,9 +80,7 @@ export const OdontogramaMapa: React.FC<OdontogramaMapaProps> = ({
       <div className="flex items-start justify-center gap-1 sm:gap-2">
         {QUADRANTES_SUPERIOR.map((q, idx) => (
           <React.Fragment key={q.id}>
-            <div className="flex gap-0.5 sm:gap-1">
-              {(idx === 0 ? q.dentes : q.dentes).map(renderDente)}
-            </div>
+            <div className="flex gap-0.5 sm:gap-1">{q.dentes.map(renderDente)}</div>
             {idx === 0 && <div className="w-px self-stretch bg-slate-200 mx-1" />}
           </React.Fragment>
         ))}
@@ -110,7 +108,6 @@ export const OdontogramaMapa: React.FC<OdontogramaMapaProps> = ({
       {/* Legenda */}
       <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1.5 pt-2">
         {Object.values(CONDICAO_POR_ID)
-          .filter((c) => (mapa.size === 0 ? c.id !== 'higido' : true))
           .filter((c) => c.id !== 'higido')
           .map((c) => (
             <span key={c.id} className="flex items-center gap-1 text-[10px] text-slate-500">
