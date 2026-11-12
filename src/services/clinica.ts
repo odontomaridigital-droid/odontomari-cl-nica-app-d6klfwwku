@@ -286,12 +286,17 @@ export const prontuariosService = {
     procedimentos: string
     anotacoes?: string
     dente_regiao?: string
+    retorno_dias?: number
+    retorno_data?: string
   }): Promise<Prontuario> {
     const isoDate = data.data.includes('T') ? data.data : `${data.data} 00:00:00.000Z`
     const created = await pb.collection('prontuarios').create<Prontuario>(
       {
         ...data,
         data: isoDate,
+        ...(data.retorno_data && !data.retorno_data.includes('T')
+          ? { retorno_data: `${data.retorno_data} 00:00:00.000Z` }
+          : {}),
       },
       {
         expand: 'consulta',
