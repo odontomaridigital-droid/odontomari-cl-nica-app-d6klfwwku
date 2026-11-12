@@ -15,6 +15,8 @@ import {
   DocumentoModelo,
   DocumentoEmitido,
   AnamneseModelo,
+  Campanha,
+  Conteudo,
 } from '@/types'
 import type { RespostasAnamnese } from '@/lib/anamneseModelo'
 import type { CondicaoDente, FaceDente } from '@/lib/odontograma'
@@ -484,6 +486,106 @@ export const anamnesesService = {
   async delete(id: string): Promise<boolean> {
     const ok = await pb.collection('anamneses').delete(id)
     registrarLog('excluiu', 'anamnese', `Excluiu anamnese (id ${id})`, id)
+    return ok
+  },
+}
+
+// =================== MARKETING: CAMPANHAS ===================
+export const campanhasService = {
+  async getAll(): Promise<Campanha[]> {
+    return await pb.collection('campanhas').getFullList<Campanha>({
+      sort: '-created',
+    })
+  },
+
+  async create(data: {
+    nome: string
+    canal: string
+    status?: string
+    inicio?: string
+    fim?: string
+    investimento?: number
+    objetivo?: string
+    publico?: string
+    observacoes?: string
+    utm?: string
+    responsavel?: string
+  }): Promise<Campanha> {
+    const criada = await pb.collection('campanhas').create<Campanha>({
+      ...data,
+      status: data.status || 'planejada',
+    })
+    registrarLog('criou', 'configuracoes', `Criou campanha: ${criada.nome}`, criada.id)
+    return criada
+  },
+
+  async update(id: string, data: Partial<Campanha>): Promise<Campanha> {
+    const atualizada = await pb.collection('campanhas').update<Campanha>(id, data)
+    registrarLog('editou', 'configuracoes', `Editou campanha: ${atualizada.nome}`, atualizada.id)
+    return atualizada
+  },
+
+  async delete(id: string): Promise<boolean> {
+    const ok = await pb.collection('campanhas').delete(id)
+    registrarLog('excluiu', 'configuracoes', `Excluiu campanha (id ${id})`, id)
+    return ok
+  },
+}
+
+// =================== MARKETING: CONTEÚDOS ===================
+export const conteudosService = {
+  async getAll(): Promise<Conteudo[]> {
+    return await pb.collection('conteudos').getFullList<Conteudo>({
+      expand: 'campanha',
+      sort: '-created',
+    })
+  },
+
+  async create(data: {
+    titulo: string
+    formato: string
+    canal: string
+    status?: string
+    tema?: string
+    publico_alvo?: string
+    data_publicacao?: string
+    link?: string
+    observacoes?: string
+    campanha?: string
+    responsavel?: string
+  }): Promise<Conteudo> {
+    const criado = await pb.collection('conteudos').create<Conteudo>(
+      {
+        ...data,
+        status: data.status || 'ideia',
+        ...(data.data_publicacao && !data.data_publicacao.includes('T')
+          ? { data_publicacao: `${data.data_publicacao} 00:00:00.000Z` }
+          : {}),
+      },
+      { expand: 'campanha' },
+    )
+    registrarLog('criou', 'configuracoes', `Criou conteúdo: ${criado.titulo}`, criado.id)
+    return criado
+  },
+
+  async update(id: string, data: Partial<Conteudo>): Promise<Conteudo> {
+    const atualizado = await pb.collection('conteudos').update<Conteudo>(
+      id,
+      {
+        ...data,
+        ...(data.data_publicacao && !data.data_publicacao.includes('T')
+          ? { data_publicacao: `${data.data_publicacao} 00:00:00.000Z` }
+          : {}),
+      },
+      { expand: 'campanha' },
+    )
+    registrarLog('editou', 'configuracoes', `Editou conteúdo: ${atualizado.titulo}`, atualizado.id)
+    return atualizado
+  },
+
+  async delete(id: string): Promise<boolean> {
+    const ok = await pb.collection('conteudos').delete(id)
+    registrarLog('excluiu', 'configuracoes', `Excluiu conteúdo (id ${id})`, id)
     return ok
   },
 }

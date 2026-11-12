@@ -123,6 +123,45 @@ export interface OdontogramaRegistro {
   }
 }
 
+/** Campanha de marketing da clínica */
+export interface Campanha {
+  id: string
+  nome: string
+  canal: string
+  status: string
+  inicio?: string
+  fim?: string
+  investimento?: number
+  objetivo?: string
+  publico?: string
+  observacoes?: string
+  utm?: string
+  responsavel?: string
+  created?: string
+  updated?: string
+}
+
+/** Item da pauta de conteúdo combinada com o produtor */
+export interface Conteudo {
+  id: string
+  titulo: string
+  formato: string
+  canal: string
+  status: string
+  tema?: string
+  publico_alvo?: string
+  data_publicacao?: string
+  link?: string
+  observacoes?: string
+  campanha?: string
+  responsavel?: string
+  created?: string
+  updated?: string
+  expand?: {
+    campanha?: Campanha
+  }
+}
+
 /** Modelo de anamnese editável pela dentista */
 export interface AnamneseModelo {
   id: string

@@ -12,6 +12,7 @@ import { ProntuarioPage } from './pages/Prontuario'
 import { OrcamentosPage } from './pages/Orcamentos'
 import { LembretesPage } from './pages/Lembretes'
 import { OportunidadesPage } from './pages/Oportunidades'
+import { MarketingPage } from './pages/Marketing'
 import { ConfiguracoesPage } from './pages/Configuracoes'
 import { LogsPage } from './pages/Logs'
 import NotFound from './pages/NotFound'
@@ -32,6 +33,7 @@ const App = () => (
             <Route path="/orcamentos" element={<OrcamentosPage />} />
             <Route path="/lembretes" element={<LembretesPage />} />
             <Route path="/oportunidades" element={<OportunidadesPage />} />
+            <Route path="/marketing" element={<MarketingPage />} />
             <Route path="/configuracoes" element={<ConfiguracoesPage />} />
             <Route path="/logs" element={<LogsPage />} />
           </Route>

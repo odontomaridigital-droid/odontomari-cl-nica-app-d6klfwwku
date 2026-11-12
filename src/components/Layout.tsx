@@ -17,6 +17,7 @@ import {
   Clock,
   Target,
   ScrollText,
+  TrendingUp,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -79,6 +80,12 @@ export default function Layout() {
       title: 'Oportunidades',
       href: '/oportunidades',
       icon: Target,
+      role: 'all',
+    },
+    {
+      title: 'Marketing & Vendas',
+      href: '/marketing',
+      icon: TrendingUp,
       role: 'all',
     },
     {
