@@ -13,7 +13,7 @@ import { AgendaGrade, AgendaDiaInfo, StatusConsultaBadge } from '@/components/ag
 import { aniversarioDePaciente, textoAniversario } from '@/lib/aniversario'
 import { PacienteAvatar } from '@/components/PacienteAvatar'
 import { useAuth } from '@/contexts/AuthContext'
-import { Cake, ClipboardList } from 'lucide-react'
+import { Cake, ClipboardList, UserCheck } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
@@ -176,6 +176,7 @@ export const AgendaPage: React.FC = () => {
   }
 
   const [posRealizada, setPosRealizada] = useState<{ navigateTo: string } | null>(null)
+  const [statusLoading, setStatusLoading] = useState<boolean>(false)
 
   const handleUpdateStatus = async (newStatus: Consulta['status']) => {
     if (!selectedConsulta) return
@@ -195,6 +196,44 @@ export const AgendaPage: React.FC = () => {
         description: err.message,
         variant: 'destructive',
       })
+    }
+  }
+
+  /**
+   * Um clique só: o paciente chegou. Marca a consulta como realizada e já
+   * abre o prontuário para o dentista registrar odontograma, evolução e receita.
+   * Sem tela intermediária — o atendimento começa imediatamente.
+   */
+  const handleClienteVeio = async (consulta: Consulta | null) => {
+    if (!consulta) return
+    const pacienteId = consulta.expand?.paciente?.id
+    if (!pacienteId) {
+      toast({
+        title: 'Paciente não identificado',
+        description: 'Não foi possível abrir o prontuário desta consulta.',
+        variant: 'destructive',
+      })
+      return
+    }
+
+    setStatusLoading(true)
+    try {
+      await consultasService.updateStatus(consulta.id, 'realizada')
+      setStatusDialogOpen(false)
+      setSelectedConsulta(null)
+      toast({
+        title: 'Atendimento iniciado',
+        description: 'Consulta marcada como realizada. Registre no prontuário.',
+      })
+      navigate(`/pacientes/${pacienteId}/prontuario`)
+    } catch (err: any) {
+      toast({
+        title: 'Erro ao confirmar presença',
+        description: err?.message || 'Tente novamente.',
+        variant: 'destructive',
+      })
+    } finally {
+      setStatusLoading(false)
     }
   }
 
@@ -497,6 +536,22 @@ export const AgendaPage: React.FC = () => {
               )}
             </div>
           )}
+
+          {/* Ação principal: o paciente chegou. Marca como realizada e já abre
+              o prontuário para registrar odontograma, evolução e receita. */}
+          <Button
+            className="w-full justify-start bg-marca-vermelho hover:bg-marca-vermelho-escuro text-white h-11"
+            disabled={statusLoading}
+            onClick={() => handleClienteVeio(selectedConsulta)}
+          >
+            <UserCheck className="w-4 h-4 mr-2" />
+            <span className="text-left leading-tight">
+              Cliente veio — abrir prontuário
+              <span className="block text-[10px] font-normal opacity-80">
+                Marca como realizada e vai direto para o atendimento
+              </span>
+            </span>
+          </Button>
 
           <p className="text-xs font-medium text-slate-600">Alterar status</p>
           <div className="grid grid-cols-1 gap-2">
