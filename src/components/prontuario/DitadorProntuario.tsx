@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Mic, MicOff, Loader2, Sparkles, Square } from 'lucide-react'
-import { cn } from '@/lib/utils'
+import pb from '@/lib/pocketbase/client'
 
 /** Resultado da estruturação feita pela IA no backend */
 export interface DitadoEstruturado {
@@ -12,22 +12,22 @@ export interface DitadoEstruturado {
 }
 
 interface DitadorProntuarioProps {
-  /** Chamado quando a IA terminou de estruturar o texto */
   onEstruturado: (dados: DitadoEstruturado) => void
-  /** Chamado quando só existe o texto cru (IA indisponível) */
   onTextoCru?: (texto: string) => void
   onErro: (titulo: string, mensagem: string) => void
-  /** Texto já ditado, mantido pelo formulário para não perder ao reabrir */
   texto?: string
   onTextoChange?: (texto: string) => void
 }
 
 /**
- * Botão de ditado do prontuário.
+ * Ditado do atendimento no prontuário.
  *
  * A transcrição usa a Web Speech API do próprio navegador (gratuita, sem chave):
- * funciona no Chrome, Edge e Safari. O texto transcrito é enviado ao backend, que
- * organiza nos campos do prontuário com IA.
+ * funciona no Chrome, Edge e Safari. O texto é enviado ao backend, que organiza
+ * nos campos do prontuário com IA.
+ *
+ * Sem suporte a voz, a caixa de texto continua disponível: o dentista escreve
+ * em linguagem livre e a IA separa nos campos.
  */
 export const DitadorProntuario: React.FC<DitadorProntuarioProps> = ({
   onEstruturado,
@@ -36,23 +36,24 @@ export const DitadorProntuario: React.FC<DitadorProntuarioProps> = ({
   texto = '',
   onTextoChange,
 }) => {
-  const [ouvindo, setOuvindo] = useState<boolean>(false)
-  const [transcrito, setTranscrito] = useState<string>(texto)
-  const [estruturando, setEstruturando] = useState<boolean>(false)
-  const [suportado, setSuportado] = useState<boolean>(true)
-  const [interim, setInterim] = useState<string>('')
+  const [ouvindo, setOuvindo] = useState(false)
+  const [transcrito, setTranscrito] = useState(texto)
+  const [organizando, setOrganizando] = useState(false)
+  const [temVoz, setTemVoz] = useState(false)
+  const [interim, setInterim] = useState('')
 
-  const reconhecimentoRef = useRef<any>(null)
-  const textoFinalRef = useRef<string>(texto)
+  const recRef = useRef<any>(null)
+  const textoRef = useRef(texto)
 
-  // Detecta suporte do navegador e prepara o reconhecedor
+  // ---------- prepara o reconhecimento de voz, quando existir ----------
   useEffect(() => {
     const W = window as any
     const Reconhecimento = W.SpeechRecognition || W.webkitSpeechRecognition
     if (!Reconhecimento) {
-      setSuportado(false)
+      setTemVoz(false)
       return
     }
+    setTemVoz(true)
 
     const rec = new Reconhecimento()
     rec.lang = 'pt-BR'
@@ -63,18 +64,16 @@ export const DitadorProntuario: React.FC<DitadorProntuarioProps> = ({
     rec.onresult = (evento: any) => {
       let parcial = ''
       for (let i = evento.resultIndex; i < evento.results.length; i++) {
-        const resultado = evento.results[i]
-        if (resultado.isFinal) {
-          const trecho = resultado[0]?.transcript?.trim()
+        const r = evento.results[i]
+        if (r.isFinal) {
+          const trecho = (r[0]?.transcript || '').trim()
           if (trecho) {
-            textoFinalRef.current = textoFinalRef.current
-              ? `${textoFinalRef.current} ${trecho}`
-              : trecho
-            setTranscrito(textoFinalRef.current)
-            onTextoChange?.(textoFinalRef.current)
+            textoRef.current = textoRef.current ? textoRef.current + ' ' + trecho : trecho
+            setTranscrito(textoRef.current)
+            onTextoChange?.(textoRef.current)
           }
         } else {
-          parcial += resultado[0]?.transcript || ''
+          parcial += r[0]?.transcript || ''
         }
       }
       setInterim(parcial)
@@ -83,12 +82,7 @@ export const DitadorProntuario: React.FC<DitadorProntuarioProps> = ({
     rec.onerror = (evento: any) => {
       const codigo = evento?.error || ''
       if (codigo === 'not-allowed' || codigo === 'service-not-allowed') {
-        onErro(
-          'Microfone bloqueado',
-          'Permita o acesso ao microfone no navegador para usar o ditado.',
-        )
-      } else if (codigo === 'no-speech') {
-        // silencioso: nada foi dito nesta janela
+        onErro('Microfone bloqueado', 'Permita o acesso ao microfone para usar o ditado.')
       } else if (codigo === 'network') {
         onErro('Sem conexão', 'O reconhecimento de voz precisa de internet.')
       }
@@ -100,72 +94,61 @@ export const DitadorProntuario: React.FC<DitadorProntuarioProps> = ({
       setInterim('')
     }
 
-    reconhecimentoRef.current = rec
-
+    recRef.current = rec
     return () => {
       try {
         rec.stop()
       } catch {
-        // ignora
+        /* ignora */
       }
     }
   }, [])
 
-  // Mantém o texto sincronizado quando o formulário limpa o campo
-  useEffect(() => {
-    if (!ouvindo && texto !== transcrito) {
-      setTranscrito(texto)
-      textoFinalRef.current = texto
-    }
-  }, [texto, ouvindo])
-
   const iniciar = () => {
-    const rec = reconhecimentoRef.current
-    if (!rec) return
+    if (!recRef.current) return
     try {
-      textoFinalRef.current = transcrito
-      rec.start()
+      textoRef.current = transcrito
+      recRef.current.start()
       setOuvindo(true)
     } catch {
-      // start() falha se já estiver rodando; ignora
+      /* já está rodando */
     }
   }
 
   const parar = () => {
-    const rec = reconhecimentoRef.current
-    if (!rec) return
+    if (!recRef.current) return
     try {
-      rec.stop()
+      recRef.current.stop()
     } catch {
-      // ignora
+      /* ignora */
     }
     setOuvindo(false)
     setInterim('')
   }
 
   const limpar = () => {
-    textoFinalRef.current = ''
+    textoRef.current = ''
     setTranscrito('')
     setInterim('')
     onTextoChange?.('')
   }
 
-  const estruturar = async () => {
-    const textoParaEnviar = transcrito.trim()
-    if (!textoParaEnviar) {
-      onErro('Nada para organizar', 'Fale algo antes de pedir a organização.')
+  // ---------- organiza com IA ----------
+  const organizar = async () => {
+    const conteudo = transcrito.trim()
+    if (!conteudo) {
+      onErro('Nada para organizar', 'Escreva ou fale o atendimento antes de organizar.')
       return
     }
 
-    setEstrutuando(true)
+    setOrganizando(true)
     try {
-      const { default: pb } = await import('@/lib/pocketbase/client')
-      const resposta = await pb.send('/backend/v1/prontuario/estruturar', {
+      const resposta: any = await pb.send('/backend/v1/prontuario/estruturar', {
         method: 'POST',
-        body: { texto: textoParaEnviar },
+        body: { texto: conteudo },
       })
 
-      if (resposta?.ok && resposta.estruturado) {
+      if (resposta?.ok && resposta?.estruturado) {
         onEstruturado({
           procedimentos: resposta.procedimentos || '',
           dente_regiao: resposta.dente_regiao || '',
@@ -173,26 +156,58 @@ export const DitadorProntuario: React.FC<DitadorProntuarioProps> = ({
           retorno_dias: resposta.retorno_dias ?? null,
         })
       } else {
-        // IA devolveu texto livre: entrega como anotação para revisão
-        onTextoCru?.(resposta?.anotacoes || textoParaEnviar)
+        onTextoCru?.(resposta?.anotacoes || conteudo)
       }
       limpar()
     } catch (err: any) {
       onErro(
         'Não foi possível organizar',
-        err?.message ||
-          'A IA não respondeu. O texto ditado continua aqui — você pode copiar para o campo.',
+        err?.message || 'A IA não respondeu. O texto continua aqui para você revisar.',
       )
     } finally {
-      setEstrutuando(false)
+      setOrganizando(false)
     }
   }
 
-  // Sem suporte a voz: mantém a caixa de texto e a IA, que continua útil
-  // (o dentista digita em linguagem livre e a IA separa nos campos).
-  if (!suportado) {
+  const botaoOrganizar = (
+    <Button
+      type="button"
+      size="sm"
+      onClick={organizar}
+      disabled={organizando || !transcrito.trim()}
+      className="h-8 text-[11px] bg-emerald-600 hover:bg-emerald-700 text-white"
+    >
+      {organizando ? (
+        <>
+          <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" />
+          Organizando...
+        </>
+      ) : (
+        <>
+          <Sparkles className="w-3.5 h-3.5 mr-1" />
+          Organizar com IA
+        </>
+      )}
+    </Button>
+  )
+
+  const botaoLimpar = transcrito ? (
+    <Button
+      type="button"
+      size="sm"
+      variant="ghost"
+      onClick={limpar}
+      disabled={organizando}
+      className="h-8 text-[11px] text-slate-500"
+    >
+      Limpar
+    </Button>
+  ) : null
+
+  // ---------- sem voz: caixa de texto + IA ----------
+  if (!temVoz) {
     return (
-      <div className="rounded-lg border border-slate-200 bg-slate-50/70 p-3 space-y-2.5">
+      <div className="rounded-lg border border-slate-200 bg-slate-50/70 p-3 space-y-2">
         <p className="text-[11px] font-semibold text-slate-700 flex items-center gap-1.5">
           <Sparkles className="w-3.5 h-3.5 text-marca-vermelho" />
           Descrever o atendimento e organizar com IA
@@ -206,7 +221,7 @@ export const DitadorProntuario: React.FC<DitadorProntuarioProps> = ({
           value={transcrito}
           onChange={(e) => {
             setTranscrito(e.target.value)
-            textoFinalRef.current = e.target.value
+            textoRef.current = e.target.value
             onTextoChange?.(e.target.value)
           }}
           rows={3}
@@ -214,42 +229,14 @@ export const DitadorProntuario: React.FC<DitadorProntuarioProps> = ({
           className="w-full rounded-md border border-slate-300 bg-white p-2 text-[11px] leading-relaxed text-slate-700 outline-none focus:border-marca-vermelho"
         />
         <div className="flex items-center gap-1.5">
-          <Button
-            type="button"
-            size="sm"
-            onClick={estruturar}
-            disabled={estruturando || !transcrito.trim()}
-            className="h-8 text-[11px] bg-emerald-600 hover:bg-emerald-700 text-white"
-          >
-            {estruturando ? (
-              <>
-                <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" />
-                Organizando...
-              </>
-            ) : (
-              <>
-                <Sparkles className="w-3.5 h-3.5 mr-1" />
-                Organizar com IA
-              </>
-            )}
-          </Button>
-          {transcrito && (
-            <Button
-              type="button"
-              size="sm"
-              variant="ghost"
-              onClick={limpar}
-              disabled={estruturando}
-              className="h-8 text-[11px] text-slate-500"
-            >
-              Limpar
-            </Button>
-          )}
+          {botaoOrganizar}
+          {botaoLimpar}
         </div>
       </div>
     )
   }
 
+  // ---------- com voz ----------
   return (
     <div className="rounded-lg border border-slate-200 bg-slate-50/70 p-3 space-y-2.5">
       <div className="flex items-center justify-between gap-2 flex-wrap">
@@ -258,18 +245,7 @@ export const DitadorProntuario: React.FC<DitadorProntuarioProps> = ({
           Ditar o atendimento
         </p>
         <div className="flex items-center gap-1.5">
-          {!ouvindo ? (
-            <Button
-              type="button"
-              size="sm"
-              onClick={iniciar}
-              disabled={estruturando}
-              className="h-8 text-[11px] bg-marca-vermelho hover:bg-marca-vermelho-escuro text-white"
-            >
-              <Mic className="w-3.5 h-3.5 mr-1" />
-              {transcrito ? 'Continuar ditando' : 'Falar'}
-            </Button>
-          ) : (
+          {ouvindo ? (
             <Button
               type="button"
               size="sm"
@@ -280,38 +256,22 @@ export const DitadorProntuario: React.FC<DitadorProntuarioProps> = ({
               <Square className="w-3 h-3 mr-1" />
               Parar
             </Button>
+          ) : (
+            <Button
+              type="button"
+              size="sm"
+              onClick={iniciar}
+              disabled={organizando}
+              className="h-8 text-[11px] bg-marca-vermelho hover:bg-marca-vermelho-escuro text-white"
+            >
+              <Mic className="w-3.5 h-3.5 mr-1" />
+              {transcrito ? 'Continuar ditando' : 'Falar'}
+            </Button>
           )}
-          {transcrito && !ouvindo && (
+          {!ouvindo && transcrito && (
             <>
-              <Button
-                type="button"
-                size="sm"
-                onClick={estruturar}
-                disabled={estruturando}
-                className="h-8 text-[11px] bg-emerald-600 hover:bg-emerald-700 text-white"
-              >
-                {estruturando ? (
-                  <>
-                    <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" />
-                    Organizando...
-                  </>
-                ) : (
-                  <>
-                    <Sparkles className="w-3.5 h-3.5 mr-1" />
-                    Organizar com IA
-                  </>
-                )}
-              </Button>
-              <Button
-                type="button"
-                size="sm"
-                variant="ghost"
-                onClick={limpar}
-                disabled={estruturando}
-                className="h-8 text-[11px] text-slate-500"
-              >
-                Limpar
-              </Button>
+              {botaoOrganizar}
+              {botaoLimpar}
             </>
           )}
         </div>
@@ -328,12 +288,7 @@ export const DitadorProntuario: React.FC<DitadorProntuarioProps> = ({
       )}
 
       {(transcrito || interim) && (
-        <div
-          className={cn(
-            'rounded-md border border-slate-200 bg-white p-2 text-[11px] leading-relaxed',
-            'text-slate-700 max-h-28 overflow-y-auto whitespace-pre-wrap',
-          )}
-        >
+        <div className="rounded-md border border-slate-200 bg-white p-2 text-[11px] leading-relaxed text-slate-700 max-h-28 overflow-y-auto whitespace-pre-wrap">
           {transcrito}
           {interim && <span className="text-slate-400"> {interim}</span>}
         </div>
