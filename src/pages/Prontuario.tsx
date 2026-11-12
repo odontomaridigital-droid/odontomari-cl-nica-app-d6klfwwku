@@ -51,6 +51,7 @@ import { aniversarioDePaciente, textoAniversario } from '@/lib/aniversario'
 import { AnamneseTab } from '@/components/anamnese/AnamneseTab'
 import { ReceitasTab } from '@/components/receitas/ReceitasTab'
 import { OdontogramaTab } from '@/components/odontograma/OdontogramaTab'
+import { DitadorProntuario } from '@/components/prontuario/DitadorProntuario'
 import { OdontogramaMapa } from '@/components/odontograma/OdontogramaMapa'
 import { DocumentosTab } from '@/components/documentos/DocumentosTab'
 import { CondicaoDente, FaceDente } from '@/lib/odontograma'
@@ -80,6 +81,7 @@ export const ProntuarioPage: React.FC = () => {
   const [anotacoes, setAnotacoes] = useState<string>('')
   const [denteRegiao, setDenteRegiao] = useState<string>('')
   const [retornoDias, setRetornoDias] = useState<string>('')
+  const [textoDitado, setTextoDitado] = useState<string>('')
   const [saving, setSaving] = useState<boolean>(false)
 
   /** Data de retorno calculada a partir da data do atendimento + dias informados */
@@ -167,6 +169,7 @@ export const ProntuarioPage: React.FC = () => {
       setAnotacoes('')
       setDenteRegiao('')
       setRetornoDias('')
+      setTextoDitado('')
       loadData()
     } catch (err: any) {
       toast({
@@ -692,6 +695,32 @@ export const ProntuarioPage: React.FC = () => {
           </DialogHeader>
 
           <form onSubmit={handleAddProntuario} className="space-y-4 py-2">
+            <DitadorProntuario
+              texto={textoDitado}
+              onTextoChange={setTextoDitado}
+              onErro={(title, description) => toast({ title, description, variant: 'destructive' })}
+              onEstruturado={(dados) => {
+                setProcedimentos(dados.procedimentos || procedimentos)
+                setAnotacoes(dados.anotacoes || anotacoes)
+                setDenteRegiao(dados.dente_regiao || denteRegiao)
+                if (dados.retorno_dias) setRetornoDias(String(dados.retorno_dias))
+                setTextoDitado('')
+                toast({
+                  title: 'Ditado organizado!',
+                  description: 'Confira os campos antes de gravar no prontuário.',
+                })
+              }}
+              onTextoCru={(texto) => {
+                setAnotacoes(texto)
+                setTextoDitado('')
+                toast({
+                  title: 'Texto transcrito',
+                  description:
+                    'A IA não conseguiu separar os campos, mas o texto está nas anotações.',
+                })
+              }}
+            />
+
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <Label htmlFor="data_reg" className="text-xs">
