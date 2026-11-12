@@ -265,6 +265,12 @@ export const consultasService = {
 
 // =================== PRONTUÁRIOS ===================
 export const prontuariosService = {
+  async getAll(): Promise<Prontuario[]> {
+    return await pb.collection('prontuarios').getFullList<Prontuario>({
+      sort: '-data',
+    })
+  },
+
   async getByPaciente(pacienteId: string): Promise<Prontuario[]> {
     return await pb.collection('prontuarios').getFullList<Prontuario>({
       filter: `paciente = "${pacienteId}"`,

@@ -1,4 +1,4 @@
-import { Paciente, Consulta, Orcamento } from '@/types'
+import { Paciente, Consulta, Orcamento, Prontuario } from '@/types'
 import { formatDateBr } from '@/lib/formatters'
 
 // =================== OPORTUNIDADES ===================
@@ -7,6 +7,7 @@ import { formatDateBr } from '@/lib/formatters'
 
 export type TipoOportunidade =
   | 'planejamento_aberto'
+  | 'retorno_vencido'
   | 'faltou'
   | 'cancelou'
   | 'sem_voltar_6m'
@@ -65,6 +66,8 @@ export function tituloLista(tipo: TipoOportunidade): string {
   switch (tipo) {
     case 'planejamento_aberto':
       return 'Planejamentos em aberto'
+    case 'retorno_vencido':
+      return 'Retornos vencidos'
     case 'faltou':
       return 'Faltaram e não retornaram'
     case 'cancelou':
@@ -80,6 +83,8 @@ export function descricaoLista(tipo: TipoOportunidade): string {
   switch (tipo) {
     case 'planejamento_aberto':
       return 'Planejamentos de Tratamento aguardando decisão do paciente'
+    case 'retorno_vencido':
+      return 'Pacientes que já passaram da data de retorno indicada pelo dentista'
     case 'faltou':
       return 'Última consulta com falta e nenhuma consulta depois dela'
     case 'cancelou':
@@ -97,6 +102,8 @@ export function mensagemWhatsApp(tipo: TipoOportunidade, nomePaciente: string): 
   switch (tipo) {
     case 'planejamento_aberto':
       return `Olá ${primeiroNome}! Passando para lembrar que o seu Planejamento de Tratamento da Clínica Odontomari está esperando por você. 😊 Queremos cuidar do seu sorriso — posso ajudar a agendar o início do tratamento?`
+    case 'retorno_vencido':
+      return `Olá ${primeiroNome}! O seu retorno na Clínica Odontomari já está no período indicado pela dentista. 🦷 É importante avaliarmos a evolução do seu tratamento. Posso verificar um horário para você?`
     case 'faltou':
       return `Olá ${primeiroNome}! Sentimos sua falta na Clínica Odontomari. 💙 Queremos remarcar sua consulta em um horário que fique melhor para você. Posso te ajudar a escolher um novo dia e horário?`
     case 'cancelou':
@@ -141,6 +148,7 @@ export function calcularOportunidades(
   pacientes: Paciente[],
   consultas: Consulta[],
   orcamentos: Orcamento[],
+  prontuarios: Prontuario[] = [],
 ): Record<TipoOportunidade, Oportunidade[]> {
   // -------- Consultas por paciente, ordenadas da mais antiga para a mais recente
   const consultasPorPaciente = new Map<string, Consulta[]>()
@@ -160,6 +168,7 @@ export function calcularOportunidades(
 
   const resultado: Record<TipoOportunidade, Oportunidade[]> = {
     planejamento_aberto: [],
+    retorno_vencido: [],
     faltou: [],
     cancelou: [],
     sem_voltar_6m: [],
@@ -236,6 +245,32 @@ export function calcularOportunidades(
     }
   }
 
+  // -------- Retorno vencido: prontuário com retorno_data no passado e não cumprido
+  const hojeMs = new Date().getTime()
+  const pacientesComConsultaDepois = new Map<string, number>()
+  for (const [pacienteId, lista] of consultasPorPaciente) {
+    const realizadas = lista.filter((c) => c.status === 'realizada' || c.status === 'confirmada')
+    if (realizadas.length > 0) {
+      const ultima = realizadas[realizadas.length - 1]
+      const d = parseData(ultima.data)?.getTime()
+      if (d) pacientesComConsultaDepois.set(pacienteId, d)
+    }
+  }
+
+  for (const pront of prontuarios) {
+    if (pront.retorno_cumprido) continue
+    if (!pront.retorno_data) continue
+    const dataRetorno = parseData(pront.retorno_data)
+    if (!dataRetorno) continue
+    if (dataRetorno.getTime() > hojeMs) continue // ainda não venceu
+
+    // Se o paciente já voltou depois da data marcada, o retorno está cumprido.
+    const ultimaVisita = pacientesComConsultaDepois.get(pront.paciente)
+    if (ultimaVisita && ultimaVisita > dataRetorno.getTime()) continue
+
+    adicionar('retorno_vencido', pront.paciente, pront.retorno_data)
+  }
+
   // -------- Pacientes sem telefone cadastrado
   for (const p of pacientes) {
     if (!(p.telefone || '').trim()) {
@@ -245,6 +280,7 @@ export function calcularOportunidades(
 
   return {
     planejamento_aberto: ordenarMaisAntigoPrimeiro(resultado.planejamento_aberto),
+    retorno_vencido: ordenarMaisAntigoPrimeiro(agruparPorPaciente(resultado.retorno_vencido)),
     faltou: ordenarMaisAntigoPrimeiro(agruparPorPaciente(resultado.faltou)),
     cancelou: ordenarMaisAntigoPrimeiro(agruparPorPaciente(resultado.cancelou)),
     sem_voltar_6m: ordenarMaisAntigoPrimeiro(agruparPorPaciente(resultado.sem_voltar_6m)),
@@ -256,6 +292,7 @@ export function calcularOportunidades(
 export function totalOportunidades(funis: Record<TipoOportunidade, Oportunidade[]>): number {
   return (
     funis.planejamento_aberto.length +
+    funis.retorno_vencido.length +
     funis.faltou.length +
     funis.cancelou.length +
     funis.sem_voltar_6m.length +

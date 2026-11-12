@@ -1,6 +1,11 @@
 import React, { useState, useEffect } from 'react'
-import { orcamentosService, pacientesService, consultasService } from '@/services/clinica'
-import { Paciente, Consulta, Orcamento } from '@/types'
+import {
+  orcamentosService,
+  pacientesService,
+  consultasService,
+  prontuariosService,
+} from '@/services/clinica'
+import { Paciente, Consulta, Orcamento, Prontuario } from '@/types'
 import {
   calcularOportunidades,
   TipoOportunidade,
@@ -13,11 +18,22 @@ import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
 import { OportunidadeColuna } from '@/components/oportunidades/OportunidadeColuna'
 import { PacienteAvatar } from '@/components/PacienteAvatar'
-import { Target, TrendingUp, CalendarX, UserX, Clock, Wallet, PhoneOff, Cake } from 'lucide-react'
+import {
+  Target,
+  TrendingUp,
+  CalendarX,
+  UserX,
+  Clock,
+  Wallet,
+  PhoneOff,
+  Cake,
+  RotateCcw,
+} from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 
 const ICONE_POR_TIPO: Record<TipoOportunidade, React.ElementType> = {
   planejamento_aberto: Wallet,
+  retorno_vencido: RotateCcw,
   faltou: UserX,
   cancelou: CalendarX,
   sem_voltar_6m: Clock,
@@ -30,6 +46,7 @@ export const OportunidadesPage: React.FC = () => {
   const [pacientes, setPacientes] = useState<Paciente[]>([])
   const [consultas, setConsultas] = useState<Consulta[]>([])
   const [orcamentos, setOrcamentos] = useState<Orcamento[]>([])
+  const [prontuarios, setProntuarios] = useState<Prontuario[]>([])
   const [loading, setLoading] = useState<boolean>(true)
 
   useEffect(() => {
@@ -37,15 +54,17 @@ export const OportunidadesPage: React.FC = () => {
     const load = async () => {
       setLoading(true)
       try {
-        const [pacs, cons, orcs] = await Promise.all([
+        const [pacs, cons, orcs, pronts] = await Promise.all([
           pacientesService.getAll(),
           consultasService.getAll(),
           orcamentosService.getAll(),
+          prontuariosService.getAll(),
         ])
         if (!alive) return
         setPacientes(pacs)
         setConsultas(cons)
         setOrcamentos(orcs)
+        setProntuarios(pronts)
       } catch (err: any) {
         toast({
           title: 'Erro ao carregar oportunidades',
@@ -63,12 +82,13 @@ export const OportunidadesPage: React.FC = () => {
   }, [])
 
   const funis = React.useMemo(
-    () => calcularOportunidades(pacientes, consultas, orcamentos),
-    [pacientes, consultas, orcamentos],
+    () => calcularOportunidades(pacientes, consultas, orcamentos, prontuarios),
+    [pacientes, consultas, orcamentos, prontuarios],
   )
   const total = totalOportunidades(funis)
   const tiposOrdenados: TipoOportunidade[] = [
     'planejamento_aberto',
+    'retorno_vencido',
     'faltou',
     'cancelou',
     'sem_voltar_6m',
