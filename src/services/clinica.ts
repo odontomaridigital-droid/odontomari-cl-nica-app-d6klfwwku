@@ -11,8 +11,12 @@ import {
   Medicamento,
   Receita,
   ItemReceita,
+  OdontogramaRegistro,
+  DocumentoModelo,
+  DocumentoEmitido,
 } from '@/types'
 import type { RespostasAnamnese } from '@/lib/anamneseModelo'
+import type { CondicaoDente, FaceDente } from '@/lib/odontograma'
 import { registrarLog } from '@/services/logsAuditoria'
 
 // =================== Helpers de formatação para o log ===================
@@ -468,6 +472,167 @@ export const anamnesesService = {
   async delete(id: string): Promise<boolean> {
     const ok = await pb.collection('anamneses').delete(id)
     registrarLog('excluiu', 'anamnese', `Excluiu anamnese (id ${id})`, id)
+    return ok
+  },
+}
+
+// =================== ODONTOGRAMA ===================
+export const odontogramaService = {
+  async getByPaciente(pacienteId: string): Promise<OdontogramaRegistro[]> {
+    return await pb.collection('odontograma').getFullList<OdontogramaRegistro>({
+      filter: `paciente = "${pacienteId}"`,
+      sort: 'dente',
+    })
+  },
+
+  /** Cria ou atualiza o estado de um dente (um registro por paciente+dente). */
+  async salvar(data: {
+    paciente: string
+    dente: number
+    condicao: CondicaoDente
+    faces?: FaceDente[]
+    observacao?: string
+    registrado_por?: string
+    data?: string
+  }): Promise<OdontogramaRegistro> {
+    const corpo: any = {
+      paciente: data.paciente,
+      dente: data.dente,
+      condicao: data.condicao,
+      faces: data.faces || [],
+      observacao: data.observacao || '',
+      registrado_por: data.registrado_por || undefined,
+      data:
+        data.data && data.data.includes('T')
+          ? data.data
+          : `${data.data || new Date().toISOString().split('T')[0]} 00:00:00.000Z`,
+    }
+
+    let existente: OdontogramaRegistro | null = null
+    try {
+      existente = await pb
+        .collection('odontograma')
+        .getFirstListItem<OdontogramaRegistro>(
+          `paciente = "${data.paciente}" && dente = ${data.dente}`,
+        )
+    } catch {
+      existente = null
+    }
+
+    const salvo = existente
+      ? await pb.collection('odontograma').update<OdontogramaRegistro>(existente.id, corpo)
+      : await pb.collection('odontograma').create<OdontogramaRegistro>(corpo)
+
+    registrarLog(
+      existente ? 'editou' : 'criou',
+      'prontuario',
+      `Odontograma: dente ${data.dente} marcado como ${data.condicao}`,
+      salvo.id,
+    )
+    return salvo
+  },
+
+  async remover(registroId: string, dente?: number): Promise<boolean> {
+    const ok = await pb.collection('odontograma').delete(registroId)
+    registrarLog(
+      'excluiu',
+      'prontuario',
+      `Odontograma: estado do dente ${dente ?? ''} removido`,
+      registroId,
+    )
+    return ok
+  },
+}
+
+// =================== DOCUMENTOS (MODELOS E EMITIDOS) ===================
+export const documentosModelosService = {
+  async getAll(somenteAtivos = true): Promise<DocumentoModelo[]> {
+    const filter = somenteAtivos ? 'ativo = true' : ''
+    return await pb.collection('documentos_modelos').getFullList<DocumentoModelo>({
+      filter,
+      sort: 'categoria,titulo',
+    })
+  },
+
+  async create(data: {
+    titulo: string
+    categoria: string
+    corpo: string
+    ativo?: boolean
+  }): Promise<DocumentoModelo> {
+    const criado = await pb.collection('documentos_modelos').create<DocumentoModelo>({
+      ...data,
+      ativo: data.ativo ?? true,
+    })
+    registrarLog('criou', 'configuracoes', `Criou modelo de documento: ${criado.titulo}`, criado.id)
+    return criado
+  },
+
+  async update(id: string, data: Partial<DocumentoModelo>): Promise<DocumentoModelo> {
+    const atualizado = await pb.collection('documentos_modelos').update<DocumentoModelo>(id, data)
+    registrarLog(
+      'editou',
+      'configuracoes',
+      `Editou modelo de documento: ${atualizado.titulo}`,
+      atualizado.id,
+    )
+    return atualizado
+  },
+
+  async delete(id: string): Promise<boolean> {
+    const ok = await pb.collection('documentos_modelos').delete(id)
+    registrarLog('excluiu', 'configuracoes', `Excluiu modelo de documento (id ${id})`, id)
+    return ok
+  },
+}
+
+export const documentosEmitidosService = {
+  async getByPaciente(pacienteId: string): Promise<DocumentoEmitido[]> {
+    return await pb.collection('documentos_emitidos').getFullList<DocumentoEmitido>({
+      filter: `paciente = "${pacienteId}"`,
+      sort: '-data,-created',
+    })
+  },
+
+  async getAll(): Promise<DocumentoEmitido[]> {
+    return await pb.collection('documentos_emitidos').getFullList<DocumentoEmitido>({
+      expand: 'paciente',
+      sort: '-data,-created',
+    })
+  },
+
+  async create(data: {
+    paciente: string
+    modelo?: string
+    titulo: string
+    categoria: string
+    corpo: string
+    autor?: string
+    data?: string
+  }): Promise<DocumentoEmitido> {
+    const criado = await pb.collection('documentos_emitidos').create<DocumentoEmitido>({
+      ...data,
+      data:
+        data.data && data.data.includes('T')
+          ? data.data
+          : `${data.data || new Date().toISOString().split('T')[0]} 00:00:00.000Z`,
+    })
+    registrarLog('criou', 'paciente', `Emitiu documento: ${criado.titulo}`, criado.id)
+    return criado
+  },
+
+  async marcarEnviado(id: string, canal: string): Promise<DocumentoEmitido> {
+    const atualizado = await pb.collection('documentos_emitidos').update<DocumentoEmitido>(id, {
+      enviado_em: new Date().toISOString(),
+      enviado_canal: canal,
+    })
+    registrarLog('editou', 'paciente', `Documento enviado por ${canal}`, atualizado.id)
+    return atualizado
+  },
+
+  async delete(id: string): Promise<boolean> {
+    const ok = await pb.collection('documentos_emitidos').delete(id)
+    registrarLog('excluiu', 'paciente', `Excluiu documento emitido (id ${id})`, id)
     return ok
   },
 }

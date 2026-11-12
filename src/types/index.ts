@@ -14,6 +14,8 @@ export interface TipoAtendimento {
   duracao_minutos: number
   valor_padrao?: number
   descricao?: string
+  /** Retorno sugerido em dias ao usar este procedimento */
+  retorno_dias_padrao?: number
   ativo?: boolean
   created?: string
   updated?: string
@@ -89,11 +91,67 @@ export interface Prontuario {
   procedimentos: string
   anotacoes?: string
   dente_regiao?: string
+  /** Prazo clínico de retorno em dias, definido no atendimento */
+  retorno_dias?: number
+  /** Data calculada de retorno (data + retorno_dias) */
+  retorno_data?: string
+  /** Marca que o paciente já retornou (sai da lista de vencidos) */
+  retorno_cumprido?: boolean
   created?: string
   updated?: string
   expand?: {
     paciente?: Paciente
     consulta?: Consulta
+  }
+}
+
+/** Estado atual de um dente no odontograma do paciente */
+export interface OdontogramaRegistro {
+  id: string
+  paciente: string
+  dente: number
+  condicao: string
+  faces?: string[]
+  observacao?: string
+  registrado_por?: string
+  data: string
+  created?: string
+  updated?: string
+  expand?: {
+    paciente?: Paciente
+    registrado_por?: User
+  }
+}
+
+/** Modelo de documento (cuidados pós-cirúrgicos, orientações, atestado...) */
+export interface DocumentoModelo {
+  id: string
+  titulo: string
+  categoria: string
+  /** Corpo com placeholders: {paciente}, {primeiro_nome}, {data}, {clinica}, {dentista}, {cro}, {procedimento} */
+  corpo: string
+  ativo?: boolean
+  created?: string
+  updated?: string
+}
+
+/** Documento já emitido para um paciente, com o texto final congelado */
+export interface DocumentoEmitido {
+  id: string
+  paciente: string
+  modelo?: string
+  titulo: string
+  categoria: string
+  corpo: string
+  autor?: string
+  data: string
+  enviado_em?: string
+  enviado_canal?: string
+  created?: string
+  updated?: string
+  expand?: {
+    paciente?: Paciente
+    autor?: User
   }
 }
 
