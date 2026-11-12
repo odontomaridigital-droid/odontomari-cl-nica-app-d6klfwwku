@@ -40,6 +40,23 @@ export const StatusConsultaBadge: React.FC<{ status: Consulta['status'] }> = ({ 
   }
 }
 
+/** Cor da faixa lateral de cada consulta, para a recepção saber de relance
+ *  quem já confirmou e quem ainda precisa ser contatado. */
+function corFaixaStatus(status: Consulta['status']): string {
+  switch (status) {
+    case 'confirmada':
+      return 'border-l-emerald-500'
+    case 'realizada':
+      return 'border-l-blue-500'
+    case 'faltou':
+      return 'border-l-amber-500'
+    case 'cancelada':
+      return 'border-l-red-400'
+    default:
+      return 'border-l-slate-300'
+  }
+}
+
 interface AgendaDiaColunaProps {
   data: string
   isHoje: boolean
@@ -152,7 +169,9 @@ export const AgendaDiaColuna: React.FC<AgendaDiaColunaProps> = ({
             key={c.id}
             type="button"
             onClick={() => onOpenConsulta(c)}
-            className="w-full text-left rounded-lg border border-slate-200 hover:border-marca-vermelho/50 hover:bg-marca-vermelho-claro/50 p-2 transition-colors"
+            className={`w-full text-left rounded-lg border border-slate-200 border-l-4 ${corFaixaStatus(
+              c.status,
+            )} hover:border-marca-vermelho/50 hover:bg-marca-vermelho-claro/50 p-2 transition-colors`}
           >
             <div className="flex items-center justify-between gap-1">
               <span className="font-mono text-xs font-bold text-marca-vermelho">
@@ -166,6 +185,15 @@ export const AgendaDiaColuna: React.FC<AgendaDiaColunaProps> = ({
             <p className="text-[10px] text-marca-vermelho-escuro truncate">
               {c.expand?.tipo_atendimento?.nome || 'Procedimento odontológico'}
             </p>
+            {(c.status === 'agendada' || c.status === 'confirmada') && (
+              <p
+                className={`text-[9px] mt-0.5 font-medium ${
+                  c.status === 'confirmada' ? 'text-emerald-700' : 'text-amber-700'
+                }`}
+              >
+                {c.status === 'confirmada' ? '✓ Presença confirmada' : '! Ainda não confirmou'}
+              </p>
+            )}
           </button>
         ))}
 

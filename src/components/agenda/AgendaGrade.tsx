@@ -84,8 +84,19 @@ const blockStyle = (status: Consulta['status']): string => {
     case 'faltou':
       return 'bg-amber-50 border-amber-300 hover:bg-amber-100 text-amber-900'
     default:
-      return 'bg-marca-vermelho-claro border-marca-vermelho/50 hover:bg-red-100 text-red-900'
+      // Agendada e ainda sem confirmação: âmbar, para a recepção ver
+      // de relance quem precisa ser contatado.
+      return 'bg-amber-50/70 border-amber-300 hover:bg-amber-100 text-amber-900'
   }
+}
+
+/** Marca visual do status de confirmação, exibida no bloco da consulta. */
+function indicadorConfirmacao(
+  status: Consulta['status'],
+): { texto: string; classe: string } | null {
+  if (status === 'confirmada') return { texto: '✓ confirmada', classe: 'text-emerald-700' }
+  if (status === 'agendada') return { texto: 'aguardando confirmação', classe: 'text-amber-700' }
+  return null
 }
 
 interface EventoLayout {
@@ -287,6 +298,15 @@ const ColunaDia: React.FC<ColunaDiaProps> = ({
               <span className="block text-[11px] font-semibold leading-tight truncate">
                 {c.expand?.paciente?.nome || 'Paciente não identificado'}
               </span>
+              {(() => {
+                const ind = indicadorConfirmacao(c.status)
+                if (!ind) return null
+                return (
+                  <span className={cn('block text-[9px] leading-tight font-medium', ind.classe)}>
+                    {ind.texto}
+                  </span>
+                )
+              })()}
               {(() => {
                 const aniv = aniversarioDePaciente(c.expand?.paciente?.data_nascimento)
                 if (!aniv || aniv.diasAte > 5) return null
