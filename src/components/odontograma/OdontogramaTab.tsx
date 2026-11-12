@@ -142,6 +142,7 @@ export const OdontogramaTab: React.FC<OdontogramaTabProps> = ({
             estados={registros.map((r) => ({
               dente: r.dente,
               condicao: r.condicao as CondicaoDente,
+              faces: (r.faces as FaceDente[]) || [],
             }))}
             selecionado={denteSelecionado}
             onSelecionar={abrirDente}
