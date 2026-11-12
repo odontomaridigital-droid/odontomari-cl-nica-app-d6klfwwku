@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-11T01:33:48.641Z",
+  "generatedAt": "2026-11-12T00:52:10.363Z",
   "collections": [
     {
       "name": "users",
@@ -118,6 +118,12 @@
             "onCreate",
             "onUpdate"
           ]
+        },
+        {
+          "name": "retorno_dias_padrao",
+          "type": "number",
+          "required": false,
+          "system": false
         }
       ],
       "indexes": [
@@ -587,11 +593,30 @@
             "onCreate",
             "onUpdate"
           ]
+        },
+        {
+          "name": "retorno_dias",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "retorno_data",
+          "type": "date",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "retorno_cumprido",
+          "type": "bool",
+          "required": false,
+          "system": false
         }
       ],
       "indexes": [
         "CREATE INDEX idx_prontuarios_paciente ON prontuarios (paciente)",
-        "CREATE INDEX idx_prontuarios_data ON prontuarios (data)"
+        "CREATE INDEX idx_prontuarios_data ON prontuarios (data)",
+        "CREATE INDEX idx_prontuarios_retorno ON prontuarios (retorno_data)"
       ]
     },
     {
@@ -979,6 +1004,106 @@
       ],
       "indexes": [
         "CREATE INDEX idx_logs_auditoria_created ON logs_auditoria (created DESC)"
+      ]
+    },
+    {
+      "name": "odontograma",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != ''",
+        "view": "@request.auth.id != ''",
+        "create": "@request.auth.id != '' && @request.auth.role = 'admin'",
+        "update": "@request.auth.id != '' && @request.auth.role = 'admin'",
+        "delete": "@request.auth.id != '' && @request.auth.role = 'admin'"
+      },
+      "fields": [
+        {
+          "name": "paciente",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "pacientes"
+        },
+        {
+          "name": "dente",
+          "type": "number",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "condicao",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": [
+            "higido",
+            "carie",
+            "restaurado",
+            "tratamento_endodontico",
+            "coroa",
+            "implante",
+            "protese",
+            "fratura",
+            "ausente",
+            "extrair",
+            "selante",
+            "em_tratamento"
+          ]
+        },
+        {
+          "name": "faces",
+          "type": "select",
+          "required": false,
+          "system": false,
+          "selectValues": [
+            "oclusal",
+            "mesial",
+            "distal",
+            "vestibular",
+            "lingual"
+          ]
+        },
+        {
+          "name": "observacao",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "registrado_por",
+          "type": "relation",
+          "required": false,
+          "system": false,
+          "collectionRef": "users"
+        },
+        {
+          "name": "data",
+          "type": "date",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": [
+            "onCreate"
+          ]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": [
+            "onCreate",
+            "onUpdate"
+          ]
+        }
+      ],
+      "indexes": [
+        "CREATE UNIQUE INDEX idx_odontograma_paciente_dente ON odontograma (paciente, dente)"
       ]
     }
   ]
