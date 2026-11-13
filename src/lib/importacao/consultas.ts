@@ -39,6 +39,19 @@ export function lerDataHoraBr(valor: string): { data: string; hora: string } | n
   }
 }
 
+/**
+ * A planilha grava a hora em formato 12h SEM AM/PM: o que era 15:00 aparece
+ * como "03:00" e 18:30 como "06:30". Como a clínica atende das 08:00 às 18:00,
+ * toda hora de 01 a 06 é, na verdade, da tarde. Hora 07 é ambígua (07:00 ou
+ * 19:00) e fica como veio.
+ */
+export function ajustarHora12h(hora: string): string {
+  const [h, m] = String(hora ?? '').split(':')
+  const n = Number(h)
+  if (!isNaN(n) && n >= 1 && n <= 6) return `${String(n + 12).padStart(2, '0')}:${m ?? '00'}`
+  return hora
+}
+
 /** Converte o status do Dentista Organizado para o status do Odontomari. */
 export function statusConsultaDe(
   valor: string,
@@ -101,7 +114,11 @@ export function converterConsultas(linhas: string[][]): ResultadoConsultas {
       return
     }
 
+    // hora de origem em 12h sem AM/PM: 01:00-06:00 são 13:00-18:00
+    inicio.hora = ajustarHora12h(inicio.hora)
+
     const fim = lerDataHoraBr(fimBruto)
+    if (fim?.hora) fim.hora = ajustarHora12h(fim.hora)
     const duracao = fim?.hora && fim.hora !== '00:00' ? minutosEntre(inicio.hora, fim.hora) : 30
 
     const campos: Record<string, unknown> = {
