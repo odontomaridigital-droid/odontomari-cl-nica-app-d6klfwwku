@@ -21,17 +21,23 @@ export interface DestinoColecao {
 
 const CAMPOS_PACIENTE: DestinoCampo[] = [
   { campo: 'nome', rotulo: 'Nome', obrigatorio: true, tipo: 'texto' },
-  { campo: 'telefone', rotulo: 'Telefone (WhatsApp)', obrigatorio: true, tipo: 'telefone' },
+  {
+    campo: 'telefone',
+    rotulo: 'Telefone / Celular',
+    tipo: 'telefone',
+    // Não é obrigatório: no backup real do Dentista Organizado, 35 pacientes
+    // não têm telefone nenhum. Bloquear impediria de trazê-los.
+  },
   { campo: 'email', rotulo: 'E-mail', tipo: 'email' },
   { campo: 'data_nascimento', rotulo: 'Data de nascimento', tipo: 'data' },
   { campo: 'cpf', rotulo: 'CPF', tipo: 'cpf' },
-  { campo: 'cep', rotulo: 'CEP', tipo: 'texto' },
+  { campo: 'cep', rotulo: 'CEP', tipo: 'cep' },
   { campo: 'logradouro', rotulo: 'Logradouro', tipo: 'texto' },
   { campo: 'numero', rotulo: 'Número', tipo: 'texto' },
   { campo: 'complemento', rotulo: 'Complemento', tipo: 'texto' },
   { campo: 'bairro', rotulo: 'Bairro', tipo: 'texto' },
-  { campo: 'cidade', rotulo: 'Cidade', tipo: 'texto' },
-  { campo: 'uf', rotulo: 'UF', tipo: 'texto' },
+  { campo: 'cidade', rotulo: 'Cidade', tipo: 'cidade' },
+  { campo: 'uf', rotulo: 'UF / Estado', tipo: 'uf' },
   { campo: 'endereco', rotulo: 'Endereço (texto completo)', tipo: 'texto' },
   { campo: 'observacoes', rotulo: 'Observações', tipo: 'texto' },
   { campo: 'origem', rotulo: 'Origem (como chegou)', tipo: 'texto' },
@@ -76,3 +82,50 @@ export const DESTINOS: Record<ColecaoDestino, DestinoColecao> = {
 
 /** Palavras-chave que identificam a aba de pacientes numa planilha com várias abas. */
 export const PALAVRAS_ABA_PACIENTES = ['contato', 'paciente', 'cliente']
+
+/**
+ * Molde do backup "Lista de Pacientes" do Dentista Organizado.
+ *
+ * O arquivo real tem uma única aba "Contatos" com 18 colunas. Mapear por
+ * igualdade de nome não basta — este molde fixa o destino de cada coluna
+ * conhecida, inclusive as que não têm campo próprio (vão para `extras` com
+ * o nome original, para não perder informação clínica nem administrativa).
+ */
+export const MOLDE_DENTISTA_ORGANIZADO: Record<
+  string,
+  { campo?: string; extra?: string; ignorar?: boolean }
+> = {
+  nome: { campo: 'nome' },
+  rg: { extra: 'RG' },
+  cpf: { campo: 'cpf' },
+  logradouro: { campo: 'logradouro' },
+  numero: { campo: 'numero' },
+  cep: { campo: 'cep' },
+  bairro: { campo: 'bairro' },
+  cidade: { campo: 'cidade' },
+  estado: { campo: 'uf' },
+  // Celular e residencial disputam o campo telefone: o celular tem prioridade
+  // (é o que serve para WhatsApp). O residencial vai para extras.
+  celular: { campo: 'telefone' },
+  'fone residencial': { extra: 'Telefone residencial' },
+  sexo: { extra: 'Sexo' },
+  referencia: { campo: 'origem' },
+  aniversario: { campo: 'data_nascimento' },
+  // A data de cadastro não pode ir para `created` (o PocketBase ignora escrita
+  // nesse campo), então fica em extras para preservar o histórico.
+  'data cadastro': { extra: 'Data de cadastro no sistema antigo' },
+  prontuario: { extra: 'Número do prontuário (sistema antigo)' },
+  email: { campo: 'email' },
+  responsavel: { extra: 'Responsável' },
+}
+
+/** Campos que, no molde, são guardados em `extras` em vez de coluna própria. */
+export function destinoDoMolde(coluna: string): { campo?: string; extra?: string } | null {
+  const chave = coluna
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim()
+  return MOLDE_DENTISTA_ORGANIZADO[chave] || null
+}

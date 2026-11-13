@@ -1,5 +1,16 @@
-import { normalizarNome } from './normalizar'
-import { DestinoCampo, DestinoColecao } from './destinos'
+import {
+  normalizarNome as normalizarColuna,
+  normalizarCidade,
+  normalizarUf,
+  normalizarTelefone,
+  normalizarCpf,
+  normalizarCep,
+  corrigirAcentos,
+} from './normalizar'
+import { DestinoCampo, DestinoColecao, destinoDoMolde } from './destinos'
+
+/** Mantém o nome antigo usado no restante do arquivo. */
+const normalizarNome = normalizarColuna
 
 /** Destino escolhido para uma coluna da planilha */
 export type MapeamentoColuna =
@@ -21,22 +32,69 @@ export interface ColunaMapeada {
  * Colunas sem equivalente vão para "extras" (nunca descartadas silenciosamente).
  */
 export function sugerirMapeamento(colunas: string[], destino: DestinoColecao): ColunaMapeada[] {
+  // Molde conhecido (Dentista Organizado) tem prioridade sobre a heurística:
+  // é o mapeamento validado contra o arquivo real, sem adivinhação.
+  if (destino.colecao === 'pacientes') {
+    const peloMolde = colunas.map((nome, indice) => {
+      const m = destinoDoMolde(nome)
+      if (!m) return null
+      if (m.campo) return { indice, nome, mapeamento: { tipo: 'campo' as const, campo: m.campo } }
+      return { indice, nome, mapeamento: { tipo: 'extras' as const } }
+    })
+    // Só usa o molde se reconhecer a maioria das colunas — senão é outra planilha.
+    const reconhecidas = peloMolde.filter(Boolean).length
+    if (reconhecidas >= Math.ceil(colunas.length * 0.6)) {
+      return peloMolde.map(
+        (c, i) => c || { indice: i, nome: colunas[i], mapeamento: { tipo: 'extras' as const } },
+      )
+    }
+  }
+
   const camposPorNome = new Map<string, DestinoCampo>()
   for (const c of destino.campos) {
     camposPorNome.set(normalizarNome(c.campo), c)
     camposPorNome.set(normalizarNome(c.rotulo), c)
     // Palavras-chave extras por campo (sinônimos comuns de sistemas odontológicos)
     const sinonimos: Record<string, string[]> = {
-      nome: ['paciente', 'nome do paciente', 'nome completo', 'cliente'],
-      telefone: ['celular', 'whatsapp', 'tel', 'fone', 'telefone 1', 'telefone celular', 'movel'],
-      email: ['e mail', 'correio', 'mail'],
-      data_nascimento: ['nascimento', 'dt nascimento', 'data nasc', 'nasc'],
-      cpf: ['cpf cliente', 'documento', 'cnpj'],
-      cep: ['codigo postal'],
-      cidade: ['municipio'],
-      uf: ['estado'],
-      observacoes: ['obs', 'observacao', 'anotacoes', 'complemento dados'],
-      endereco: ['rua', 'avenida', 'enderoco', 'logradouro completo'],
+      nome: ['paciente', 'nome do paciente', 'nome completo', 'cliente', 'nome cliente'],
+      telefone: [
+        'celular',
+        'whatsapp',
+        'tel',
+        'fone',
+        'telefone 1',
+        'telefone celular',
+        'movel',
+        'fone celular',
+        'celular 1',
+        'contato',
+      ],
+      email: ['e mail', 'correio', 'mail', 'email principal'],
+      data_nascimento: [
+        'nascimento',
+        'dt nascimento',
+        'data nasc',
+        'nasc',
+        'aniversario',
+        'data aniversario',
+        'data de nascimento',
+      ],
+      cpf: ['cpf cliente', 'documento', 'cnpj', 'cpf cnpj'],
+      cep: ['codigo postal', 'cep residencial'],
+      cidade: ['municipio', 'cidade paciente'],
+      uf: ['estado', 'estado uf', 'uf estado'],
+      observacoes: [
+        'obs',
+        'observacao',
+        'observacoes',
+        'anotacoes',
+        'complemento dados',
+        'notas',
+        'informacoes',
+      ],
+      endereco: ['rua', 'avenida', 'enderoco', 'logradouro completo', 'endereco completo'],
+      origem: ['referencia', 'como chegou', 'como nos conheceu', 'indicacao', 'fonte'],
+      numero: ['numero endereco', 'num', 'n'],
     }
     for (const sin of sinonimos[c.campo] || []) camposPorNome.set(normalizarNome(sin), c)
   }
@@ -76,25 +134,32 @@ export function converterValor(
 
   switch (tipo) {
     case 'telefone': {
-      const digitos = v.replace(/\D/g, '')
-      if (digitos.length === 0) return { valor: null }
-      if (digitos.length < 10 || digitos.length > 11) {
-        return { valor: v, aviso: 'Telefone com número de dígitos incomum' }
-      }
-      return { valor: digitos }
+      const { telefone, aviso } = normalizarTelefone(v)
+      if (!telefone) return { valor: null, aviso: aviso || 'Telefone inválido' }
+      return { valor: telefone, aviso }
     }
     case 'cpf': {
-      const digitos = v.replace(/\D/g, '')
-      if (digitos.length === 0) return { valor: null }
-      if (digitos.length !== 11) return { valor: v, aviso: 'CPF não tem 11 dígitos' }
-      return { valor: digitos }
+      const { cpf, aviso } = normalizarCpf(v)
+      if (!cpf) return { valor: null }
+      return { valor: cpf, aviso }
     }
     case 'email': {
-      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)) return { valor: v, aviso: 'E-mail malformatado' }
-      return { valor: v.toLowerCase() }
+      const limpo = v.toLowerCase()
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(limpo))
+        return { valor: limpo, aviso: 'E-mail malformatado' }
+      return { valor: limpo }
     }
     case 'data':
       return converterData(v)
+    case 'cidade':
+      return { valor: normalizarCidade(v) || null }
+    case 'uf':
+      return { valor: normalizarUf(v) || null }
+    case 'cep':
+      return { valor: normalizarCep(v) || null }
+    case 'texto':
+      // Corrige acentos quebrados de exportação em qualquer campo de texto
+      return { valor: corrigirAcentos(v) }
     case 'numero': {
       // Aceita "1.234,56" e "1234.56"
       const limpo = v.replace(/\s/g, '')
@@ -108,7 +173,7 @@ export function converterValor(
       return { valor: num }
     }
     default:
-      return { valor: v }
+      return { valor: corrigirAcentos(v) }
   }
 }
 

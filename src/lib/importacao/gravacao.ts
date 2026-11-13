@@ -3,6 +3,7 @@ import { Paciente } from '@/types'
 import { LinhaConvertida } from './mapeamento'
 import { ColecaoDestino } from './destinos'
 import { registrarLog } from '@/services/logsAuditoria'
+import { corrigirAcentos } from './normalizar'
 
 /** Resultado da gravação de uma importação. */
 export interface ResumoImportacao {
@@ -17,12 +18,16 @@ function digitosTelefone(v?: string | null): string {
   return String(v ?? '').replace(/\D/g, '')
 }
 
-/** Normaliza nome para deduplicação: sem acento, minúsculo, espaços colapsados. */
+/**
+ * Normaliza nome para deduplicação: corrige acento quebrado de exportação,
+ * remove acento, minúsculo e espaços colapsados.
+ */
 function chaveNome(nome?: string | null): string {
-  return String(nome ?? '')
+  return corrigirAcentos(String(nome ?? ''))
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
     .toLowerCase()
+    .replace(/[^a-z0-9 ]/g, '')
     .replace(/\s+/g, ' ')
     .trim()
 }
@@ -64,9 +69,31 @@ export async function gravarPacientes(
       const existente = porChave.get(chave)
 
       const payload: Record<string, unknown> = { ...linha.campos }
+
+      // O PocketBase não aceita telefone vazio em campo obrigatório de versões
+      // antigas; hoje o campo é opcional, mas limpamos valores falsos.
+      if (payload.telefone === '') delete payload.telefone
+
+      // Origem "Outros" (comum no Dentista Organizado) não informa nada —
+      // melhor deixar vazio do que poluir o relatório de marketing.
+      if (
+        String(payload.origem || '')
+          .trim()
+          .toLowerCase() === 'outros'
+      ) {
+        payload.origem = ''
+      }
+      // Data de nascimento do backup vem como "Aniversario": só vale se for
+      // uma data válida e o paciente tiver idade plausível.
+      if (payload.data_nascimento) {
+        const ano = Number(String(payload.data_nascimento).slice(0, 4))
+        const anoAtual = new Date().getFullYear()
+        if (!ano || ano < 1900 || ano > anoAtual) delete payload.data_nascimento
+      }
+
       if (Object.keys(linha.extras).length > 0) {
         // Mescla com extras já existentes (atualização de paciente importado antes)
-        payload.extras = { ...(existente?.extras ?? {}), ...linha.extras }
+        payload.extras = { ...((existente as any)?.extras ?? {}), ...linha.extras }
       }
 
       try {
