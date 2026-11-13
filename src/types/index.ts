@@ -125,6 +125,19 @@ export interface OdontogramaRegistro {
   }
 }
 
+/** Modelo de receita pronto (pós-cirúrgico, antibiótico, analgésico...) */
+export interface ReceitaModelo {
+  id: string
+  nome: string
+  categoria: string
+  descricao?: string
+  itens: ItemReceita[]
+  orientacoes?: string
+  ativo?: boolean
+  created?: string
+  updated?: string
+}
+
 /** Campanha de marketing da clínica */
 export interface Campanha {
   id: string

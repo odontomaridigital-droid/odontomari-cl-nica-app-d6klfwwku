@@ -17,6 +17,7 @@ import {
   AnamneseModelo,
   Campanha,
   Conteudo,
+  ReceitaModelo,
 } from '@/types'
 import type { RespostasAnamnese } from '@/lib/anamneseModelo'
 import type { CondicaoDente, FaceDente } from '@/lib/odontograma'
@@ -486,6 +487,50 @@ export const anamnesesService = {
   async delete(id: string): Promise<boolean> {
     const ok = await pb.collection('anamneses').delete(id)
     registrarLog('excluiu', 'anamnese', `Excluiu anamnese (id ${id})`, id)
+    return ok
+  },
+}
+
+// =================== MODELOS DE RECEITA ===================
+export const receitaModelosService = {
+  async getAll(somenteAtivos = true): Promise<ReceitaModelo[]> {
+    const filter = somenteAtivos ? 'ativo = true' : ''
+    return await pb.collection('receita_modelos').getFullList<ReceitaModelo>({
+      filter,
+      sort: 'categoria,nome',
+    })
+  },
+
+  async create(data: {
+    nome: string
+    categoria: string
+    descricao?: string
+    itens: ItemReceita[]
+    orientacoes?: string
+    ativo?: boolean
+  }): Promise<ReceitaModelo> {
+    const criado = await pb.collection('receita_modelos').create<ReceitaModelo>({
+      ...data,
+      ativo: data.ativo ?? true,
+    })
+    registrarLog('criou', 'configuracoes', `Criou modelo de receita: ${criado.nome}`, criado.id)
+    return criado
+  },
+
+  async update(id: string, data: Partial<ReceitaModelo>): Promise<ReceitaModelo> {
+    const atualizado = await pb.collection('receita_modelos').update<ReceitaModelo>(id, data)
+    registrarLog(
+      'editou',
+      'configuracoes',
+      `Editou modelo de receita: ${atualizado.nome}`,
+      atualizado.id,
+    )
+    return atualizado
+  },
+
+  async delete(id: string): Promise<boolean> {
+    const ok = await pb.collection('receita_modelos').delete(id)
+    registrarLog('excluiu', 'configuracoes', `Excluiu modelo de receita (id ${id})`, id)
     return ok
   },
 }

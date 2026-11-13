@@ -10,6 +10,8 @@ import { Textarea } from '@/components/ui/textarea'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { CatalogoMedicamentos } from '@/components/config/CatalogoMedicamentos'
+import { ModelosReceita } from '@/components/config/ModelosReceita'
+import { ModelosDocumento } from '@/components/config/ModelosDocumento'
 import {
   Dialog,
   DialogContent,
@@ -302,6 +304,12 @@ export const ConfiguracoesPage: React.FC = () => {
           <TabsTrigger value="medicamentos" className="text-xs sm:text-sm">
             Medicamentos
           </TabsTrigger>
+          <TabsTrigger value="receitas" className="text-xs sm:text-sm">
+            Modelos de Receita
+          </TabsTrigger>
+          <TabsTrigger value="documentos" className="text-xs sm:text-sm">
+            Modelos de Documento
+          </TabsTrigger>
         </TabsList>
 
         {/* Tab 1: Horários & Geral */}
@@ -526,6 +534,16 @@ export const ConfiguracoesPage: React.FC = () => {
         {/* Tab 2.5: Catálogo de Medicamentos (para receitas) */}
         <TabsContent value="medicamentos" className="space-y-4 pt-2">
           <CatalogoMedicamentos />
+        </TabsContent>
+
+        {/* Modelos de receita prontos */}
+        <TabsContent value="receitas" className="space-y-4 pt-2">
+          <ModelosReceita />
+        </TabsContent>
+
+        {/* Modelos de documento (atestado, orientações pós-cirúrgicas...) */}
+        <TabsContent value="documentos" className="space-y-4 pt-2">
+          <ModelosDocumento />
         </TabsContent>
 
         {/* Tab 3: Bloqueios de Agenda */}
