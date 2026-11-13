@@ -152,6 +152,19 @@ export function normalizarTelefone(bruto: string): { telefone: string; aviso?: s
   return { telefone: d, aviso: 'Telefone fora do padrão' }
 }
 
+/**
+ * Normaliza o nome de uma coluna para comparação (sem acento, minúsculo).
+ * Mantido com o nome original porque o wizard de importação já o utiliza.
+ */
+export function normalizarNome(s: string): string {
+  return String(s ?? '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim()
+}
+
 /** Normaliza CPF: só dígitos; devolve vazio se não tiver 11. */
 export function normalizarCpf(bruto: string): { cpf: string; aviso?: string } {
   const d = String(bruto ?? '').replace(/\D/g, '')
