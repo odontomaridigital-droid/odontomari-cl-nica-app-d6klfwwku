@@ -1,12 +1,11 @@
 import React, { useMemo } from 'react'
 import { Consulta } from '@/types'
 import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import { Plus, Lock, LockOpen, AlertTriangle, Cake } from 'lucide-react'
+import { Plus, Lock, LockOpen, Cake } from 'lucide-react'
 import { getDiaSemanaCurto } from '@/lib/semana'
 import { cn } from '@/lib/utils'
 import { ConsultaTooltip } from '@/components/agenda/ConsultaTooltip'
-import { aniversarioDePaciente } from '@/lib/aniversario'
+import { extrairDiaMes } from '@/lib/aniversario'
 
 export const StatusConsultaBadge: React.FC<{ status: Consulta['status'] }> = ({ status }) => {
   switch (status) {
@@ -63,9 +62,10 @@ interface AgendaGradeProps {
   onToggleBloqueio: (data: string) => void
 }
 
-const GUTTER_PX = 56
-const HOUR_PX = 56 // altura de cada hora na grade
-const MIN_EVENT_PX = 26
+const GUTTER_PX = 52
+const HOUR_PX = 62 // altura de cada hora na grade
+const MIN_EVENT_PX = 22
+const COL_FDS_PX = 88 // sábado e domingo mais estreitos que os dias úteis
 
 const timeToMinutes = (t: string) => {
   const [h, m] = t.split(':').map(Number)
@@ -76,27 +76,54 @@ const timeToMinutes = (t: string) => {
 const blockStyle = (status: Consulta['status']): string => {
   switch (status) {
     case 'confirmada':
-      return 'bg-emerald-50 border-emerald-300 hover:bg-emerald-100 text-emerald-900'
+      return 'bg-emerald-50 border-emerald-400 hover:bg-emerald-100 text-emerald-950'
     case 'realizada':
-      return 'bg-blue-50 border-blue-300 hover:bg-blue-100 text-blue-900'
+      return 'bg-blue-50 border-blue-400 hover:bg-blue-100 text-blue-950'
     case 'cancelada':
       return 'bg-slate-50 border-slate-200 text-slate-400 line-through opacity-70'
     case 'faltou':
-      return 'bg-amber-50 border-amber-300 hover:bg-amber-100 text-amber-900'
+      return 'bg-rose-50 border-rose-400 hover:bg-rose-100 text-rose-950'
     default:
       // Agendada e ainda sem confirmação: âmbar, para a recepção ver
       // de relance quem precisa ser contatado.
-      return 'bg-amber-50/70 border-amber-300 hover:bg-amber-100 text-amber-900'
+      return 'bg-amber-50 border-amber-400 hover:bg-amber-100 text-amber-950'
   }
 }
 
-/** Marca visual do status de confirmação, exibida no bloco da consulta. */
-function indicadorConfirmacao(
-  status: Consulta['status'],
-): { texto: string; classe: string } | null {
-  if (status === 'confirmada') return { texto: '✓ confirmada', classe: 'text-emerald-700' }
-  if (status === 'agendada') return { texto: 'aguardando confirmação', classe: 'text-amber-700' }
-  return null
+/** Bolinha de status, usada no lugar de texto quando o bloco é baixo. */
+const dotStyle = (status: Consulta['status']): string => {
+  switch (status) {
+    case 'confirmada':
+      return 'bg-emerald-500'
+    case 'realizada':
+      return 'bg-blue-500'
+    case 'cancelada':
+      return 'bg-slate-300'
+    case 'faltou':
+      return 'bg-rose-500'
+    default:
+      return 'bg-amber-500'
+  }
+}
+
+/**
+ * Aniversariantes do próprio dia (não todos os pacientes do dia).
+ * O filtro anterior mostrava qualquer paciente com data de nascimento
+ * preenchida, o que enchia o cabeçalho de nomes sem relação com a data.
+ */
+function aniversariantesDoDia(consultas: Consulta[], data: string) {
+  const [, mm, dd] = data.split('-').map(Number)
+  const vistos = new Set<string>()
+  const out: { id: string; nome: string }[] = []
+  for (const c of consultas) {
+    const p = c.expand?.paciente
+    if (!p || vistos.has(p.id)) continue
+    const dm = extrairDiaMes(p.data_nascimento)
+    if (!dm || dm.mes !== mm || dm.dia !== dd) continue
+    vistos.add(p.id)
+    out.push({ id: p.id, nome: p.nome })
+  }
+  return out
 }
 
 interface EventoLayout {
@@ -108,7 +135,7 @@ interface EventoLayout {
 }
 
 /** Distribui consultas sobrepostas em colunas laterais (como no Google Calendar). */
-function layoutDoDia(consultas: Consulta[], inicioMin: number, totalMin: number): EventoLayout[] {
+function layoutDoDia(consultas: Consulta[], inicioMin: number): EventoLayout[] {
   const yOf = (t: string) => ((timeToMinutes(t) - inicioMin) / 60) * HOUR_PX
   const ativos = consultas.filter((c) => c.status !== 'cancelada')
   const canceladas = consultas.filter((c) => c.status === 'cancelada')
@@ -182,6 +209,7 @@ interface ColunaDiaProps {
   fimMin: number
   intervaloMinutos: number
   hourLines: string[]
+  estreita: boolean
   onOpenConsulta: (c: Consulta) => void
   onNovoAgendamento: (data: string, hora?: string) => void
   onToggleBloqueio: (data: string) => void
@@ -194,6 +222,7 @@ const ColunaDia: React.FC<ColunaDiaProps> = ({
   fimMin,
   intervaloMinutos,
   hourLines,
+  estreita,
   onOpenConsulta,
   onNovoAgendamento,
   onToggleBloqueio,
@@ -219,7 +248,7 @@ const ColunaDia: React.FC<ColunaDiaProps> = ({
     <div
       className={cn(
         'relative h-full',
-        dia.bloqueado && 'bg-amber-50/70',
+        dia.bloqueado && 'bg-slate-100/80',
         dia.isFds && !dia.bloqueado && 'bg-slate-50/60',
       )}
     >
@@ -235,22 +264,18 @@ const ColunaDia: React.FC<ColunaDiaProps> = ({
       {dia.bloqueado ? (
         <button
           type="button"
-          className="absolute inset-0 flex flex-col items-center justify-center gap-1.5 p-2 text-center group"
+          className="absolute inset-0 flex flex-col items-center justify-center gap-1 p-1 text-center group hover:bg-emerald-50/60 transition-colors"
           onClick={() => onToggleBloqueio(dia.data)}
           title={dia.desbloqueadoFds ? 'Bloquear novamente' : 'Desbloquear dia'}
         >
           {dia.desbloqueadoFds ? (
-            <Lock className="w-4 h-4 text-amber-500" />
+            <Lock className="w-3.5 h-3.5 text-amber-500" />
           ) : (
-            <LockOpen className="w-4 h-4 text-emerald-600" />
+            <LockOpen className="w-3.5 h-3.5 text-emerald-600" />
           )}
-          <span className="text-[10px] font-medium text-amber-800 leading-tight group-hover:underline">
-            {dia.isFds
-              ? 'Fim de semana bloqueado por padrão'
-              : dia.motivoBloqueio || 'Dia inteiro bloqueado'}
-          </span>
-          <span className="text-[10px] text-slate-500 group-hover:text-emerald-700">
-            {dia.desbloqueadoFds ? 'Clique para bloquear' : 'Clique para liberar'}
+          <span className="text-[9px] font-semibold text-slate-500 leading-tight">Fechado</span>
+          <span className="text-[9px] text-emerald-700 leading-tight opacity-0 group-hover:opacity-100 transition-opacity">
+            {dia.desbloqueadoFds ? 'bloquear' : 'abrir'}
           </span>
         </button>
       ) : (
@@ -273,63 +298,67 @@ const ColunaDia: React.FC<ColunaDiaProps> = ({
           ))}
 
           {/* consultas */}
-          {eventos.map(({ consulta: c, top, height, leftPct, widthPct }) => (
-            <button
-              key={c.id}
-              type="button"
-              className={cn(
-                'group absolute rounded-md border-l-4 border shadow-sm px-1.5 py-0.5 text-left overflow-visible hover:shadow-md transition-shadow z-10',
-                blockStyle(c.status),
-              )}
-              style={{
-                top,
-                height,
-                left: `calc(${leftPct}% + 2px)`,
-                width: `calc(${widthPct}% - 4px)`,
-              }}
-              onClick={() => onOpenConsulta(c)}
-              aria-label={`Consulta de ${c.expand?.paciente?.nome || 'Paciente'} às ${c.hora_inicio}: ${c.expand?.tipo_atendimento?.nome || 'Procedimento odontológico'}`}
-              tabIndex={0}
-            >
-              <ConsultaTooltip consulta={c} />
-              <span className="block font-mono text-[10px] font-bold leading-tight">
-                {c.hora_inicio}
-              </span>
-              <span className="block text-[11px] font-semibold leading-tight truncate">
-                {c.expand?.paciente?.nome || 'Paciente não identificado'}
-              </span>
-              {(() => {
-                const ind = indicadorConfirmacao(c.status)
-                if (!ind) return null
-                return (
-                  <span className={cn('block text-[9px] leading-tight font-medium', ind.classe)}>
-                    {ind.texto}
+          {eventos.map(({ consulta: c, top, height, leftPct, widthPct }) => {
+            const nome = c.expand?.paciente?.nome || 'Paciente não identificado'
+            const procedimento = c.expand?.tipo_atendimento?.nome || ''
+            // conteúdo conforme a altura do bloco: nada de texto cortado
+            const mostraProcedimento = height >= 50
+            const mostraStatusTexto = height >= 68
+            return (
+              <button
+                key={c.id}
+                type="button"
+                className={cn(
+                  'group absolute rounded border-l-[3px] border shadow-sm px-1 py-0.5 text-left overflow-hidden hover:shadow-md hover:z-20 transition-shadow z-10',
+                  blockStyle(c.status),
+                )}
+                style={{
+                  top,
+                  height,
+                  left: `calc(${leftPct}% + 1px)`,
+                  width: `calc(${widthPct}% - 2px)`,
+                }}
+                onClick={() => onOpenConsulta(c)}
+                aria-label={`Consulta de ${nome} às ${c.hora_inicio}: ${procedimento || 'Procedimento odontológico'}`}
+                tabIndex={0}
+              >
+                <ConsultaTooltip consulta={c} />
+                <span className="flex items-center gap-1 leading-none">
+                  <span className="font-mono text-[10px] font-bold tabular-nums">
+                    {c.hora_inicio.slice(0, 5)}
                   </span>
-                )
-              })()}
-              {(() => {
-                const aniv = aniversarioDePaciente(c.expand?.paciente?.data_nascimento)
-                if (!aniv || aniv.diasAte > 5) return null
-                return (
                   <span
-                    className={cn(
-                      'inline-flex items-center gap-0.5 mt-0.5 px-1 py-px rounded text-[9px] font-semibold leading-tight',
-                      aniv.ehHoje ? 'bg-pink-600 text-white' : 'bg-pink-100 text-pink-800',
-                    )}
-                    title={`🎂 ${aniv.ehHoje ? 'Aniversário hoje!' : `Faz aniversário em ${aniv.diasAte} ${aniv.diasAte === 1 ? 'dia' : 'dias'}`}`}
-                  >
-                    <Cake className="w-2.5 h-2.5" />
-                    {aniv.ehHoje ? 'Aniversário hoje' : `Aniv. em ${aniv.diasAte}d`}
-                  </span>
-                )
-              })()}
-              {height > MIN_EVENT_PX + 10 && (
-                <span className="block text-[10px] leading-tight truncate opacity-80">
-                  {c.expand?.tipo_atendimento?.nome || 'Procedimento odontológico'}
+                    className={cn('w-1.5 h-1.5 rounded-full shrink-0', dotStyle(c.status))}
+                    title={
+                      c.status === 'confirmada'
+                        ? 'Confirmada'
+                        : c.status === 'agendada'
+                          ? 'Aguardando confirmação'
+                          : c.status
+                    }
+                  />
                 </span>
-              )}
-            </button>
-          ))}
+                <span
+                  className={cn(
+                    'block font-semibold leading-tight truncate',
+                    estreita ? 'text-[10px]' : 'text-[11px]',
+                  )}
+                >
+                  {nome}
+                </span>
+                {mostraProcedimento && procedimento && (
+                  <span className="block text-[9px] leading-tight truncate opacity-75">
+                    {procedimento}
+                  </span>
+                )}
+                {mostraStatusTexto && c.status === 'agendada' && (
+                  <span className="block text-[9px] leading-tight font-medium text-amber-700">
+                    aguardando confirmação
+                  </span>
+                )}
+              </button>
+            )
+          })}
         </>
       )}
     </div>
@@ -359,57 +388,65 @@ export const AgendaGrade: React.FC<AgendaGradeProps> = ({
   }, [inicioMin, fimMin])
 
   const eventosPorDia = useMemo(
-    () => dias.map((d) => layoutDoDia(d.consultas, inicioMin, fimMin)),
-    [dias, inicioMin, fimMin],
+    () => dias.map((d) => layoutDoDia(d.consultas, inicioMin)),
+    [dias, inicioMin],
   )
 
-  const colTemplate = { gridTemplateColumns: `${GUTTER_PX}px repeat(7, minmax(0, 1fr))` }
+  // Sábado e domingo ocupam menos largura; os dias úteis ficam com o resto.
+  const colTemplate = {
+    gridTemplateColumns: `${GUTTER_PX}px repeat(5, minmax(132px, 1fr)) ${COL_FDS_PX}px ${COL_FDS_PX}px`,
+  }
+
+  const estreitaEm = (i: number) => i >= 5
 
   return (
     <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
       {/* rolagem horizontal no mobile, com a grade preservada */}
       <div className="overflow-x-auto">
-        <div className="min-w-[760px]">
+        <div className="min-w-[820px]">
           {/* cabeçalho dos dias */}
           <div className="grid border-b border-slate-200 bg-white" style={colTemplate}>
             <div />
-            {dias.map((d) => {
+            {dias.map((d, i) => {
               const ddmm = `${d.data.slice(8, 10)}/${d.data.slice(5, 7)}`
+              const ativas = d.consultas.filter((c) => c.status !== 'cancelada').length
+              const anives = aniversariantesDoDia(d.consultas, d.data)
+              const estreita = estreitaEm(i)
               return (
                 <div
                   key={d.data}
                   className={cn(
-                    'border-l border-slate-200 px-2 py-2',
+                    'border-l border-slate-200 px-1.5 py-1.5 group/dia',
                     d.isHoje
                       ? 'bg-marca-vermelho text-white'
                       : d.bloqueado
-                        ? 'bg-amber-50'
+                        ? 'bg-slate-100'
                         : 'bg-slate-50',
                   )}
                 >
                   <div className="flex items-center justify-between gap-1">
                     <span
                       className={cn(
-                        'text-[11px] font-semibold uppercase tracking-wide',
-                        d.isHoje ? 'text-white' : 'text-slate-600',
+                        'text-[10px] font-semibold uppercase tracking-wide leading-none',
+                        d.isHoje ? 'text-white' : 'text-slate-500',
                       )}
                     >
                       {getDiaSemanaCurto(d.data)}
                     </span>
-                    <div className="flex items-center gap-0.5">
+                    <div className="flex items-center gap-0.5 opacity-0 group-hover/dia:opacity-100 transition-opacity">
                       {!d.bloqueado && (
                         <button
                           type="button"
                           onClick={() => onNovoAgendamento(d.data)}
                           title="Novo agendamento neste dia"
                           className={cn(
-                            'w-5 h-5 rounded flex items-center justify-center',
+                            'w-4 h-4 rounded flex items-center justify-center',
                             d.isHoje
                               ? 'hover:bg-red-700 text-white'
                               : 'hover:bg-marca-vermelho-claro text-marca-vermelho',
                           )}
                         >
-                          <Plus className="w-3.5 h-3.5" />
+                          <Plus className="w-3 h-3" />
                         </button>
                       )}
                       <button
@@ -417,7 +454,7 @@ export const AgendaGrade: React.FC<AgendaGradeProps> = ({
                         onClick={() => onToggleBloqueio(d.data)}
                         title={d.bloqueado ? 'Desbloquear dia' : 'Bloquear dia inteiro'}
                         className={cn(
-                          'w-5 h-5 rounded flex items-center justify-center',
+                          'w-4 h-4 rounded flex items-center justify-center',
                           d.isHoje
                             ? 'hover:bg-red-700 text-white'
                             : d.bloqueado
@@ -426,67 +463,75 @@ export const AgendaGrade: React.FC<AgendaGradeProps> = ({
                         )}
                       >
                         {d.bloqueado ? (
-                          <LockOpen className="w-3.5 h-3.5" />
+                          <LockOpen className="w-3 h-3" />
                         ) : (
-                          <Lock className="w-3.5 h-3.5" />
+                          <Lock className="w-3 h-3" />
                         )}
                       </button>
                     </div>
                   </div>
-                  <div className="flex items-baseline gap-1.5">
-                    <span className={cn('text-base font-bold', d.isHoje ? 'text-white' : '')}>
+
+                  <div className="flex items-baseline gap-1 mt-0.5">
+                    <span
+                      className={cn(
+                        'font-bold leading-none',
+                        estreita ? 'text-[12px]' : 'text-sm',
+                        d.isHoje ? 'text-white' : 'text-slate-800',
+                      )}
+                    >
                       {ddmm}
                     </span>
                     {d.isHoje && (
-                      <span className="text-[9px] bg-white text-marca-vermelho font-semibold px-1 py-px rounded leading-none">
+                      <span className="text-[8px] bg-white text-marca-vermelho font-bold px-1 py-px rounded leading-none">
                         HOJE
                       </span>
                     )}
                   </div>
-                  {(() => {
-                    const anives = d.consultas
-                      .map((c) => c.expand?.paciente)
-                      .filter((p): p is NonNullable<typeof p> => !!p?.data_nascimento)
-                      .map((p) => ({ p, aniv: aniversarioDePaciente(p.data_nascimento) }))
-                      .filter((x) => x.aniv !== null)
-                    if (anives.length === 0) return null
-                    return (
-                      <div className="mt-0.5 flex flex-wrap gap-0.5">
-                        {anives.map(({ p, aniv }) => (
-                          <span
-                            key={p.id}
-                            className={cn(
-                              'inline-flex items-center gap-0.5 px-1 py-px rounded-full text-[9px] font-semibold leading-none max-w-full',
-                              aniv!.ehHoje
-                                ? d.isHoje
-                                  ? 'bg-white text-pink-700'
-                                  : 'bg-pink-600 text-white'
-                                : d.isHoje
-                                  ? 'bg-pink-100 text-pink-800'
-                                  : 'bg-pink-100 text-pink-800',
-                            )}
-                            title={`🎂 ${p.nome}: ${aniv!.ehHoje ? 'aniversário hoje!' : `aniversário em ${aniv!.diasAte} dia(s)`}`}
-                          >
-                            <Cake className="w-2.5 h-2.5 shrink-0" />
-                            <span className="truncate">{p.nome.split(' ')[0]}</span>
-                          </span>
-                        ))}
-                      </div>
-                    )
-                  })()}
+
+                  {/* resumo do dia: quantas consultas, para bater o olho */}
+                  {!d.bloqueado && ativas > 0 && (
+                    <span
+                      className={cn(
+                        'text-[9px] leading-none',
+                        d.isHoje ? 'text-red-50' : 'text-slate-500',
+                      )}
+                    >
+                      {ativas} {ativas === 1 ? 'consulta' : 'consultas'}
+                    </span>
+                  )}
+
+                  {/* aniversariantes DO DIA (não todos os que têm data de nascimento) */}
+                  {anives.length > 0 && (
+                    <div className="mt-1 flex flex-wrap gap-0.5">
+                      <span
+                        className={cn(
+                          'inline-flex items-center gap-0.5 px-1 py-px rounded text-[9px] font-semibold leading-none max-w-full',
+                          d.isHoje ? 'bg-white text-pink-700' : 'bg-pink-100 text-pink-800',
+                        )}
+                        title={anives.map((a) => a.nome).join(', ')}
+                      >
+                        <Cake className="w-2.5 h-2.5 shrink-0" />
+                        <span className="truncate">
+                          {anives.length === 1
+                            ? anives[0].nome.split(' ')[0]
+                            : `${anives[0].nome.split(' ')[0]} +${anives.length - 1}`}
+                        </span>
+                      </span>
+                    </div>
+                  )}
                 </div>
               )
             })}
           </div>
 
-          {/* corpo da grade */}
+          {/* corpo da grade — usa a mesma grade do cabeçalho, então as colunas alinham */}
           <div className="grid" style={colTemplate}>
             {/* coluna de horas */}
             <div className="relative bg-slate-50/70" style={{ height: alturaCorpo }}>
               {hourLines.map((h) => (
                 <span
                   key={h}
-                  className="absolute right-1.5 -translate-y-1/2 text-[10px] font-mono text-slate-400"
+                  className="absolute right-1.5 -translate-y-1/2 text-[10px] font-mono text-slate-400 tabular-nums"
                   style={{ top: ((timeToMinutes(h) - inicioMin) / 60) * HOUR_PX }}
                 >
                   {h}
@@ -494,28 +539,29 @@ export const AgendaGrade: React.FC<AgendaGradeProps> = ({
               ))}
             </div>
 
-            {/* área dos 7 dias */}
-            <div className="col-span-7 relative" style={{ height: alturaCorpo }}>
-              {dias.map((d, i) => (
-                <div
-                  key={d.data}
-                  className={cn('absolute top-0 bottom-0', i > 0 && 'border-l border-slate-200')}
-                  style={{ left: `${(i / 7) * 100}%`, width: `${100 / 7}%` }}
-                >
-                  <ColunaDia
-                    dia={d}
-                    eventos={eventosPorDia[i]}
-                    inicioMin={inicioMin}
-                    fimMin={fimMin}
-                    intervaloMinutos={intervaloMinutos}
-                    hourLines={hourLines}
-                    onOpenConsulta={onOpenConsulta}
-                    onNovoAgendamento={onNovoAgendamento}
-                    onToggleBloqueio={onToggleBloqueio}
-                  />
-                </div>
-              ))}
-            </div>
+            {dias.map((d, i) => (
+              <div
+                key={d.data}
+                className={cn(
+                  'border-l border-slate-200',
+                  d.isHoje && 'ring-1 ring-inset ring-marca-vermelho/20',
+                )}
+                style={{ height: alturaCorpo }}
+              >
+                <ColunaDia
+                  dia={d}
+                  eventos={eventosPorDia[i]}
+                  inicioMin={inicioMin}
+                  fimMin={fimMin}
+                  intervaloMinutos={intervaloMinutos}
+                  hourLines={hourLines}
+                  estreita={estreitaEm(i)}
+                  onOpenConsulta={onOpenConsulta}
+                  onNovoAgendamento={onNovoAgendamento}
+                  onToggleBloqueio={onToggleBloqueio}
+                />
+              </div>
+            ))}
           </div>
         </div>
       </div>
