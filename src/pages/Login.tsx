@@ -12,7 +12,7 @@ import {
   CardFooter,
 } from '@/components/ui/card'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Calendar, AlertCircle, Sparkles, UserCheck } from 'lucide-react'
+import { Calendar, AlertCircle, Sparkles } from 'lucide-react'
 import pb from '@/lib/pocketbase/client'
 import { OdontomariLogoCompleta, OdontomariSlogan } from '@/components/OdontomariLogo'
 
@@ -57,11 +57,6 @@ export const LoginPage: React.FC = () => {
     } finally {
       setForgotLoading(false)
     }
-  }
-
-  const handleQuickLogin = (quickEmail: string) => {
-    setEmail(quickEmail)
-    setPassword('Skip@Pass')
   }
 
   return (
@@ -188,36 +183,11 @@ export const LoginPage: React.FC = () => {
 
           {!showForgot && (
             <CardFooter className="flex flex-col border-t border-slate-100 pt-4 bg-slate-50/70 rounded-b-lg">
-              <span className="text-xs text-slate-500 mb-2 font-medium flex items-center gap-1.5">
-                <UserCheck className="w-3.5 h-3.5 text-marca-vermelho" />
-                Acesso rápido para testes dos perfis:
-              </span>
-              <div className="grid grid-cols-2 gap-2 w-full text-xs">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className="text-left justify-start h-auto py-2 border-slate-200"
-                  onClick={() => handleQuickLogin('ja3dimpressoes3d@gmail.com')}
-                >
-                  <div>
-                    <p className="font-semibold text-slate-800">Administrador</p>
-                    <p className="text-[10px] text-slate-500">Dentista / Geral</p>
-                  </div>
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className="text-left justify-start h-auto py-2 border-slate-200"
-                  onClick={() => handleQuickLogin('recepcao@odontomari.com.br')}
-                >
-                  <div>
-                    <p className="font-semibold text-slate-800">Recepção</p>
-                    <p className="text-[10px] text-slate-500">Agenda e Pacientes</p>
-                  </div>
-                </Button>
-              </div>
+              <p className="text-[11px] text-slate-500 text-center leading-relaxed">
+                Acesso restrito à equipe da clínica.
+                <br />
+                Esqueceu seus dados de acesso? Fale com a administração da Odontomari.
+              </p>
             </CardFooter>
           )}
         </Card>
