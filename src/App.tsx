@@ -16,6 +16,7 @@ import { MarketingPage } from './pages/Marketing'
 import { ConfiguracoesPage } from './pages/Configuracoes'
 import { LogsPage } from './pages/Logs'
 import { ImportacaoPage } from './pages/Importacao'
+import { ResetPasswordPage } from './pages/ResetPassword'
 import NotFound from './pages/NotFound'
 
 const App = () => (
@@ -39,6 +40,7 @@ const App = () => (
             <Route path="/importacao" element={<ImportacaoPage />} />
             <Route path="/logs" element={<LogsPage />} />
           </Route>
+          <Route path="/reset-password" element={<ResetPasswordPage />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </TooltipProvider>
