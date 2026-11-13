@@ -18,6 +18,7 @@ import {
   Target,
   ScrollText,
   TrendingUp,
+  Upload,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -87,6 +88,12 @@ export default function Layout() {
       href: '/marketing',
       icon: TrendingUp,
       role: 'all',
+    },
+    {
+      title: 'Importação',
+      href: '/importacao',
+      icon: Upload,
+      role: 'admin', // Admin only
     },
     {
       title: 'Configurações',

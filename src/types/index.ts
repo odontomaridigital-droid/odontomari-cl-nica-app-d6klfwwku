@@ -45,6 +45,8 @@ export interface Paciente {
   /** Como o paciente chegou à clínica (marketing futuro) */
   origem?: string
   origem_complemento?: string
+  /** Colunas de planilha importada sem campo próprio no banco (nada é descartado) */
+  extras?: Record<string, unknown> | null
   /** Foto do paciente (arquivo no PocketBase) */
   foto?: string
   created?: string

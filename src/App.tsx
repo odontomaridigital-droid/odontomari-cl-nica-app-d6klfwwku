@@ -15,6 +15,7 @@ import { OportunidadesPage } from './pages/Oportunidades'
 import { MarketingPage } from './pages/Marketing'
 import { ConfiguracoesPage } from './pages/Configuracoes'
 import { LogsPage } from './pages/Logs'
+import { ImportacaoPage } from './pages/Importacao'
 import NotFound from './pages/NotFound'
 
 const App = () => (
@@ -35,6 +36,7 @@ const App = () => (
             <Route path="/oportunidades" element={<OportunidadesPage />} />
             <Route path="/marketing" element={<MarketingPage />} />
             <Route path="/configuracoes" element={<ConfiguracoesPage />} />
+            <Route path="/importacao" element={<ImportacaoPage />} />
             <Route path="/logs" element={<LogsPage />} />
           </Route>
           <Route path="*" element={<NotFound />} />

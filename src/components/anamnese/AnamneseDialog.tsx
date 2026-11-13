@@ -106,7 +106,7 @@ export const AnamneseDialog: React.FC<AnamneseDialogProps> = ({
         await anamnesesService.update(anamnese.id, {
           respostas,
           data: dataPreenchimento,
-        })
+        } as never)
       } else {
         await anamnesesService.create({
           paciente: pacienteId,
