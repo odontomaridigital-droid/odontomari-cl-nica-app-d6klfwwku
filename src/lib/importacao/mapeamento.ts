@@ -1,5 +1,5 @@
 import {
-  normalizarNome as normalizarColuna,
+  normalizarNome,
   normalizarCidade,
   normalizarUf,
   normalizarTelefone,
@@ -8,9 +8,6 @@ import {
   corrigirAcentos,
 } from './normalizar'
 import { DestinoCampo, DestinoColecao, destinoDoMolde } from './destinos'
-
-/** Mantém o nome antigo usado no restante do arquivo. */
-const normalizarNome = normalizarColuna
 
 /** Destino escolhido para uma coluna da planilha */
 export type MapeamentoColuna =
