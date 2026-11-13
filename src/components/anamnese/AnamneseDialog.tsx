@@ -21,6 +21,7 @@ import {
   MODELO_ANAMNESE,
   RespostasAnamnese,
   respostasVazias,
+  respostasVaziasPara,
   normalizarRespostas,
 } from '@/lib/anamneseModelo'
 import { formatDateBr } from '@/lib/formatters'

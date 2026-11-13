@@ -695,7 +695,7 @@ export const odontogramaService = {
 
     registrarLog(
       existente ? 'editou' : 'criou',
-      'prontuario',
+      'consulta',
       `Odontograma: dente ${data.dente} marcado como ${data.condicao}`,
       salvo.id,
     )
@@ -706,7 +706,7 @@ export const odontogramaService = {
     const ok = await pb.collection('odontograma').delete(registroId)
     registrarLog(
       'excluiu',
-      'prontuario',
+      'consulta',
       `Odontograma: estado do dente ${dente ?? ''} removido`,
       registroId,
     )

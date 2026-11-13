@@ -18,6 +18,7 @@ import type { TipoOportunidade } from '@/lib/oportunidades'
 
 const ICONES: Record<TipoOportunidade, React.ElementType> = {
   planejamento_aberto: Wallet,
+  retorno_vencido: CalendarCheck,
   faltou: UserX,
   cancelou: CalendarX,
   sem_voltar_6m: CalendarCheck,
@@ -36,6 +37,10 @@ const CORES: Record<TipoOportunidade, { chip: string; iconeBox: string }> = {
   cancelou: {
     chip: 'bg-slate-100 text-slate-700 border-slate-200',
     iconeBox: 'bg-slate-100 text-slate-600',
+  },
+  retorno_vencido: {
+    chip: 'bg-rose-50 text-rose-800 border-rose-200',
+    iconeBox: 'bg-rose-50 text-rose-600',
   },
   sem_voltar_6m: {
     chip: 'bg-blue-50 text-blue-800 border-blue-200',
