@@ -38,3 +38,13 @@ export function dateKeyOf(data: string): string {
 export function getDiaSemanaCurto(dateStr: string): string {
   return NOMES_DIAS_CURTOS[parseDateStr(dateStr).getDay()]
 }
+
+/** YYYY-MM-DD → Date local (meio-dia, para não escorregar de fuso). */
+export function dataDeChave(dateStr: string): Date {
+  return parseDateStr(dateStr)
+}
+
+/** Date local → YYYY-MM-DD. */
+export function chaveDeData(d: Date): string {
+  return toDateKey(d)
+}

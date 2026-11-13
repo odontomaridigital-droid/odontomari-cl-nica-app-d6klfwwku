@@ -8,14 +8,25 @@ import {
 } from '@/services/clinica'
 import { Consulta, BloqueioAgenda, ClinicaConfig, Paciente } from '@/types'
 import { getTodayDateString, formatDateBr, isWeekend, createWhatsAppUrl } from '@/lib/formatters'
-import { getWeekStart, getWeekDays, addDaysToDate, dateKeyOf } from '@/lib/semana'
+import {
+  getWeekStart,
+  getWeekDays,
+  addDaysToDate,
+  dateKeyOf,
+  dataDeChave,
+  chaveDeData,
+} from '@/lib/semana'
 import { AgendaGrade, AgendaDiaInfo, StatusConsultaBadge } from '@/components/agenda/AgendaGrade'
-import { aniversarioDePaciente, textoAniversario } from '@/lib/aniversario'
+import { FaixaAniversario } from '@/components/agenda/AniversariantesFaixa'
+import { aniversarioNaJanela } from '@/lib/aniversario'
 import { PacienteAvatar } from '@/components/PacienteAvatar'
 import { useAuth } from '@/contexts/AuthContext'
 import { Cake, ClipboardList, UserCheck } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Calendar } from '@/components/ui/calendar'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { ptBR } from 'date-fns/locale'
 import {
   Dialog,
   DialogContent,
@@ -280,14 +291,24 @@ export const AgendaPage: React.FC = () => {
 
   const selectedPac = selectedConsulta?.expand?.paciente
 
-  // Pacientes que fazem aniversário hoje (banner do topo)
-  const aniversariantesHoje = useMemo(
-    () =>
-      pacientes
-        .map((p) => ({ p, aniv: aniversarioDePaciente(p.data_nascimento) }))
-        .filter((x) => x.aniv?.ehHoje),
-    [pacientes],
-  )
+  /**
+   * Aniversariantes numa janela de 5 dias para trás e 5 para frente.
+   * Quem fez aniversário ontem ainda dá tempo de parabenizar; quem faz na
+   * semana que vem dá tempo de preparar. Ficam separados em três faixas.
+   */
+  const aniversariantes = useMemo(() => {
+    const itens = pacientes
+      .map((p) => ({ p, janela: aniversarioNaJanela(p.data_nascimento, new Date(), 5, 5) }))
+      .filter((x): x is { p: Paciente; janela: NonNullable<typeof x.janela> } => x.janela !== null)
+      .sort((a, b) => a.janela.offset - b.janela.offset)
+
+    return {
+      recentes: itens.filter((x) => x.janela.offset < 0),
+      hoje: itens.filter((x) => x.janela.offset === 0),
+      proximos: itens.filter((x) => x.janela.offset > 0),
+      total: itens.length,
+    }
+  }, [pacientes])
 
   return (
     <div className="space-y-6 pb-16 md:pb-8">
@@ -314,15 +335,33 @@ export const AgendaPage: React.FC = () => {
             >
               <ChevronLeft className="w-4 h-4" />
             </Button>
-            <input
-              type="date"
-              value={weekStart}
-              onChange={(e) => {
-                if (e.target.value) setWeekStart(getWeekStart(e.target.value))
-              }}
-              title="Ir para a semana da data"
-              className="bg-transparent text-xs sm:text-sm font-medium px-2 py-1 outline-none text-slate-700 cursor-pointer"
-            />
+            {/* Calendário em português: o campo nativo do navegador insiste
+                no formato americano (mm/dd), então a data é escolhida aqui. */}
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 px-2 text-xs sm:text-sm font-semibold text-slate-700 whitespace-nowrap"
+                  title="Escolher a semana pelo calendário"
+                >
+                  <CalendarIcon className="w-3.5 h-3.5 mr-1.5 text-marca-vermelho" />
+                  {formatDateBr(weekStart)}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="center">
+                <Calendar
+                  mode="single"
+                  locale={ptBR}
+                  selected={dataDeChave(weekStart)}
+                  defaultMonth={dataDeChave(weekStart)}
+                  onSelect={(d) => {
+                    if (d) setWeekStart(getWeekStart(chaveDeData(d)))
+                  }}
+                  autoFocus
+                />
+              </PopoverContent>
+            </Popover>
             <Button
               variant="ghost"
               size="icon"
@@ -355,35 +394,39 @@ export const AgendaPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Banner de aniversariantes do dia */}
-      {aniversariantesHoje.length > 0 && (
-        <div className="rounded-xl border border-pink-200 bg-pink-50 px-4 py-3 flex items-start gap-3">
-          <div className="w-9 h-9 rounded-lg bg-pink-100 text-pink-600 flex items-center justify-center shrink-0">
-            <Cake className="w-5 h-5" />
-          </div>
-          <div className="min-w-0 flex-1">
-            <p className="text-sm font-bold text-pink-900">
-              {aniversariantesHoje.length === 1
-                ? 'Aniversariante do dia!'
-                : `${aniversariantesHoje.length} aniversariantes hoje!`}
-            </p>
-            <div className="mt-1.5 flex flex-wrap items-center gap-2">
-              {aniversariantesHoje.map(({ p, aniv }) => (
-                <button
-                  key={p.id}
-                  type="button"
-                  onClick={() => navigate(`/pacientes/${p.id}/prontuario`)}
-                  className="flex items-center gap-2 rounded-full bg-white border border-pink-200 pl-1 pr-3 py-1 hover:border-pink-400 transition-colors"
-                  title={`Abrir prontuário de ${p.nome}`}
-                >
-                  <PacienteAvatar paciente={p} className="w-6 h-6" textClassName="text-[9px]" />
-                  <span className="text-xs font-semibold text-pink-900">{p.nome}</span>
-                  <span className="text-[10px] text-pink-600">
-                    {textoAniversario(0, p.data_nascimento)}
-                  </span>
-                </button>
-              ))}
+      {/* Painel de aniversariantes: últimos 5 dias, hoje e próximos 5 dias */}
+      {aniversariantes.total > 0 && (
+        <div className="rounded-xl border border-pink-200 bg-pink-50 px-4 py-3">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-lg bg-pink-100 text-pink-600 flex items-center justify-center shrink-0">
+              <Cake className="w-4 h-4" />
             </div>
+            <p className="text-sm font-bold text-pink-900">Aniversariantes</p>
+            <span className="text-[11px] text-pink-600">
+              de {formatDateBr(addDaysToDate(hoje, -5))} a {formatDateBr(addDaysToDate(hoje, 5))}
+            </span>
+          </div>
+
+          <div className="mt-2.5 space-y-2">
+            <FaixaAniversario
+              titulo="Já passaram (últimos 5 dias)"
+              cor="text-slate-600"
+              itens={aniversariantes.recentes}
+              onAbrir={(id) => navigate(`/pacientes/${id}/prontuario`)}
+            />
+            <FaixaAniversario
+              titulo="Hoje"
+              destaque
+              cor="text-pink-700"
+              itens={aniversariantes.hoje}
+              onAbrir={(id) => navigate(`/pacientes/${id}/prontuario`)}
+            />
+            <FaixaAniversario
+              titulo="Próximos 5 dias"
+              cor="text-pink-700"
+              itens={aniversariantes.proximos}
+              onAbrir={(id) => navigate(`/pacientes/${id}/prontuario`)}
+            />
           </div>
         </div>
       )}

@@ -48,6 +48,36 @@ export function aniversarioDePaciente(dataNascimento?: string | null, hoje = new
   return { mes: dm.mes, dia: dm.dia, diasAte, ehHoje, idade, anoAniversario: ano }
 }
 
+/**
+ * Aniversário dentro de uma janela em torno de hoje: `antes` dias para trás e
+ * `depois` dias para frente. Devolve o deslocamento em dias (0 = hoje,
+ * negativo = já passou) e a idade que a pessoa completa nesse aniversário.
+ * null quando o aniversário está fora da janela ou não há dia/mês.
+ */
+export function aniversarioNaJanela(
+  dataNascimento: string | null | undefined,
+  hoje = new Date(),
+  antes = 5,
+  depois = 5,
+): { offset: number; idade: number | null; ano: number } | null {
+  const dm = extrairDiaMes(dataNascimento)
+  if (!dm) return null
+  const base = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate())
+  const anoNasc = extrairAno(dataNascimento)
+
+  // o aniversário pode cair no ano anterior, neste ano ou no próximo
+  for (const ano of [base.getFullYear() - 1, base.getFullYear(), base.getFullYear() + 1]) {
+    let alvo = new Date(ano, dm.mes - 1, dm.dia)
+    if (isNaN(alvo.getTime())) alvo = new Date(ano, dm.mes, 0) // 31 -> último dia do mês
+    const diff = Math.round((alvo.getTime() - base.getTime()) / 86400000)
+    if (diff >= -antes && diff <= depois) {
+      const idade = anoNasc ? ano - anoNasc : null
+      return { offset: diff, idade, ano }
+    }
+  }
+  return null
+}
+
 /** Texto curto tipo "hoje", "em 3 dias", "em 25/09". */
 export function textoAniversario(diasAte: number, dataNascimento?: string | null): string {
   if (diasAte === 0) return 'aniversário hoje! 🎂'
