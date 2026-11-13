@@ -119,6 +119,46 @@ export const MOLDE_DENTISTA_ORGANIZADO: Record<
   responsavel: { extra: 'Responsável' },
 }
 
+/**
+ * Molde da aba "Consultas" do backup completo do Dentista Organizado.
+ *
+ * ⚠️ Esta aba tem uma pegadinha: a coluna chamada `nome_completo` contém o nome
+ * da DENTISTA (Marinalva Cordeiro, em 3.648 de 3.648 linhas), e o paciente está
+ * na coluna chamada `nome`. Mapear por nome de coluna colocaria todas as
+ * consultas na dentista.
+ *
+ * As datas vêm no formato "14/03/2022 -  09:50" (data e hora no mesmo campo).
+ * O mapeamento é por POSIÇÃO, não por nome de coluna.
+ */
+export const MOLDE_CONSULTAS_DENTISTA_ORGANIZADO = {
+  /** Confere se os cabeçalhos são dessa aba (tolerante a acento e caixa). */
+  reconhece(colunas: string[]): boolean {
+    const norm = (s: string) =>
+      String(s || '')
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^a-z]+/g, ' ')
+        .trim()
+    const alvo = colunas.map(norm)
+    return (
+      alvo.includes('nome completo') &&
+      alvo.some((c) => c.startsWith('data de in')) &&
+      alvo.includes('status') &&
+      alvo.includes('nome')
+    )
+  },
+
+  /** Índices fixos das colunas nesta aba. */
+  colunas: {
+    paciente: 4, // "nome" — atenção: NÃO é "nome_completo"
+    dataHoraInicio: 1, // "Data de Início" no formato "DD/MM/AAAA -  HH:MM"
+    dataHoraFim: 2, // "Hora Fim", mesmo formato
+    status: 3, // Confirmada / Agendada / Cancelada / Faltou
+    observacoes: 5,
+  },
+}
+
 /** Campos que, no molde, são guardados em `extras` em vez de coluna própria. */
 export function destinoDoMolde(coluna: string): { campo?: string; extra?: string } | null {
   const chave = coluna

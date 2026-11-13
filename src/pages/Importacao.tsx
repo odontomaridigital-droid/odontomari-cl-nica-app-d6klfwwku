@@ -10,6 +10,8 @@ import {
   PALAVRAS_ABA_PACIENTES,
 } from '@/lib/importacao/destinos'
 import { PlanilhaArquivo, PlanilhaAba, lerPlanilha } from '@/lib/importacao/lerPlanilha'
+import { converterConsultas } from '@/lib/importacao/consultas'
+import { MOLDE_CONSULTAS_DENTISTA_ORGANIZADO } from '@/lib/importacao/destinos'
 import {
   ColunaMapeada,
   LinhaConvertida,
@@ -109,12 +111,29 @@ export const ImportacaoPage: React.FC = () => {
   const abaAtual = arquivo && abaIndex >= 0 ? arquivo.abas[abaIndex] : null
   const destinoAtual = DESTINOS[destino]
 
+  /**
+   * A aba "Consultas" do Dentista Organizado tem a coluna `nome_completo`
+   * preenchida com o nome da DENTISTA, e o paciente em `nome`. Por isso ela é
+   * lida por posição fixa, com um conversor próprio — o mapeamento genérico
+   * jogaria todas as consultas na dentista.
+   */
+  const ehAbaConsultas = useMemo(
+    () => Boolean(abaAtual && MOLDE_CONSULTAS_DENTISTA_ORGANIZADO.reconhece(abaAtual.colunas)),
+    [abaAtual],
+  )
+
+  const conversaoConsultas = useMemo(() => {
+    if (!abaAtual || destino !== 'consultas' || !ehAbaConsultas) return null
+    return converterConsultas(abaAtual.linhas)
+  }, [abaAtual, destino, ehAbaConsultas])
+
   const linhasConvertidas: LinhaConvertida[] = useMemo(() => {
     if (!abaAtual) return []
+    if (conversaoConsultas) return conversaoConsultas.linhas
     return abaAtual.linhas.map((linha) =>
       converterLinha(linha, abaAtual.colunas, mapeamento, destinoAtual),
     )
-  }, [abaAtual, mapeamento, destinoAtual])
+  }, [abaAtual, mapeamento, destinoAtual, conversaoConsultas])
 
   const totalProblemas = linhasConvertidas.filter((l) => l.problemas.length > 0).length
   const totalExtras = mapeamento.filter((m) => m.mapeamento.tipo === 'extras').length
@@ -398,6 +417,28 @@ export const ImportacaoPage: React.FC = () => {
           </CardHeader>
           <CardContent className="space-y-4">
             <p className="text-xs text-slate-500">{destinoAtual.descricao}</p>
+
+            {ehAbaConsultas && destino === 'consultas' && (
+              <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-xs text-emerald-900 space-y-1">
+                <p className="font-semibold">Aba de consultas reconhecida</p>
+                <p>
+                  Nesta aba o nome da dentista está na coluna <code>nome_completo</code> e o
+                  paciente na coluna <code>nome</code>. Por isso ela é lida por posição, não pelo
+                  mapeamento abaixo — a lista de colunas aqui é só informativa.
+                </p>
+                <p>
+                  A data e a hora vêm juntas ("14/03/2022 - 09:50") e são separadas automaticamente.
+                </p>
+                {conversaoConsultas && Object.keys(conversaoConsultas.descartes).length > 0 && (
+                  <p className="font-medium">
+                    Descartadas:{' '}
+                    {Object.entries(conversaoConsultas.descartes)
+                      .map(([m, n]) => `${n} por ${m}`)
+                      .join(' · ')}
+                  </p>
+                )}
+              </div>
+            )}
             <div className="space-y-2">
               {mapeamento.map((col) => (
                 <div
