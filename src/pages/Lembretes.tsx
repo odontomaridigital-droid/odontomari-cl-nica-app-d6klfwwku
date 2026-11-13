@@ -11,7 +11,7 @@ import {
 import { useAuth } from '@/contexts/AuthContext'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Calendar } from '@/components/ui/calendar'
+import { Calendar as CalendarioUI } from '@/components/ui/calendar'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { ptBR } from 'date-fns/locale'
 import { dataDeChave, chaveDeData } from '@/lib/semana'
@@ -176,7 +176,7 @@ export const LembretesPage: React.FC = () => {
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0" align="center">
-                <Calendar
+                <CalendarioUI
                   mode="single"
                   locale={ptBR}
                   selected={dataDeChave(date)}
