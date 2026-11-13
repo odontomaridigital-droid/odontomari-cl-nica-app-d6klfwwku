@@ -58,12 +58,32 @@ export function normalizarCidade(valor: string): string {
     .map((p, i) => (i > 0 && minusculas.has(p) ? p : p.charAt(0).toUpperCase() + p.slice(1)))
     .join(' ')
 
-  // Abreviações conhecidas na região da clínica
+  // Abreviações e grafias divergentes da região da clínica
   const equivalentes: Record<string, string> = {
     America: 'Americana',
     'Santa Barbara Doeste': "Santa Bárbara d'Oeste",
     'Santa Barbara DOeste': "Santa Bárbara d'Oeste",
     'Santa Barbara': "Santa Bárbara d'Oeste",
+    "Santa Barbara D'oeste": "Santa Bárbara d'Oeste",
+    'Santa Barbara DOeste ': "Santa Bárbara d'Oeste",
+    Sumare: 'Sumaré',
+    Hortolandia: 'Hortolândia',
+    'Nova Odessa': 'Nova Odessa',
+    'Sao Paulo': 'São Paulo',
+    'Sao Jose Dos Campos': 'São José dos Campos',
+    'Sao Jose Do Rio Preto': 'São José do Rio Preto',
+    Marilia: 'Marília',
+    Iracemapolis: 'Iracemápolis',
+    Paulinia: 'Paulínia',
+    Cosmopolis: 'Cosmópolis',
+    Piracicaba: 'Piracicaba',
+    Limeira: 'Limeira',
+    Campinas: 'Campinas',
+    Valinhos: 'Valinhos',
+    Vinhedo: 'Vinhedo',
+    Indaiatuba: 'Indaiatuba',
+    'Monte Mor': 'Monte Mor',
+    Jundiai: 'Jundiaí',
   }
   return equivalentes[c] || c
 }
@@ -120,14 +140,21 @@ export function normalizarTelefone(bruto: string): { telefone: string; aviso?: s
     return { telefone: `19${d}`, aviso: 'Sem DDD — assumido 19' }
   }
 
-  // 12 dígitos: DDD + 9 + 9 dígitos (o 9 duplicado é erro de digitação comum)
+  // 12 dígitos: dois casos reais aparecem no backup
   if (d.length === 12) {
-    // 19 9 99115-2384 -> 19 + 9991152384 (10) = 12. Remove o 9 extra após o DDD.
+    // (a) DDD antigo com zero à esquerda: "012 98818-7971" -> DDD 12
+    if (d.startsWith('0')) {
+      const semZero = d.slice(1)
+      if (semZero.length === 11) {
+        return { telefone: semZero, aviso: 'Zero do DDD antigo removido' }
+      }
+    }
+
+    // (b) DDD + 9 + número de 9 dígitos: o 9 aparece duplicado na digitação.
+    //     "19 9 99115-2384" -> 19 + 9991152384 -> 19991152384
     const ddd = d.slice(0, 2)
     const resto = d.slice(2)
-    // Celular válido tem 9 dígitos e começa com 9
     if (resto.length === 10 && resto.startsWith('9')) {
-      // tira o primeiro dígito (o 9 duplicado) mantendo o segundo bloco
       const semDuplicado = resto.slice(1)
       if (semDuplicado.startsWith('9')) {
         return { telefone: `${ddd}${semDuplicado}`, aviso: 'Dígito 9 duplicado removido' }
