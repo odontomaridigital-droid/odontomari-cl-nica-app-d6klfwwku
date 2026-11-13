@@ -47,10 +47,26 @@ export async function gravarPacientes(
   existentes: Paciente[],
   onProgresso: (feitas: number, total: number) => void,
 ): Promise<ResumoImportacao> {
+  // Índices de deduplicação. Reimportar a planilha atualizada é um caso de uso
+  // real (o sistema antigo continua rodando), então o paciente é identificado
+  // por três caminhos, do mais forte para o mais fraco:
+  //   1. número do prontuário antigo (único e estável)
+  //   2. telefone (ignora formatação)
+  //   3. nome + telefone
+  const porProntuario = new Map<string, Paciente>()
+  const porTelefone = new Map<string, Paciente>()
   const porChave = new Map<string, Paciente>()
+
   for (const p of existentes) {
-    const chave = `${chaveNome(p.nome)}|${digitosTelefone(p.telefone)}`
-    if (digitosTelefone(p.telefone) && chaveNome(p.nome)) porChave.set(chave, p)
+    const extras: Record<string, unknown> = (p as any).extras || {}
+    const pront = String(extras['Número do prontuário (sistema antigo)'] || '').trim()
+    if (pront) porProntuario.set(pront, p)
+
+    const tel = digitosTelefone(p.telefone)
+    if (tel && tel.length >= 10) porTelefone.set(tel, p)
+
+    const chave = `${chaveNome(p.nome)}|${tel}`
+    if (tel && chaveNome(p.nome)) porChave.set(chave, p)
   }
 
   const resumo: ResumoImportacao = { criados: 0, atualizados: 0, pulados: 0, motivosPulo: [] }
@@ -65,8 +81,17 @@ export async function gravarPacientes(
     for (const linha of lote) {
       const nome = String(linha.campos.nome ?? '').trim()
       const telefone = String(linha.campos.telefone ?? '').trim()
-      const chave = `${chaveNome(nome)}|${digitosTelefone(telefone)}`
-      const existente = porChave.get(chave)
+      const telDigitos = digitosTelefone(telefone)
+      const chave = `${chaveNome(nome)}|${telDigitos}`
+      const prontuario = String(
+        linha.extras?.['Número do prontuário (sistema antigo)'] ?? '',
+      ).trim()
+
+      // Ordem de identificação: prontuário antigo > telefone > nome+telefone
+      let existente: Paciente | undefined
+      if (prontuario) existente = porProntuario.get(prontuario)
+      if (!existente && telDigitos.length >= 10) existente = porTelefone.get(telDigitos)
+      if (!existente) existente = porChave.get(chave)
 
       const payload: Record<string, unknown> = { ...linha.campos }
 
@@ -100,9 +125,15 @@ export async function gravarPacientes(
         if (existente) {
           await pb.collection('pacientes').update(existente.id, payload)
           resumo.atualizados++
+          // mantém os índices atualizados para as próximas linhas do mesmo arquivo
+          porChave.set(chave, existente)
+          if (telDigitos.length >= 10) porTelefone.set(telDigitos, existente)
+          if (prontuario) porProntuario.set(prontuario, existente)
         } else {
           const criado = await pb.collection('pacientes').create<Paciente>(payload)
           porChave.set(chave, criado)
+          if (telDigitos.length >= 10) porTelefone.set(telDigitos, criado)
+          if (prontuario) porProntuario.set(prontuario, criado)
           resumo.criados++
         }
       } catch (err: unknown) {
@@ -147,6 +178,35 @@ export async function buscarPacientePorReferencia(ref: string): Promise<Paciente
   }
 }
 
+/**
+ * Carrega as chaves já existentes de consultas/orçamentos para não duplicar
+ * quando a planilha for importada de novo (o sistema antigo continua rodando).
+ *
+ * As chaves usam o MESMO formato da gravação:
+ * - consultas: paciente|data|hora_inicio
+ * - orçamentos: chave do conteúdo dos itens (nome do paciente + itens ordenados)
+ */
+async function carregarChavesExistentes(colecao: ColecaoDestino): Promise<Set<string>> {
+  const chaves = new Set<string>()
+  if (colecao === 'consultas') {
+    const registros = await pb.collection('consultas').getFullList<any>({ sort: 'data' })
+    for (const c of registros) {
+      chaves.add(`${c.paciente}|${String(c.data || '').slice(0, 10)}|${c.hora_inicio}`)
+    }
+  } else {
+    const registros = await pb.collection('orcamentos').getFullList<any>()
+    for (const o of registros) {
+      const itens = Array.isArray(o.itens) ? o.itens : []
+      const assinatura = itens
+        .map((i: any) => `${i.procedimento}|${i.dente || ''}|${i.valor || 0}`)
+        .sort()
+        .join('~')
+      chaves.add(`${o.paciente}|${assinatura}`)
+    }
+  }
+  return chaves
+}
+
 /** Grava consultas/orçamentos, vinculando cada linha ao paciente encontrado. */
 export async function gravarRegistrosVinculados(
   colecao: ColecaoDestino,
@@ -159,6 +219,9 @@ export async function gravarRegistrosVinculados(
   let feitas = 0
   const LOTE = 25
   const cachePacientes = new Map<string, Paciente | null>()
+
+  // Reimportação: o que já existe é reconhecido e ignorado, em vez de duplicado.
+  const chavesExistentes = await carregarChavesExistentes(colecao)
 
   for (let i = 0; i < validas.length; i += LOTE) {
     const lote = validas.slice(i, i + LOTE)
@@ -176,6 +239,24 @@ export async function gravarRegistrosVinculados(
       }
       const payload: Record<string, unknown> = { ...linha.campos, paciente: paciente.id }
       if (Object.keys(linha.extras).length > 0) payload.extras = linha.extras
+
+      // Chave de idempotência: se este registro já foi importado, ignora.
+      const itensLinha = Array.isArray(payload.itens) ? (payload.itens as any[]) : []
+      const assinaturaLinha = itensLinha
+        .map((i: any) => `${i.procedimento}|${i.dente || ''}|${i.valor || 0}`)
+        .sort()
+        .join('~')
+      const chaveRegistro =
+        colecao === 'consultas'
+          ? `${paciente.id}|${String(payload.data || '').slice(0, 10)}|${payload.hora_inicio}`
+          : `${paciente.id}|${assinaturaLinha}`
+
+      if (chavesExistentes.has(chaveRegistro)) {
+        resumo.atualizados++
+        feitas++
+        continue
+      }
+
       try {
         if (colecao === 'consultas') {
           // hora_fim é obrigatório no banco: calcula pela duração quando a
@@ -229,6 +310,7 @@ export async function gravarRegistrosVinculados(
           }
         }
         await pb.collection(colecao).create(payload)
+        chavesExistentes.add(chaveRegistro)
         resumo.criados++
       } catch (err: unknown) {
         resumo.pulados++
