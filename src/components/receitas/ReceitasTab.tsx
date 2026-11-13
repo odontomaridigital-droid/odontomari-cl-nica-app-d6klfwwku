@@ -30,10 +30,18 @@ import { ReceitaPosSalvarDialog } from '@/components/receitas/ReceitaPosSalvarDi
 import {
   medicamentosService,
   receitasService,
+  receitaModelosService,
   configuracoesService,
   DEFAULT_CONFIGS,
 } from '@/services/clinica'
-import { Medicamento, Receita, ItemReceita, ClinicaConfig } from '@/types'
+import { Medicamento, Receita, ItemReceita, ClinicaConfig, ReceitaModelo } from '@/types'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { formatDateBr, getTodayDateString, createWhatsAppUrl } from '@/lib/formatters'
 import { normalizarItensReceita, montarMensagemWhatsApp } from '@/lib/receitas'
 import { gerarPdfReceita } from '@/lib/receitaPdf'
@@ -70,6 +78,7 @@ export const ReceitasTab: React.FC<ReceitasTabProps> = ({
   // ===== catálogo + configurações (dados da clínica/dentista p/ assinatura) =====
   const [catalogo, setCatalogo] = useState<Medicamento[]>([])
   const [config, setConfig] = useState<ClinicaConfig>(DEFAULT_CONFIGS)
+  const [modelosReceita, setModelosReceita] = useState<ReceitaModelo[]>([])
 
   useEffect(() => {
     medicamentosService
@@ -79,6 +88,10 @@ export const ReceitasTab: React.FC<ReceitasTabProps> = ({
     configuracoesService
       .getConfigs()
       .then((c) => setConfig(c))
+      .catch(() => {})
+    receitaModelosService
+      .getAll(true)
+      .then(setModelosReceita)
       .catch(() => {})
   }, [])
 
@@ -453,12 +466,55 @@ export const ReceitasTab: React.FC<ReceitasTabProps> = ({
               {editandoId ? 'Editar Receita' : 'Nova Receita'} — {pacienteNome}
             </DialogTitle>
             <DialogDescription className="text-xs">
-              Escolha medicamentos do catálogo (a posologia pré-definida vem preenchida e pode ser
-              ajustada) ou digite um medicamento livre.
+              Comece por um modelo pronto (a receita já vem preenchida) ou monte do zero pelo
+              catálogo de medicamentos.
             </DialogDescription>
           </DialogHeader>
 
           <div className="flex-1 overflow-y-auto px-4 py-3 min-h-0 space-y-4">
+            {/* Modelos prontos */}
+            {!editandoId && modelosReceita.length > 0 && (
+              <div>
+                <Label className="text-xs">Receita pronta (modelo)</Label>
+                <Select
+                  value=""
+                  onValueChange={(id) => {
+                    const m = modelosReceita.find((x) => x.id === id)
+                    if (!m) return
+                    const lista = Array.isArray(m.itens) ? m.itens : []
+                    setItens(
+                      lista.map((i) => ({
+                        nome: i.nome,
+                        apresentacao: i.apresentacao || '',
+                        posologia: i.posologia || '',
+                      })),
+                    )
+                    if (m.orientacoes) setOrientacoes(m.orientacoes)
+                    setBusca('')
+                    toast({
+                      title: `Modelo "${m.nome}" aplicado`,
+                      description: 'Ajuste os medicamentos e a posologia se precisar.',
+                    })
+                  }}
+                >
+                  <SelectTrigger className="mt-1 text-xs h-9">
+                    <SelectValue placeholder="Escolher um modelo pronto..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {modelosReceita.map((m) => (
+                      <SelectItem key={m.id} value={m.id} className="text-xs">
+                        {m.nome}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-[10px] text-slate-400 mt-1">
+                  O modelo preenche os medicamentos e as orientações. Dá para ajustar item a item
+                  antes de salvar.
+                </p>
+              </div>
+            )}
+
             {/* Data */}
             <div>
               <Label className="text-xs">Data de emissão</Label>
@@ -466,7 +522,7 @@ export const ReceitasTab: React.FC<ReceitasTabProps> = ({
                 type="date"
                 value={data}
                 onChange={(e) => setData(e.target.value)}
-                className="mt-1 text-xs sm:text-sm max-w-[200px]"
+                className="mt-1 text-xs text-sm max-w-[200px]"
               />
             </div>
 
