@@ -13,6 +13,11 @@ import { PlanilhaArquivo, PlanilhaAba, lerPlanilha } from '@/lib/importacao/lerP
 import { converterConsultas } from '@/lib/importacao/consultas'
 import { MOLDE_CONSULTAS_DENTISTA_ORGANIZADO } from '@/lib/importacao/destinos'
 import {
+  reconheceAbaItens,
+  agruparItensPorOrcamento,
+  converterOrcamentosComItens,
+} from '@/lib/importacao/itensOrcamento'
+import {
   ColunaMapeada,
   LinhaConvertida,
   converterLinha,
@@ -127,13 +132,30 @@ export const ImportacaoPage: React.FC = () => {
     return converterConsultas(abaAtual.linhas)
   }, [abaAtual, destino, ehAbaConsultas])
 
+  /**
+   * A aba "Itens do Orcamento" é a única que tem o detalhamento de cada
+   * planejamento (procedimento, dente, face e valor). Ela é agrupada por
+   * orçamento e vira o campo JSON `itens` do orçamento correspondente.
+   */
+  const ehAbaItens = useMemo(
+    () => Boolean(abaAtual && reconheceAbaItens(abaAtual.colunas)),
+    [abaAtual],
+  )
+
+  const conversaoItens = useMemo(() => {
+    if (!abaAtual || destino !== 'orcamentos' || !ehAbaItens) return null
+    const { grupos, descartes } = agruparItensPorOrcamento(abaAtual.linhas)
+    return { linhas: converterOrcamentosComItens(grupos), descartes, grupos: grupos.length }
+  }, [abaAtual, destino, ehAbaItens])
+
   const linhasConvertidas: LinhaConvertida[] = useMemo(() => {
     if (!abaAtual) return []
     if (conversaoConsultas) return conversaoConsultas.linhas
+    if (conversaoItens) return conversaoItens.linhas
     return abaAtual.linhas.map((linha) =>
       converterLinha(linha, abaAtual.colunas, mapeamento, destinoAtual),
     )
-  }, [abaAtual, mapeamento, destinoAtual, conversaoConsultas])
+  }, [abaAtual, mapeamento, destinoAtual, conversaoConsultas, conversaoItens])
 
   const totalProblemas = linhasConvertidas.filter((l) => l.problemas.length > 0).length
   const totalExtras = mapeamento.filter((m) => m.mapeamento.tipo === 'extras').length
@@ -437,6 +459,35 @@ export const ImportacaoPage: React.FC = () => {
                       .join(' · ')}
                   </p>
                 )}
+              </div>
+            )}
+
+            {ehAbaItens && destino === 'orcamentos' && (
+              <div className="rounded-lg border border-blue-200 bg-blue-50 p-3 text-xs text-blue-900 space-y-1">
+                <p className="font-semibold">Aba de itens do orçamento reconhecida</p>
+                <p>
+                  Cada orçamento vira <strong>um registro completo</strong>, com todos os
+                  procedimentos, dentes, faces e valores dentro. Não precisa importar a aba
+                  "Orcamentos" — esta já traz tudo.
+                </p>
+                {conversaoItens && (
+                  <p className="font-medium">
+                    {conversaoItens.grupos} orçamentos agrupados a partir das {abaAtual.totalLinhas}{' '}
+                    linhas de itens.
+                  </p>
+                )}
+                {conversaoItens && Object.keys(conversaoItens.descartes).length > 0 && (
+                  <p>
+                    Descartadas:{' '}
+                    {Object.entries(conversaoItens.descartes)
+                      .map(([m, n]) => `${n} por ${m}`)
+                      .join(' · ')}
+                  </p>
+                )}
+                <p className="pt-1 border-t border-blue-200">
+                  ⚠️ Importe <strong>esta aba</strong> em vez da aba "Orcamentos". Se importar as
+                  duas, os orçamentos entram duplicados: um completo e outro sem os itens.
+                </p>
               </div>
             )}
             <div className="space-y-2">
