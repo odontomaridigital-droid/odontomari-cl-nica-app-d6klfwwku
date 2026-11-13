@@ -52,8 +52,9 @@ export const DESTINOS: Record<ColecaoDestino, DestinoColecao> = {
     campos: [
       { campo: 'paciente', rotulo: 'Paciente (nome ou telefone na planilha)', obrigatorio: true },
       { campo: 'data', rotulo: 'Data da consulta', tipo: 'data', obrigatorio: true },
-      { campo: 'hora_inicio', rotulo: 'Hora de início (HH:MM)' },
+      { campo: 'hora_inicio', rotulo: 'Hora de início (HH:MM)', obrigatorio: true },
       { campo: 'duracao_minutos', rotulo: 'Duração (minutos)', tipo: 'numero' },
+      { campo: 'hora_fim', rotulo: 'Hora de término (HH:MM) — calculada se vazia' },
       { campo: 'status', rotulo: 'Status (agendada/realizada/cancelada/faltou)' },
       { campo: 'observacoes', rotulo: 'Observações' },
     ],

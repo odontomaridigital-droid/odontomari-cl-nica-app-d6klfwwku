@@ -151,7 +151,55 @@ export async function gravarRegistrosVinculados(
       if (Object.keys(linha.extras).length > 0) payload.extras = linha.extras
       try {
         if (colecao === 'consultas') {
-          payload.hora_fim = payload.hora_fim || ''
+          // hora_fim é obrigatório no banco: calcula pela duração quando a
+          // planilha não trouxer a hora final.
+          const inicio = String(payload.hora_inicio || '').trim()
+          const duracao = Number(payload.duracao_minutos) || 30
+          if (!payload.duracao_minutos) payload.duracao_minutos = duracao
+          if (!payload.hora_fim && /^\d{2}:\d{2}$/.test(inicio)) {
+            const [h, m] = inicio.split(':').map(Number)
+            const total = h * 60 + m + duracao
+            payload.hora_fim = `${String(Math.floor(total / 60) % 24).padStart(2, '0')}:${String(
+              total % 60,
+            ).padStart(2, '0')}`
+          }
+          // tipo_atendimento é obrigatório: usa o primeiro tipo ativo da clínica
+          // quando a planilha não indicar um.
+          if (!payload.tipo_atendimento) {
+            try {
+              const tipos = await pb
+                .collection('tipos_atendimento')
+                .getFullList({ filter: 'ativo = true', sort: 'nome' })
+              const primeiro = tipos[0]?.id
+              if (primeiro) payload.tipo_atendimento = primeiro
+            } catch {
+              /* sem tipo: a criação vai falhar e a linha é reportada como pulada */
+            }
+          }
+          if (!payload.hora_inicio) {
+            resumo.pulados++
+            resumo.motivosPulo.push(`"${ref}": consulta sem hora de início`)
+            continue
+          }
+        }
+        if (colecao === 'orcamentos') {
+          // itens é obrigatório no banco: monta a partir do valor/observação
+          // quando a planilha não tiver itens detalhados.
+          if (!Array.isArray(payload.itens) || payload.itens.length === 0) {
+            payload.itens = [
+              {
+                procedimento: String(payload.observacoes || 'Tratamento importado').slice(0, 180),
+                valor: Number(payload.valor_total) || 0,
+                dente: '',
+              },
+            ]
+          }
+          if (!payload.valor_total) {
+            payload.valor_total = payload.itens.reduce(
+              (s: number, it: { valor?: number }) => s + (Number(it.valor) || 0),
+              0,
+            )
+          }
         }
         await pb.collection(colecao).create(payload)
         resumo.criados++
