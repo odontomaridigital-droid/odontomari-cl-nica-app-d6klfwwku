@@ -11,6 +11,10 @@ import {
 import { useAuth } from '@/contexts/AuthContext'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Calendar } from '@/components/ui/calendar'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { ptBR } from 'date-fns/locale'
+import { dataDeChave, chaveDeData } from '@/lib/semana'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import {
@@ -159,12 +163,31 @@ export const LembretesPage: React.FC = () => {
             >
               <ChevronLeft className="w-4 h-4" />
             </Button>
-            <input
-              type="date"
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
-              className="bg-transparent text-xs sm:text-sm font-medium px-2 py-1 outline-none text-slate-700 cursor-pointer"
-            />
+            {/* Calendário em português: o campo nativo usa mm/dd no navegador */}
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 px-2 text-xs sm:text-sm font-semibold text-slate-700 whitespace-nowrap"
+                  title="Escolher o dia pelo calendário"
+                >
+                  {formatDateBr(date)}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="center">
+                <Calendar
+                  mode="single"
+                  locale={ptBR}
+                  selected={dataDeChave(date)}
+                  defaultMonth={dataDeChave(date)}
+                  onSelect={(d) => {
+                    if (d) setDate(chaveDeData(d))
+                  }}
+                  autoFocus
+                />
+              </PopoverContent>
+            </Popover>
             <Button
               variant="ghost"
               size="icon"

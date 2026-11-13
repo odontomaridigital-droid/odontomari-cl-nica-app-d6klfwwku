@@ -19,6 +19,11 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
+import { Calendar } from '@/components/ui/calendar'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { ptBR } from 'date-fns/locale'
+import { formatDateBr } from '@/lib/formatters'
+import { dataDeChave, chaveDeData } from '@/lib/semana'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Calendar, Clock, User, Plus, AlertCircle, Search, Check, Sparkles } from 'lucide-react'
@@ -467,14 +472,32 @@ export const NovoAgendamentoPage: React.FC = () => {
                 <Label htmlFor="data" className="text-xs">
                   Data da Consulta *
                 </Label>
-                <Input
-                  id="data"
-                  type="date"
-                  value={date}
-                  onChange={(e) => setDate(e.target.value)}
-                  className="text-xs sm:text-sm mt-1"
-                  required
-                />
+                {/* Calendário em português: o campo nativo usa mm/dd no navegador */}
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      id="data"
+                      type="button"
+                      variant="outline"
+                      className="w-full justify-start text-left font-normal text-xs sm:text-sm mt-1"
+                    >
+                      <Calendar className="w-4 h-4 mr-2 text-marca-vermelho" />
+                      {formatDateBr(date)}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      locale={ptBR}
+                      selected={dataDeChave(date)}
+                      defaultMonth={dataDeChave(date)}
+                      onSelect={(d) => {
+                        if (d) setDate(chaveDeData(d))
+                      }}
+                      autoFocus
+                    />
+                  </PopoverContent>
+                </Popover>
               </div>
 
               <div>
