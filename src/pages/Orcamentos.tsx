@@ -313,19 +313,6 @@ export const OrcamentosPage: React.FC = () => {
           variant={filterStatus === 'concluido' ? 'default' : 'outline'}
           className={
             filterStatus === 'concluido'
-              ? 'text-xs bg-sky-600 hover:bg-sky-700 text-white'
-              : 'text-xs'
-          }
-          onClick={() => setFilterStatus('concluido')}
-        >
-          Concluídos ({orcamentos.filter((o) => o.status === 'concluido').length})
-        </Button>
-        <Button
-          type="button"
-          size="sm"
-          variant={filterStatus === 'concluido' ? 'default' : 'outline'}
-          className={
-            filterStatus === 'concluido'
               ? 'text-xs h-8 bg-sky-600 hover:bg-sky-700 text-white'
               : 'text-xs h-8 text-sky-700 border-sky-200'
           }
