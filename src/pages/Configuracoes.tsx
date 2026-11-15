@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { configuracoesService, tiposAtendimentoService, bloqueiosService } from '@/services/clinica'
 import { CatalogoProcedimentos } from '@/components/config/CatalogoProcedimentos'
+import { CatalogoPagamentos } from '@/components/config/CatalogoPagamentos'
 import { ClinicaConfig, TipoAtendimento, BloqueioAgenda } from '@/types'
 import { formatCurrency, formatDateBr } from '@/lib/formatters'
 import { useAuth } from '@/contexts/AuthContext'
@@ -298,6 +299,9 @@ export const ConfiguracoesPage: React.FC = () => {
           <TabsTrigger value="procedimentos" className="text-xs sm:text-sm">
             Procedimentos
           </TabsTrigger>
+          <TabsTrigger value="pagamentos" className="text-xs sm:text-sm">
+            Pagamentos
+          </TabsTrigger>
           <TabsTrigger value="bloqueios" className="text-xs sm:text-sm">
             Bloqueios de Agenda ({bloqueios.length})
           </TabsTrigger>
@@ -531,6 +535,10 @@ export const ConfiguracoesPage: React.FC = () => {
         </TabsContent>
 
         {/* Catálogo de procedimentos clínicos (o que se cobra) */}
+        <TabsContent value="pagamentos" className="space-y-4 pt-2">
+          <CatalogoPagamentos />
+        </TabsContent>
+
         <TabsContent value="procedimentos" className="space-y-4 pt-2">
           <CatalogoProcedimentos />
         </TabsContent>
