@@ -728,32 +728,6 @@ export const ProntuarioPage: React.FC = () => {
           </DialogHeader>
 
           <form onSubmit={handleAddProntuario} className="space-y-4 py-2">
-            <DitadorProntuario
-              texto={textoDitado}
-              onTextoChange={setTextoDitado}
-              onErro={(title, description) => toast({ title, description, variant: 'destructive' })}
-              onEstruturado={(dados) => {
-                setProcedimentos(dados.procedimentos || procedimentos)
-                setAnotacoes(dados.anotacoes || anotacoes)
-                setDenteRegiao(dados.dente_regiao || denteRegiao)
-                if (dados.retorno_dias) setRetornoDias(String(dados.retorno_dias))
-                setTextoDitado('')
-                toast({
-                  title: 'Ditado organizado!',
-                  description: 'Confira os campos antes de gravar no prontuário.',
-                })
-              }}
-              onTextoCru={(texto) => {
-                setAnotacoes(texto)
-                setTextoDitado('')
-                toast({
-                  title: 'Texto transcrito',
-                  description:
-                    'A IA não conseguiu separar os campos, mas o texto está nas anotações.',
-                })
-              }}
-            />
-
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <Label htmlFor="data_reg" className="text-xs">
@@ -862,6 +836,38 @@ export const ProntuarioPage: React.FC = () => {
                 </div>
               </div>
             </div>
+
+            {/* O ditado e a organizacao por IA ficam DEPOIS dos campos:
+                preencher os campos e o caminho principal; ditar e um atalho. */}
+            <p className="text-[11px] text-slate-500 pt-1 border-t border-slate-100">
+              ou fale o atendimento e deixe a IA preencher os campos acima
+            </p>
+
+            <DitadorProntuario
+              texto={textoDitado}
+              onTextoChange={setTextoDitado}
+              onErro={(title, description) => toast({ title, description, variant: 'destructive' })}
+              onEstruturado={(dados) => {
+                setProcedimentos(dados.procedimentos || procedimentos)
+                setAnotacoes(dados.anotacoes || anotacoes)
+                setDenteRegiao(dados.dente_regiao || denteRegiao)
+                if (dados.retorno_dias) setRetornoDias(String(dados.retorno_dias))
+                setTextoDitado('')
+                toast({
+                  title: 'Campos preenchidos pela IA',
+                  description: 'Confira abaixo antes de gravar no prontuário.',
+                })
+              }}
+              onTextoCru={(texto) => {
+                setAnotacoes(texto)
+                setTextoDitado('')
+                toast({
+                  title: 'Texto transcrito',
+                  description:
+                    'A IA não conseguiu separar os campos, mas o texto está nas anotações.',
+                })
+              }}
+            />
 
             <DialogFooter className="gap-2 pt-2">
               <Button
