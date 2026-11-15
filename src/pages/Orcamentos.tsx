@@ -73,7 +73,7 @@ export const OrcamentosPage: React.FC = () => {
       ])
       setOrcamentos(orcs)
       setPacientes(pacs)
-      setTipos(tps)
+      setProcedimentos(tps)
 
       if (initialPacienteId && !createDialogOpen) {
         setSelectedPacienteId(initialPacienteId)
