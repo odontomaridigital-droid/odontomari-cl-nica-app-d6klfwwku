@@ -66,6 +66,7 @@ export const GestaoUsuarios: React.FC = () => {
   const [senhaAberto, setSenhaAberto] = useState<UsuarioSistema | null>(null)
   const [novaSenha, setNovaSenha] = useState('')
   const [novaConfirmacao, setNovaConfirmacao] = useState('')
+  const [senhaAdmin, setSenhaAdmin] = useState('')
   const [salvandoSenha, setSalvandoSenha] = useState(false)
 
   const carregar = async () => {
@@ -170,9 +171,13 @@ export const GestaoUsuarios: React.FC = () => {
       toast({ title: 'As duas senhas não são iguais', variant: 'destructive' })
       return
     }
+    if (!senhaAdmin.trim()) {
+      toast({ title: 'Informe a sua senha para confirmar', variant: 'destructive' })
+      return
+    }
     setSalvandoSenha(true)
     try {
-      await usuariosService.definirSenha(senhaAberto.id, novaSenha, novaConfirmacao)
+      await usuariosService.definirSenha(senhaAberto.id, novaSenha, novaConfirmacao, senhaAdmin)
       toast({
         title: 'Senha alterada',
         description: `${senhaAberto.name || senhaAberto.email} já pode entrar com a senha nova.`,
@@ -180,10 +185,15 @@ export const GestaoUsuarios: React.FC = () => {
       setSenhaAberto(null)
       setNovaSenha('')
       setNovaConfirmacao('')
+      setSenhaAdmin('')
     } catch (err: any) {
+      const msg = String(err?.message || '')
+      const descricao = msg.toLowerCase().includes('old password')
+        ? 'Sua senha de administrador está incorreta.'
+        : msg
       toast({
-        title: 'Erro ao alterar a senha',
-        description: err?.message,
+        title: 'Não foi possível alterar a senha',
+        description: descricao,
         variant: 'destructive',
       })
     } finally {
@@ -487,6 +497,20 @@ export const GestaoUsuarios: React.FC = () => {
                 onChange={(e) => setNovaConfirmacao(e.target.value)}
                 className="mt-1 text-xs sm:text-sm"
               />
+            </div>
+
+            <div className="pt-1 border-t border-slate-100">
+              <Label className="text-xs">Sua senha de administrador *</Label>
+              <Input
+                type="password"
+                value={senhaAdmin}
+                onChange={(e) => setSenhaAdmin(e.target.value)}
+                placeholder="Para confirmar que é você"
+                className="mt-1 text-xs sm:text-sm"
+              />
+              <p className="text-[10px] text-slate-500 mt-1">
+                O sistema exige a senha de quem está logado para liberar a troca.
+              </p>
             </div>
           </div>
 
