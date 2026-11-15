@@ -50,6 +50,9 @@ export const CatalogoMensagens: React.FC = () => {
   const [form, setForm] = useState({ ...VAZIA })
   const [salvando, setSalvando] = useState(false)
   const areaTexto = useRef<HTMLTextAreaElement | null>(null)
+  // Última posição do cursor conhecida. Sem isso, ao clicar no botão a textarea
+  // perde o foco, selectionStart volta a 0 e a variável entra no começo do texto.
+  const cursorRef = useRef<number | null>(null)
 
   const carregar = async () => {
     setCarregando(true)
@@ -90,19 +93,25 @@ export const CatalogoMensagens: React.FC = () => {
    */
   const inserirVariavel = (tag: string) => {
     const campo = areaTexto.current
-    if (!campo) {
-      setForm((f) => ({ ...f, texto: `${f.texto}${tag}` }))
-      return
-    }
-    const inicio = campo.selectionStart ?? form.texto.length
-    const fim = campo.selectionEnd ?? inicio
-    const novo = form.texto.slice(0, inicio) + tag + form.texto.slice(fim)
+    const textoAtual = form.texto
+
+    // Usa a posição guardada; se o campo está focado, a posição viva manda.
+    const focado = campo && document.activeElement === campo
+    const posicao =
+      focado && campo
+        ? (campo.selectionStart ?? textoAtual.length)
+        : (cursorRef.current ?? textoAtual.length)
+
+    const inicio = Math.min(posicao, textoAtual.length)
+    const novo = textoAtual.slice(0, inicio) + tag + textoAtual.slice(inicio)
     setForm((f) => ({ ...f, texto: novo }))
-    // Devolve o cursor para depois da variável inserida.
+
+    const depois = inicio + tag.length
+    cursorRef.current = depois
     requestAnimationFrame(() => {
+      if (!campo) return
       campo.focus()
-      const pos = inicio + tag.length
-      campo.setSelectionRange(pos, pos)
+      campo.setSelectionRange(depois, depois)
     })
   }
 
@@ -324,7 +333,22 @@ export const CatalogoMensagens: React.FC = () => {
                 ref={areaTexto}
                 rows={5}
                 value={form.texto}
-                onChange={(e) => setForm({ ...form, texto: e.target.value })}
+                onChange={(e) => {
+                  setForm({ ...form, texto: e.target.value })
+                  cursorRef.current = e.target.selectionStart ?? e.target.value.length
+                }}
+                onSelect={(e) => {
+                  const alvo = e.target as HTMLTextAreaElement
+                  cursorRef.current = alvo.selectionStart ?? alvo.value.length
+                }}
+                onClick={(e) => {
+                  const alvo = e.target as HTMLTextAreaElement
+                  cursorRef.current = alvo.selectionStart ?? alvo.value.length
+                }}
+                onKeyUp={(e) => {
+                  const alvo = e.target as HTMLTextAreaElement
+                  cursorRef.current = alvo.selectionStart ?? alvo.value.length
+                }}
                 placeholder="Olá {primeiro_nome}! A equipe da {clinica} deseja um feliz aniversário..."
                 className="mt-1 text-xs sm:text-sm"
               />
