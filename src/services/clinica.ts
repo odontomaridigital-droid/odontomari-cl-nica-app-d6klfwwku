@@ -18,7 +18,12 @@ import {
   Campanha,
   Conteudo,
   ReceitaModelo,
+  Maquina,
+  CondicaoPagamento,
+  ContaReceber,
 } from '@/types'
+import { montarPlanoRecebimento } from '@/lib/recebimento'
+import { somenteData } from '@/lib/datas'
 import type { RespostasAnamnese } from '@/lib/anamneseModelo'
 import type { CondicaoDente, FaceDente } from '@/lib/odontograma'
 import { registrarLog } from '@/services/logsAuditoria'
@@ -1098,6 +1103,161 @@ export const bloqueiosService = {
     const ok = await pb.collection('bloqueios_agenda').delete(id)
     registrarLog('excluiu', 'bloqueio', `Excluiu bloqueio de agenda (id ${id})`, id)
     return ok
+  },
+}
+
+// =================== MÁQUINAS, CONDIÇÕES E CONTAS A RECEBER ===================
+export const maquinasService = {
+  async getAll(somenteAtivas = false): Promise<Maquina[]> {
+    return await pb.collection('maquinas').getFullList<Maquina>({
+      sort: 'nome',
+      ...(somenteAtivas ? { filter: 'ativo = true' } : {}),
+    })
+  },
+
+  async create(data: Partial<Maquina>): Promise<Maquina> {
+    const created = await pb.collection('maquinas').create<Maquina>(data)
+    registrarLog('criou', 'maquina', `Criou máquina ${created.nome}`, created.id)
+    return created
+  },
+
+  async update(id: string, data: Partial<Maquina>): Promise<Maquina> {
+    const updated = await pb.collection('maquinas').update<Maquina>(id, data)
+    registrarLog('editou', 'maquina', `Editou máquina ${updated.nome}`, updated.id)
+    return updated
+  },
+
+  async remove(id: string, nome?: string): Promise<boolean> {
+    const ok = await pb.collection('maquinas').delete(id)
+    registrarLog('excluiu', 'maquina', `Excluiu máquina ${nome || ''}`, id)
+    return ok
+  },
+}
+
+export const condicoesPagamentoService = {
+  async getAll(somenteAtivas = false): Promise<CondicaoPagamento[]> {
+    return await pb.collection('condicoes_pagamento').getFullList<CondicaoPagamento>({
+      sort: 'nome',
+      expand: 'maquina',
+      ...(somenteAtivas ? { filter: 'ativo = true' } : {}),
+    })
+  },
+
+  async create(data: Partial<CondicaoPagamento>): Promise<CondicaoPagamento> {
+    const created = await pb.collection('condicoes_pagamento').create<CondicaoPagamento>(data)
+    registrarLog('criou', 'condicao', `Criou condição ${created.nome}`, created.id)
+    return created
+  },
+
+  async update(id: string, data: Partial<CondicaoPagamento>): Promise<CondicaoPagamento> {
+    const updated = await pb.collection('condicoes_pagamento').update<CondicaoPagamento>(id, data)
+    registrarLog('editou', 'condicao', `Editou condição ${updated.nome}`, updated.id)
+    return updated
+  },
+
+  async remove(id: string, nome?: string): Promise<boolean> {
+    const ok = await pb.collection('condicoes_pagamento').delete(id)
+    registrarLog('excluiu', 'condicao', `Excluiu condição ${nome || ''}`, id)
+    return ok
+  },
+}
+
+export const contasReceberService = {
+  async getAll(): Promise<ContaReceber[]> {
+    return await pb.collection('contas_receber').getFullList<ContaReceber>({
+      sort: 'vencimento',
+      expand: 'paciente,condicao,maquina,orcamento',
+    })
+  },
+
+  async getByPaciente(pacienteId: string): Promise<ContaReceber[]> {
+    return await pb.collection('contas_receber').getFullList<ContaReceber>({
+      filter: `paciente = "${pacienteId}"`,
+      sort: 'vencimento',
+      expand: 'condicao,maquina',
+    })
+  },
+
+  async getByOrcamento(orcamentoId: string): Promise<ContaReceber[]> {
+    return await pb.collection('contas_receber').getFullList<ContaReceber>({
+      filter: `orcamento = "${orcamentoId}"`,
+      sort: 'parcela',
+    })
+  },
+
+  /**
+   * Gera as contas a receber de um planejamento conforme a condição escolhida.
+   * Apaga as contas antigas do mesmo planejamento antes — refazer não duplica.
+   */
+  async gerarParaOrcamento(
+    orcamentoId: string,
+    dados: {
+      valorTotal: number
+      condicao: CondicaoPagamento
+      maquina?: Maquina
+      dataBase: string
+      numParcelas?: number
+      datasCompensacao?: string[]
+      pacienteId?: string
+    },
+  ): Promise<ContaReceber[]> {
+    const antigas = await this.getByOrcamento(orcamentoId)
+    for (const conta of antigas) {
+      await pb.collection('contas_receber').delete(conta.id)
+    }
+
+    const plano = montarPlanoRecebimento({
+      valorTotal: dados.valorTotal,
+      condicao: dados.condicao,
+      maquina: dados.maquina,
+      dataBase: somenteData(dados.dataBase),
+      numParcelas: dados.numParcelas,
+      datasCompensacao: dados.datasCompensacao,
+    })
+
+    const criadas: ContaReceber[] = []
+    for (const item of plano) {
+      const criada = await pb.collection('contas_receber').create<ContaReceber>({
+        paciente: dados.pacienteId || undefined,
+        orcamento: orcamentoId,
+        condicao: dados.condicao.id,
+        maquina: dados.maquina?.id || undefined,
+        descricao: item.descricao,
+        valor: item.valor,
+        valor_liquido: item.valor_liquido,
+        taxa_percentual: item.taxa_percentual,
+        parcela: item.parcela,
+        total_parcelas: item.total_parcelas,
+        vencimento: `${item.vencimento} 00:00:00.000Z`,
+        status: 'previsto',
+      })
+      criadas.push(criada)
+    }
+
+    registrarLog(
+      'criou',
+      'financeiro',
+      `Gerou ${criadas.length} conta(s) a receber do planejamento`,
+      orcamentoId,
+    )
+    return criadas
+  },
+
+  async marcarRecebido(id: string, data?: string): Promise<ContaReceber> {
+    const updated = await pb.collection('contas_receber').update<ContaReceber>(id, {
+      status: 'recebido',
+      recebido_em: data ? `${somenteData(data)} 00:00:00.000Z` : new Date().toISOString(),
+    })
+    registrarLog('editou', 'financeiro', 'Marcou conta a receber como recebida', id)
+    return updated
+  },
+
+  async cancelar(id: string): Promise<ContaReceber> {
+    const updated = await pb.collection('contas_receber').update<ContaReceber>(id, {
+      status: 'cancelado',
+    })
+    registrarLog('editou', 'financeiro', 'Cancelou conta a receber', id)
+    return updated
   },
 }
 

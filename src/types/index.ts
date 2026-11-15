@@ -292,11 +292,105 @@ export interface Orcamento {
   aceito_por?: string
   /** Data em que o tratamento foi concluído */
   concluido_em?: string
+  /** Como o paciente paga (dinheiro, PIX, cartão, cheque...) */
+  condicao_pagamento?: string
+  /** Máquina usada, quando for cartão */
+  maquina?: string
+  /** Em quantas parcelas */
+  num_parcelas?: number
   created?: string
   updated?: string
   expand?: {
     paciente?: Paciente
     aceito_por?: User
+    condicao_pagamento?: CondicaoPagamento
+    maquina?: Maquina
+  }
+}
+
+/** Máquina de cartão (adquirente), com prazo de repasse e taxa por modalidade */
+export interface Maquina {
+  id: string
+  nome: string
+  ativo?: boolean
+  /** Dias até o dinheiro cair. 0 = mesmo dia */
+  dias_debito?: number
+  dias_credito_vista?: number
+  dias_credito_parcelado?: number
+  dias_pix?: number
+  /** Taxa em % descontada pela máquina */
+  taxa_debito?: number
+  taxa_credito_vista?: number
+  taxa_credito_parcelado?: number
+  taxa_pix?: number
+  observacoes?: string
+  created?: string
+  updated?: string
+}
+
+export type CondicaoTipo =
+  | 'dinheiro'
+  | 'pix'
+  | 'cartao_credito'
+  | 'cartao_debito'
+  | 'cheque'
+  | 'boleto'
+
+/**
+ * Como o dinheiro entra no contas a receber:
+ * um_lancamento  → cartão: cai tudo de uma vez na data do repasse
+ * por_parcela    → uma conta por parcela, cada uma no seu vencimento
+ * na_compensacao → cheque
+ */
+export type FormaLancamento = 'um_lancamento' | 'por_parcela' | 'na_compensacao'
+
+/** Condição = como o paciente paga. A forma (parcelamento) fica dentro dela. */
+export interface CondicaoPagamento {
+  id: string
+  nome: string
+  tipo: CondicaoTipo
+  maquina?: string
+  permite_parcelamento?: boolean
+  /** 0 = sem limite (a máquina limita) */
+  max_parcelas?: number
+  forma_lancamento: FormaLancamento
+  ativo?: boolean
+  created?: string
+  updated?: string
+  expand?: {
+    maquina?: Maquina
+  }
+}
+
+export type ContaReceberStatus = 'previsto' | 'recebido' | 'cancelado'
+
+/** Uma conta a receber. Cartão = uma só no repasse; os outros, uma por parcela. */
+export interface ContaReceber {
+  id: string
+  paciente?: string
+  orcamento?: string
+  condicao?: string
+  maquina?: string
+  descricao?: string
+  /** Valor que o paciente deve */
+  valor: number
+  /** Valor que efetivamente cai (valor menos a taxa) */
+  valor_liquido?: number
+  taxa_percentual?: number
+  parcela?: number
+  total_parcelas?: number
+  /** Data em que o dinheiro deve entrar */
+  vencimento: string
+  status: ContaReceberStatus
+  recebido_em?: string
+  observacoes?: string
+  created?: string
+  updated?: string
+  expand?: {
+    paciente?: Paciente
+    orcamento?: Orcamento
+    condicao?: CondicaoPagamento
+    maquina?: Maquina
   }
 }
 
