@@ -3,6 +3,7 @@ import { configuracoesService, tiposAtendimentoService, bloqueiosService } from 
 import { CatalogoProcedimentos } from '@/components/config/CatalogoProcedimentos'
 import { CatalogoPagamentos } from '@/components/config/CatalogoPagamentos'
 import { CatalogoMensagens } from '@/components/config/CatalogoMensagens'
+import { GestaoUsuarios } from '@/components/config/GestaoUsuarios'
 import { ClinicaConfig, TipoAtendimento, BloqueioAgenda } from '@/types'
 import { formatCurrency, formatDateBr } from '@/lib/formatters'
 import { useAuth } from '@/contexts/AuthContext'
@@ -309,6 +310,9 @@ export const ConfiguracoesPage: React.FC = () => {
           <TabsTrigger value="bloqueios" className="text-xs sm:text-sm">
             Bloqueios de Agenda ({bloqueios.length})
           </TabsTrigger>
+          <TabsTrigger value="usuarios" className="text-xs sm:text-sm">
+            Usuários
+          </TabsTrigger>
           <TabsTrigger value="medicamentos" className="text-xs sm:text-sm">
             Medicamentos
           </TabsTrigger>
@@ -554,6 +558,10 @@ export const ConfiguracoesPage: React.FC = () => {
         {/* Tab 2.5: Catálogo de Medicamentos (para receitas) */}
         <TabsContent value="medicamentos" className="space-y-4 pt-2">
           <CatalogoMedicamentos />
+        </TabsContent>
+
+        <TabsContent value="usuarios" className="space-y-4 pt-2">
+          <GestaoUsuarios />
         </TabsContent>
 
         {/* Modelos de receita prontos */}
