@@ -12,6 +12,7 @@ import {
   textoOrigem,
 } from '@/lib/pacienteCampos'
 import { comprimirImagem } from '@/lib/imagemUpload'
+import { useDebounce } from '@/hooks/use-debounce'
 import { pacienteFotoUrl } from '@/lib/pacienteFoto'
 import { PacienteAvatar } from '@/components/PacienteAvatar'
 import { BotaoDitar } from '@/components/voz/BotaoDitar'
@@ -175,9 +176,13 @@ export const PacientesPage: React.FC = () => {
     }
   }
 
+  // Busca enquanto digita: espera a pessoa parar por um instante e busca sozinha.
+  const buscaComAtraso = useDebounce(searchQuery, 350)
+
   useEffect(() => {
-    loadPacientes()
-  }, [])
+    loadPacientes(buscaComAtraso)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [buscaComAtraso])
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -363,7 +368,7 @@ export const PacientesPage: React.FC = () => {
               />
             </div>
             <Button type="submit" variant="secondary" className="text-xs sm:text-sm">
-              Buscar
+              {loading ? 'Buscando...' : 'Buscar'}
             </Button>
             {searchQuery && (
               <Button

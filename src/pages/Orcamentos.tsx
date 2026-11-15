@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { orcamentosService, pacientesService, procedimentosService } from '@/services/clinica'
 import { Orcamento, Paciente, ItemOrcamento, Procedimento } from '@/types'
 import {
@@ -36,12 +36,15 @@ import {
   MessageCircle,
   Eye,
   Edit,
+  Search,
 } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { BotaoDitar } from '@/components/voz/BotaoDitar'
+import { useDebounce } from '@/hooks/use-debounce'
 
 export const OrcamentosPage: React.FC = () => {
   const [searchParams] = useSearchParams()
+  const navigate = useNavigate()
   const initialPacienteId = searchParams.get('pacienteId') || ''
   const { isAdmin } = useAuth()
   const { toast } = useToast()
@@ -51,6 +54,9 @@ export const OrcamentosPage: React.FC = () => {
   const [procedimentos, setProcedimentos] = useState<Procedimento[]>([])
   const [loading, setLoading] = useState<boolean>(true)
   const [filterStatus, setFilterStatus] = useState<string>('todos')
+  const [busca, setBusca] = useState<string>('')
+  // Busca enquanto digita na lista de planejamentos.
+  const buscaComAtraso = useDebounce(busca, 350)
 
   // Dialog state
   const [createDialogOpen, setCreateDialogOpen] = useState<boolean>(false)
@@ -178,6 +184,13 @@ export const OrcamentosPage: React.FC = () => {
       setCreateDialogOpen(false)
       setItens([{ procedimento: '', valor: 0, dente: '' }])
       setObservacoes('')
+
+      // Veio do prontuário/ficha do paciente: volta para ela, onde o
+      // planejamento aparece no histórico do paciente e não se perde na lista.
+      if (initialPacienteId) {
+        navigate(`/pacientes/${initialPacienteId}/prontuario`)
+        return
+      }
       loadData()
     } catch (err: any) {
       toast({
@@ -231,8 +244,13 @@ export const OrcamentosPage: React.FC = () => {
   }
 
   const filteredOrcamentos = orcamentos.filter((orc) => {
-    if (filterStatus === 'todos') return true
-    return orc.status === filterStatus
+    if (filterStatus !== 'todos' && orc.status !== filterStatus) return false
+    const termo = buscaComAtraso.trim().toLowerCase()
+    if (!termo) return true
+    const nome = (orc.expand?.paciente?.nome || '').toLowerCase()
+    const telefone = (orc.expand?.paciente?.telefone || '').replace(/\D/g, '')
+    const digitos = termo.replace(/\D/g, '')
+    return nome.includes(termo) || (digitos.length > 0 && telefone.includes(digitos))
   })
 
   return (
@@ -297,6 +315,21 @@ export const OrcamentosPage: React.FC = () => {
           Recusados ({orcamentos.filter((o) => o.status === 'recusado').length})
         </Button>
       </div>
+
+      {/* Busca enquanto digita */}
+      <Card className="border-slate-200 shadow-sm bg-white">
+        <CardContent className="p-3">
+          <div className="relative">
+            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
+            <Input
+              placeholder="Buscar paciente por nome ou telefone..."
+              value={busca}
+              onChange={(e) => setBusca(e.target.value)}
+              className="pl-9 text-xs sm:text-sm"
+            />
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Planejamentos List */}
       <div className="space-y-3">
