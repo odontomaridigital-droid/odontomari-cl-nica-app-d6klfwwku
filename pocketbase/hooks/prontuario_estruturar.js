@@ -29,6 +29,11 @@ routerAdd(
       '- Não invente informação que não esteja no ditado.',
       '- Corrija termos técnicos óbvios de transcrição (ex.: "canal" -> "tratamento endodôntico").',
       '- Responda em português do Brasil.',
+      '',
+      'IMPORTANTE — nunca descarte o que foi falado:',
+      '- Se o ditado tiver trecho SEM relação com o atendimento odontológico, coloque esse trecho em "anotacoes" como observação do profissional, entre parênteses. Ex.: "(O dentista comentou que hoje choveu muito.)".',
+      '- NUNCA devolva "anotacoes" vazia se o ditado tiver qualquer conteúdo. Se não houver nada clínico, "anotacoes" recebe o texto original revisado, e "procedimentos" fica vazio.',
+      '- O dentista precisa reconhecer na tela o que ele falou. Apagar o ditado é pior do que registrar algo fora de contexto.',
     ].join('\n')
 
     const resposta = $ai.chat({
@@ -62,12 +67,30 @@ routerAdd(
       })
     }
 
+    const procedimentos = typeof dados.procedimentos === 'string' ? dados.procedimentos.trim() : ''
+    const denteRegiao = typeof dados.dente_regiao === 'string' ? dados.dente_regiao.trim() : ''
+    const anotacoes = typeof dados.anotacoes === 'string' ? dados.anotacoes.trim() : ''
+
+    // Rede de segurança: se o modelo devolveu tudo vazio (acontece quando o
+    // ditado não tem nada de clínico), devolve o texto original em anotações
+    // em vez de apagar o que o dentista falou.
+    if (!procedimentos && !anotacoes) {
+      return e.json(200, {
+        ok: true,
+        estruturado: false,
+        procedimentos: '',
+        dente_regiao: denteRegiao,
+        anotacoes: texto,
+        retorno_dias: null,
+      })
+    }
+
     return e.json(200, {
       ok: true,
       estruturado: true,
-      procedimentos: typeof dados.procedimentos === 'string' ? dados.procedimentos : '',
-      dente_regiao: typeof dados.dente_regiao === 'string' ? dados.dente_regiao : '',
-      anotacoes: typeof dados.anotacoes === 'string' ? dados.anotacoes : '',
+      procedimentos,
+      dente_regiao: denteRegiao,
+      anotacoes,
       retorno_dias:
         typeof dados.retorno_dias === 'number' && dados.retorno_dias > 0
           ? Math.round(dados.retorno_dias)
