@@ -5,8 +5,18 @@ import {
   bloqueiosService,
   configuracoesService,
   pacientesService,
+  mensagensAutomaticasService,
+  enviosMensagemService,
+  preencherMensagem,
 } from '@/services/clinica'
-import { Consulta, BloqueioAgenda, ClinicaConfig, Paciente } from '@/types'
+import {
+  Consulta,
+  BloqueioAgenda,
+  ClinicaConfig,
+  Paciente,
+  MensagemAutomatica,
+  EnvioMensagem,
+} from '@/types'
 import { getTodayDateString, formatDateBr, isWeekend, createWhatsAppUrl } from '@/lib/formatters'
 import {
   getWeekStart,
@@ -53,7 +63,7 @@ import { useToast } from '@/hooks/use-toast'
 export const AgendaPage: React.FC = () => {
   const navigate = useNavigate()
   const { toast } = useToast()
-  const { isAdmin } = useAuth()
+  const { isAdmin, user } = useAuth()
   const hoje = getTodayDateString()
 
   const [weekStart, setWeekStart] = useState<string>(getWeekStart(hoje))
@@ -65,6 +75,9 @@ export const AgendaPage: React.FC = () => {
   const [config, setConfig] = useState<ClinicaConfig | null>(null)
   const [pacientes, setPacientes] = useState<Paciente[]>([])
   const [loading, setLoading] = useState<boolean>(true)
+  // Mensagem de aniversário em uso e quem já recebeu neste ano.
+  const [mensagemAniversario, setMensagemAniversario] = useState<MensagemAutomatica | null>(null)
+  const [enviosAniversario, setEnviosAniversario] = useState<EnvioMensagem[]>([])
 
   // Bloqueio de dia: guarda a data que está sendo bloqueada/desbloqueada
   const [blockTarget, setBlockTarget] = useState<string | null>(null)
@@ -88,6 +101,14 @@ export const AgendaPage: React.FC = () => {
       setConsultas(cons)
       setBloqueios(bloq)
       setPacientes(pacs)
+
+      // Mensagem ativa e envios do ano — para marcar quem já recebeu.
+      const [msg, envios] = await Promise.all([
+        mensagensAutomaticasService.getAtiva('aniversario'),
+        enviosMensagemService.getDoAno('aniversario'),
+      ])
+      setMensagemAniversario(msg)
+      setEnviosAniversario(envios)
     } catch (err) {
       console.error('Erro ao carregar agenda:', err)
       toast({
@@ -101,6 +122,66 @@ export const AgendaPage: React.FC = () => {
   }
 
   const recarregar = () => loadData(weekStart, weekEnd)
+
+  const idsEnviadosAniversario = new Set(
+    enviosAniversario.filter((e) => e.status === 'enviado').map((e) => e.paciente),
+  )
+
+  /**
+   * Abre o WhatsApp com a mensagem já escrita (variáveis preenchidas) e registra
+   * o envio, para a recepção não parabenizar o mesmo paciente duas vezes.
+   */
+  const enviarParabens = async (item: { p: Paciente; janela: { idade: number | null } }) => {
+    const texto = preencherMensagem(mensagemAniversario?.texto || '', {
+      pacienteNome: item.p.nome,
+      idade: item.janela.idade,
+      clinica: config?.nome_clinica,
+      dentista: config?.dentista_nome,
+      telefone: config?.telefone_clinica,
+    })
+
+    if (item.p.telefone) {
+      window.open(createWhatsAppUrl(item.p.telefone, texto), '_blank')
+    } else {
+      toast({
+        title: 'Paciente sem telefone',
+        description: `${item.p.nome} não tem telefone cadastrado. A mensagem foi copiada.`,
+      })
+      try {
+        await navigator.clipboard.writeText(texto)
+      } catch {
+        // sem clipboard, segue
+      }
+    }
+
+    try {
+      await enviosMensagemService.registrar({
+        pacienteId: item.p.id,
+        mensagemId: mensagemAniversario?.id,
+        finalidade: 'aniversario',
+        canal: 'whatsapp_manual',
+        usuarioId: user?.id,
+      })
+      setEnviosAniversario(await enviosMensagemService.getDoAno('aniversario'))
+    } catch (err: any) {
+      toast({
+        title: 'Enviou, mas não registrou',
+        description: err.message,
+        variant: 'destructive',
+      })
+    }
+  }
+
+  /** Desfaz o registro de envio (marcou por engano). */
+  const desfazerParabens = async (item: { p: Paciente }) => {
+    try {
+      await enviosMensagemService.desfazer(item.p.id, 'aniversario')
+      setEnviosAniversario(await enviosMensagemService.getDoAno('aniversario'))
+      toast({ title: 'Registro de envio desfeito' })
+    } catch (err: any) {
+      toast({ title: 'Erro', description: err.message, variant: 'destructive' })
+    }
+  }
 
   useEffect(() => {
     loadData(weekStart, weekEnd)
@@ -413,6 +494,9 @@ export const AgendaPage: React.FC = () => {
               cor="text-slate-600"
               itens={aniversariantes.recentes}
               onAbrir={(id) => navigate(`/pacientes/${id}/prontuario`)}
+              enviados={idsEnviadosAniversario}
+              onEnviar={enviarParabens}
+              onDesfazerEnvio={desfazerParabens}
             />
             <FaixaAniversario
               titulo="Hoje"
@@ -420,12 +504,18 @@ export const AgendaPage: React.FC = () => {
               cor="text-pink-700"
               itens={aniversariantes.hoje}
               onAbrir={(id) => navigate(`/pacientes/${id}/prontuario`)}
+              enviados={idsEnviadosAniversario}
+              onEnviar={enviarParabens}
+              onDesfazerEnvio={desfazerParabens}
             />
             <FaixaAniversario
               titulo="Próximos 5 dias"
               cor="text-pink-700"
               itens={aniversariantes.proximos}
               onAbrir={(id) => navigate(`/pacientes/${id}/prontuario`)}
+              enviados={idsEnviadosAniversario}
+              onEnviar={enviarParabens}
+              onDesfazerEnvio={desfazerParabens}
             />
           </div>
         </div>
