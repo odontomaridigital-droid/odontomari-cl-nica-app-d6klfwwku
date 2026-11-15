@@ -206,11 +206,13 @@ export const OrcamentosPage: React.FC = () => {
 
   const handleUpdateStatus = async (id: string, newStatus: Orcamento['status']) => {
     try {
-      await orcamentosService.updateStatus(id, newStatus, user?.id)
+      const atualizado: Orcamento = await orcamentosService.updateStatus(id, newStatus, user?.id)
       toast({ title: `Status atualizado para: ${newStatus.toUpperCase()}` })
       loadData()
+      // Usa o registro que voltou do banco: é ele que traz a data e o autor do
+      // aceite. Copiar só o status deixaria a tela sem a data.
       if (activeOrcamento && activeOrcamento.id === id) {
-        setActiveOrcamento({ ...activeOrcamento, status: newStatus })
+        setActiveOrcamento(atualizado)
       }
     } catch (err: any) {
       toast({
