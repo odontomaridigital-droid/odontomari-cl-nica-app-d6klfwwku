@@ -67,22 +67,20 @@ export const usuariosService = {
   /**
    * Redefine a senha de outro usuário (administrador).
    *
-   * O PocketBase exige `oldPassword` em qualquer troca de senha, mesmo quando
-   * quem edita é o admin — e o valor exigido é a senha de QUEM ESTÁ LOGADO, não
-   * a do usuário-alvo. Por isso a tela pede a senha atual do administrador.
-   * Isso é o comportamento seguro: ninguém troca senha sem provar quem é.
+   * Vai pelo hook do servidor porque a API REST do PocketBase, ao trocar a senha
+   * de outro registro, exige `oldPassword` e trata esse campo como a senha DO
+   * ALVO — ou seja, seria preciso saber a senha atual da pessoa, que é
+   * exatamente o que ela esqueceu. O hook confere que quem chama é admin e
+   * grava a senha nova sem pedir a antiga.
    */
-  async definirSenha(
-    id: string,
-    senha: string,
-    confirmacao: string,
-    senhaDoAdmin: string,
-  ): Promise<void> {
-    await pb.collection(COLECAO).update(id, {
-      password: senha,
-      passwordConfirm: confirmacao,
-      oldPassword: senhaDoAdmin,
+  async definirSenha(id: string, senha: string, confirmacao: string): Promise<void> {
+    const resposta: any = await pb.send('/backend/v1/usuarios/definir-senha', {
+      method: 'POST',
+      body: { usuarioId: id, senha, confirmacao },
     })
+    if (!resposta?.ok) {
+      throw new Error(resposta?.message || 'Não foi possível redefinir a senha.')
+    }
     registrarLog('editou', 'configuracoes', `Redefiniu a senha de um usuário`, id)
   },
 

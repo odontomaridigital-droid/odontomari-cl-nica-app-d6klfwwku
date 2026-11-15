@@ -66,7 +66,7 @@ export const GestaoUsuarios: React.FC = () => {
   const [senhaAberto, setSenhaAberto] = useState<UsuarioSistema | null>(null)
   const [novaSenha, setNovaSenha] = useState('')
   const [novaConfirmacao, setNovaConfirmacao] = useState('')
-  const [senhaAdmin, setSenhaAdmin] = useState('')
+
   const [salvandoSenha, setSalvandoSenha] = useState(false)
 
   const carregar = async () => {
@@ -185,15 +185,10 @@ export const GestaoUsuarios: React.FC = () => {
       setSenhaAberto(null)
       setNovaSenha('')
       setNovaConfirmacao('')
-      setSenhaAdmin('')
     } catch (err: any) {
-      const msg = String(err?.message || '')
-      const descricao = msg.toLowerCase().includes('old password')
-        ? 'Sua senha de administrador está incorreta.'
-        : msg
       toast({
         title: 'Não foi possível alterar a senha',
-        description: descricao,
+        description: err?.message,
         variant: 'destructive',
       })
     } finally {
@@ -497,20 +492,6 @@ export const GestaoUsuarios: React.FC = () => {
                 onChange={(e) => setNovaConfirmacao(e.target.value)}
                 className="mt-1 text-xs sm:text-sm"
               />
-            </div>
-
-            <div className="pt-1 border-t border-slate-100">
-              <Label className="text-xs">Sua senha de administrador *</Label>
-              <Input
-                type="password"
-                value={senhaAdmin}
-                onChange={(e) => setSenhaAdmin(e.target.value)}
-                placeholder="Para confirmar que é você"
-                className="mt-1 text-xs sm:text-sm"
-              />
-              <p className="text-[10px] text-slate-500 mt-1">
-                O sistema exige a senha de quem está logado para liberar a troca.
-              </p>
             </div>
           </div>
 
