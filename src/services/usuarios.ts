@@ -45,10 +45,10 @@ export const usuariosService = {
       role: dados.role,
       password: dados.password,
       passwordConfirm: dados.passwordConfirm,
-      // o admin cria a conta já verificada: não há fluxo de confirmação por
-      // e-mail configurado para convidados
-      verified: true,
       emailVisibility: true,
+      // `verified` NÃO é enviado: o PocketBase recusa essa alteração pela API
+      // (validation_values_mismatch). A conta nasce não verificada, mas entra
+      // normalmente — a verificação só é exigida se a clínica ativá-la.
     })
     registrarLog('criou', 'configuracoes', `Criou usuário: ${criado.email}`, criado.id)
     return criado
