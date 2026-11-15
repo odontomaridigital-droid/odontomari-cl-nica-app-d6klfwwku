@@ -46,7 +46,7 @@ export const OrcamentosPage: React.FC = () => {
   const [searchParams] = useSearchParams()
   const navigate = useNavigate()
   const initialPacienteId = searchParams.get('pacienteId') || ''
-  const { isAdmin } = useAuth()
+  const { isAdmin, user } = useAuth()
   const { toast } = useToast()
 
   const [orcamentos, setOrcamentos] = useState<Orcamento[]>([])
@@ -55,6 +55,7 @@ export const OrcamentosPage: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true)
   const [filterStatus, setFilterStatus] = useState<string>('todos')
   const [busca, setBusca] = useState<string>('')
+
   // Busca enquanto digita na lista de planejamentos.
   const buscaComAtraso = useDebounce(busca, 350)
 
@@ -205,7 +206,7 @@ export const OrcamentosPage: React.FC = () => {
 
   const handleUpdateStatus = async (id: string, newStatus: Orcamento['status']) => {
     try {
-      await orcamentosService.updateStatus(id, newStatus)
+      await orcamentosService.updateStatus(id, newStatus, user?.id)
       toast({ title: `Status atualizado para: ${newStatus.toUpperCase()}` })
       loadData()
       if (activeOrcamento && activeOrcamento.id === id) {
@@ -305,6 +306,32 @@ export const OrcamentosPage: React.FC = () => {
           onClick={() => setFilterStatus('aceito')}
         >
           Aceitos ({orcamentos.filter((o) => o.status === 'aceito').length})
+        </Button>
+        <Button
+          type="button"
+          size="sm"
+          variant={filterStatus === 'concluido' ? 'default' : 'outline'}
+          className={
+            filterStatus === 'concluido'
+              ? 'text-xs bg-sky-600 hover:bg-sky-700 text-white'
+              : 'text-xs'
+          }
+          onClick={() => setFilterStatus('concluido')}
+        >
+          Concluídos ({orcamentos.filter((o) => o.status === 'concluido').length})
+        </Button>
+        <Button
+          type="button"
+          size="sm"
+          variant={filterStatus === 'concluido' ? 'default' : 'outline'}
+          className={
+            filterStatus === 'concluido'
+              ? 'text-xs h-8 bg-sky-600 hover:bg-sky-700 text-white'
+              : 'text-xs h-8 text-sky-700 border-sky-200'
+          }
+          onClick={() => setFilterStatus('concluido')}
+        >
+          Concluídos ({orcamentos.filter((o) => o.status === 'concluido').length})
         </Button>
         <Button
           variant={filterStatus === 'recusado' ? 'default' : 'outline'}
@@ -749,22 +776,14 @@ export const OrcamentosPage: React.FC = () => {
                 </div>
               )}
 
-              {/* Status Change Controls */}
-              <div className="space-y-1.5 pt-2">
+              {/* Aceite e execução */}
+              <div className="space-y-1.5 pt-2 border-t border-slate-100 pt-3">
                 <Label className="text-xs font-semibold text-slate-700">
-                  Alterar Status do Planejamento:
+                  Situação do planejamento
                 </Label>
-                <div className="grid grid-cols-3 gap-2">
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant={activeOrcamento.status === 'aceito' ? 'default' : 'outline'}
-                    className="text-xs bg-emerald-600 hover:bg-emerald-700 text-white"
-                    onClick={() => handleUpdateStatus(activeOrcamento.id, 'aceito')}
-                  >
-                    <CheckCircle2 className="w-3.5 h-3.5 mr-1" />
-                    Aceito
-                  </Button>
+
+                {/* O caminho normal: aberto → aceito → concluído */}
+                <div className="flex flex-wrap gap-2">
                   <Button
                     type="button"
                     size="sm"
@@ -778,6 +797,34 @@ export const OrcamentosPage: React.FC = () => {
                   <Button
                     type="button"
                     size="sm"
+                    variant={activeOrcamento.status === 'aceito' ? 'default' : 'outline'}
+                    className={
+                      activeOrcamento.status === 'aceito'
+                        ? 'text-xs bg-emerald-600 hover:bg-emerald-700 text-white'
+                        : 'text-xs border-emerald-300 text-emerald-700 hover:bg-emerald-50'
+                    }
+                    onClick={() => handleUpdateStatus(activeOrcamento.id, 'aceito')}
+                  >
+                    <CheckCircle2 className="w-3.5 h-3.5 mr-1" />
+                    Aceito
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant={activeOrcamento.status === 'concluido' ? 'default' : 'outline'}
+                    className={
+                      activeOrcamento.status === 'concluido'
+                        ? 'text-xs bg-sky-600 hover:bg-sky-700 text-white'
+                        : 'text-xs border-sky-300 text-sky-700 hover:bg-sky-50'
+                    }
+                    onClick={() => handleUpdateStatus(activeOrcamento.id, 'concluido')}
+                  >
+                    <CheckCircle2 className="w-3.5 h-3.5 mr-1" />
+                    Concluído
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
                     variant={activeOrcamento.status === 'recusado' ? 'default' : 'outline'}
                     className="text-xs text-red-600 border-red-200 hover:bg-red-50"
                     onClick={() => handleUpdateStatus(activeOrcamento.id, 'recusado')}
@@ -786,6 +833,21 @@ export const OrcamentosPage: React.FC = () => {
                     Recusado
                   </Button>
                 </div>
+
+                {/* Registro do aceite: quando e por quem */}
+                {activeOrcamento.aceito_em && (
+                  <p className="text-[11px] text-slate-500">
+                    Aceito em {formatDateBr(activeOrcamento.aceito_em)}
+                    {activeOrcamento.expand?.aceito_por?.name
+                      ? ` por ${activeOrcamento.expand.aceito_por.name}`
+                      : ''}
+                  </p>
+                )}
+                {activeOrcamento.status === 'concluido' && activeOrcamento.concluido_em && (
+                  <p className="text-[11px] text-slate-500">
+                    Concluído em {formatDateBr(activeOrcamento.concluido_em)}
+                  </p>
+                )}
               </div>
             </div>
 

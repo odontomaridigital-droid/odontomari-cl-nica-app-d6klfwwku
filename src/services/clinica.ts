@@ -441,14 +441,36 @@ export const orcamentosService = {
     return updated
   },
 
-  async updateStatus(id: string, status: Orcamento['status']): Promise<Orcamento> {
-    const updated = await pb.collection('orcamentos').update<Orcamento>(
-      id,
-      { status },
-      {
-        expand: 'paciente',
-      },
-    )
+  /**
+   * Muda a situação do planejamento e guarda a data (e quem fez, no aceite).
+   * Aberto → Aceito → Concluído. Recusado continua existindo.
+   */
+  async updateStatus(
+    id: string,
+    status: Orcamento['status'],
+    usuarioId?: string,
+  ): Promise<Orcamento> {
+    const agora = new Date().toISOString()
+    const corpo: Record<string, unknown> = { status }
+
+    if (status === 'aceito') {
+      corpo.aceito_em = agora
+      if (usuarioId) corpo.aceito_por = usuarioId
+    }
+    if (status === 'concluido') {
+      corpo.concluido_em = agora
+    }
+    // Voltou para aberto: limpa o aceite, senão fica data de aceite num
+    // planejamento que não está mais aceito.
+    if (status === 'aberto') {
+      corpo.aceito_em = ''
+      corpo.aceito_por = ''
+      corpo.concluido_em = ''
+    }
+
+    const updated = await pb.collection('orcamentos').update<Orcamento>(id, corpo, {
+      expand: 'paciente,aceito_por',
+    })
     registrarLog(
       'editou',
       'planejamento',

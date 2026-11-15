@@ -268,7 +268,14 @@ export interface ItemOrcamento {
   procedimento_id?: string
 }
 
-export type OrcamentoStatus = 'aberto' | 'aceito' | 'recusado'
+/**
+ * Situação do planejamento:
+ * aberto     → criado, aguardando o paciente decidir
+ * aceito     → paciente aprovou (recepção ou dentista registra)
+ * concluido  → tratamento executado
+ * recusado   → paciente não aceitou (mantido porque a informação existe)
+ */
+export type OrcamentoStatus = 'aberto' | 'aceito' | 'concluido' | 'recusado'
 
 export interface Orcamento {
   id: string
@@ -279,10 +286,17 @@ export interface Orcamento {
   valor_total: number
   observacoes?: string
   validade_dias?: number
+  /** Data em que o paciente aceitou */
+  aceito_em?: string
+  /** Quem registrou o aceite */
+  aceito_por?: string
+  /** Data em que o tratamento foi concluído */
+  concluido_em?: string
   created?: string
   updated?: string
   expand?: {
     paciente?: Paciente
+    aceito_por?: User
   }
 }
 
