@@ -394,6 +394,39 @@ export interface ContaReceber {
   }
 }
 
+/** Mensagem automática configurável (aniversário, retorno, pós-operatório) */
+export interface MensagemAutomatica {
+  id: string
+  nome: string
+  finalidade: 'aniversario' | 'retorno' | 'pos_operatorio' | 'outro'
+  texto: string
+  ativo?: boolean
+  created?: string
+  updated?: string
+}
+
+/** Registro de uma mensagem já enviada a um paciente */
+export interface EnvioMensagem {
+  id: string
+  paciente: string
+  mensagem?: string
+  finalidade: 'aniversario' | 'retorno' | 'pos_operatorio' | 'outro'
+  /** Ano de referência: no ano seguinte a pessoa volta a aparecer pendente */
+  ano_referencia: number
+  canal: 'whatsapp_manual' | 'whatsapp_api'
+  status: 'enviado' | 'falhou'
+  enviado_em?: string
+  enviado_por?: string
+  observacoes?: string
+  created?: string
+  updated?: string
+  expand?: {
+    paciente?: Paciente
+    mensagem?: MensagemAutomatica
+    enviado_por?: User
+  }
+}
+
 export interface BloqueioAgenda {
   id: string
   data: string

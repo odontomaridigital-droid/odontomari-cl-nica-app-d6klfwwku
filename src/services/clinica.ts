@@ -21,6 +21,8 @@ import {
   Maquina,
   CondicaoPagamento,
   ContaReceber,
+  MensagemAutomatica,
+  EnvioMensagem,
 } from '@/types'
 import { montarPlanoRecebimento } from '@/lib/recebimento'
 import { somenteData } from '@/lib/datas'
@@ -1103,6 +1105,169 @@ export const bloqueiosService = {
     const ok = await pb.collection('bloqueios_agenda').delete(id)
     registrarLog('excluiu', 'bloqueio', `Excluiu bloqueio de agenda (id ${id})`, id)
     return ok
+  },
+}
+
+// =================== MENSAGENS AUTOMÁTICAS ===================
+/**
+ * Variáveis fixas que podem ser usadas no texto da mensagem.
+ * Qualquer outra coisa entre chaves é erro de digitação.
+ */
+export const VARIAVEIS_MENSAGEM: { tag: string; descricao: string }[] = [
+  { tag: '{primeiro_nome}', descricao: 'Primeiro nome do paciente' },
+  { tag: '{paciente}', descricao: 'Nome completo do paciente' },
+  { tag: '{idade}', descricao: 'Idade que ele está completando' },
+  { tag: '{clinica}', descricao: 'Nome da clínica' },
+  { tag: '{dentista}', descricao: 'Nome da dentista' },
+  { tag: '{telefone}', descricao: 'Telefone da clínica' },
+]
+
+/** Troca as variáveis pelos dados reais do paciente. */
+export function preencherMensagem(
+  texto: string,
+  dados: {
+    pacienteNome: string
+    idade?: number | null
+    clinica?: string
+    dentista?: string
+    telefone?: string
+  },
+): string {
+  const primeiro = (dados.pacienteNome || '').trim().split(/\s+/)[0] || ''
+  return String(texto || '')
+    .replace(/\{primeiro_nome\}/g, primeiro)
+    .replace(/\{paciente\}/g, dados.pacienteNome || '')
+    .replace(/\{idade\}/g, dados.idade != null ? String(dados.idade) : '')
+    .replace(/\{clinica\}/g, dados.clinica || 'Clínica Odontomari')
+    .replace(/\{dentista\}/g, dados.dentista || '')
+    .replace(/\{telefone\}/g, dados.telefone || '')
+}
+
+export const mensagensAutomaticasService = {
+  async getAll(finalidade?: MensagemAutomatica['finalidade']): Promise<MensagemAutomatica[]> {
+    return await pb.collection('mensagens_automaticas').getFullList<MensagemAutomatica>({
+      sort: 'finalidade,nome',
+      ...(finalidade ? { filter: `finalidade = "${finalidade}"` } : {}),
+    })
+  },
+
+  /** A mensagem marcada como ativa de uma finalidade (a que será usada). */
+  async getAtiva(finalidade: MensagemAutomatica['finalidade']): Promise<MensagemAutomatica | null> {
+    try {
+      return await pb
+        .collection('mensagens_automaticas')
+        .getFirstListItem<MensagemAutomatica>(`finalidade = "${finalidade}" && ativo = true`)
+    } catch {
+      return null
+    }
+  },
+
+  /** Só uma ativa por finalidade: ativar uma desativa as outras. */
+  async ativar(id: string, finalidade: MensagemAutomatica['finalidade']): Promise<void> {
+    const todas = await this.getAll(finalidade)
+    for (const m of todas) {
+      const deve = m.id === id
+      if ((m.ativo ?? false) !== deve) {
+        await pb.collection('mensagens_automaticas').update(m.id, { ativo: deve })
+      }
+    }
+    registrarLog('editou', 'mensagem', 'Definiu a mensagem automática em uso', id)
+  },
+
+  async create(data: Partial<MensagemAutomatica>): Promise<MensagemAutomatica> {
+    const criada = await pb.collection('mensagens_automaticas').create<MensagemAutomatica>(data)
+    registrarLog('criou', 'mensagem', `Criou mensagem ${criada.nome}`, criada.id)
+    return criada
+  },
+
+  async update(id: string, data: Partial<MensagemAutomatica>): Promise<MensagemAutomatica> {
+    const atualizada = await pb
+      .collection('mensagens_automaticas')
+      .update<MensagemAutomatica>(id, data)
+    registrarLog('editou', 'mensagem', `Editou mensagem ${atualizada.nome}`, atualizada.id)
+    return atualizada
+  },
+
+  async remove(id: string, nome?: string): Promise<boolean> {
+    const ok = await pb.collection('mensagens_automaticas').delete(id)
+    registrarLog('excluiu', 'mensagem', `Excluiu mensagem ${nome || ''}`, id)
+    return ok
+  },
+}
+
+export const enviosMensagemService = {
+  /** Envios de uma finalidade no ano corrente — para saber quem já recebeu. */
+  async getDoAno(
+    finalidade: EnvioMensagem['finalidade'],
+    ano = new Date().getFullYear(),
+  ): Promise<EnvioMensagem[]> {
+    return await pb.collection('envios_mensagem').getFullList<EnvioMensagem>({
+      filter: `finalidade = "${finalidade}" && ano_referencia = ${ano}`,
+      expand: 'paciente,mensagem,enviado_por',
+    })
+  },
+
+  /** Registra que a mensagem foi enviada. Reenviar atualiza em vez de duplicar. */
+  async registrar(data: {
+    pacienteId: string
+    mensagemId?: string
+    finalidade: EnvioMensagem['finalidade']
+    canal: EnvioMensagem['canal']
+    ano?: number
+    usuarioId?: string
+    observacoes?: string
+  }): Promise<EnvioMensagem> {
+    const ano = data.ano || new Date().getFullYear()
+    const corpo = {
+      paciente: data.pacienteId,
+      mensagem: data.mensagemId || undefined,
+      finalidade: data.finalidade,
+      ano_referencia: ano,
+      canal: data.canal,
+      status: 'enviado' as const,
+      enviado_em: new Date().toISOString(),
+      enviado_por: data.usuarioId || undefined,
+      observacoes: data.observacoes || '',
+    }
+
+    let existente: EnvioMensagem | null = null
+    try {
+      existente = await pb
+        .collection('envios_mensagem')
+        .getFirstListItem<EnvioMensagem>(
+          `paciente = "${data.pacienteId}" && finalidade = "${data.finalidade}" && ano_referencia = ${ano}`,
+        )
+    } catch {
+      existente = null
+    }
+
+    const salvo = existente
+      ? await pb.collection('envios_mensagem').update<EnvioMensagem>(existente.id, corpo)
+      : await pb.collection('envios_mensagem').create<EnvioMensagem>(corpo)
+
+    registrarLog(
+      'criou',
+      'mensagem',
+      `Registrou envio de ${data.finalidade} para paciente`,
+      salvo.id,
+    )
+    return salvo
+  },
+
+  /** Desfaz o registro (marcou por engano). */
+  async desfazer(pacienteId: string, finalidade: EnvioMensagem['finalidade'], ano?: number) {
+    const anoRef = ano || new Date().getFullYear()
+    try {
+      const existente = await pb
+        .collection('envios_mensagem')
+        .getFirstListItem<EnvioMensagem>(
+          `paciente = "${pacienteId}" && finalidade = "${finalidade}" && ano_referencia = ${anoRef}`,
+        )
+      await pb.collection('envios_mensagem').delete(existente.id)
+      registrarLog('excluiu', 'mensagem', 'Desfez registro de envio', existente.id)
+    } catch {
+      // nada a desfazer
+    }
   },
 }
 
