@@ -26,17 +26,32 @@ export function formatValorInput(value?: number): string {
  */
 export function parseValorInput(texto: string): number {
   if (!texto) return 0
-  const limpo = texto.replace(/[^\d.,]/g, '')
+  let limpo = texto.replace(/[^\d.,]/g, '')
   if (!limpo) return 0
-  let normalizado: string
-  const temVirgula = limpo.includes(',')
-  if (temVirgula) {
-    // Formato brasileiro: o ponto é milhar e a vírgula é decimal.
-    normalizado = limpo.replace(/\./g, '').replace(',', '.')
-  } else {
-    normalizado = limpo
+
+  // Vírgula é o separador decimal no Brasil: daí o ponto só pode ser milhar.
+  if (limpo.includes(',')) {
+    limpo = limpo.replace(/\./g, '').replace(',', '.')
+    const n = Number(limpo)
+    return Number.isFinite(n) ? n : 0
   }
-  const n = Number(normalizado)
+
+  const partes = limpo.split('.')
+  if (partes.length === 1) {
+    const n = Number(limpo)
+    return Number.isFinite(n) ? n : 0
+  }
+
+  // Sem vírgula, o ponto é ambíguo: milhar (1.500 = mil e quinhentos) ou
+  // decimal (12.5 = doze e meio). É milhar quando todo grupo depois do
+  // primeiro ponto tem exatamente 3 dígitos — senão, é decimal.
+  const ehMilhar = partes.slice(1).every((p) => p.length === 3)
+  if (ehMilhar) {
+    const n = Number(partes.join(''))
+    return Number.isFinite(n) ? n : 0
+  }
+
+  const n = Number(`${partes[0]}.${partes.slice(1).join('')}`)
   return Number.isFinite(n) ? n : 0
 }
 
