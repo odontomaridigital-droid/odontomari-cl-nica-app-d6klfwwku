@@ -171,13 +171,9 @@ export const GestaoUsuarios: React.FC = () => {
       toast({ title: 'As duas senhas não são iguais', variant: 'destructive' })
       return
     }
-    if (!senhaAdmin.trim()) {
-      toast({ title: 'Informe a sua senha para confirmar', variant: 'destructive' })
-      return
-    }
     setSalvandoSenha(true)
     try {
-      await usuariosService.definirSenha(senhaAberto.id, novaSenha, novaConfirmacao, senhaAdmin)
+      await usuariosService.definirSenha(senhaAberto.id, novaSenha, novaConfirmacao)
       toast({
         title: 'Senha alterada',
         description: `${senhaAberto.name || senhaAberto.email} já pode entrar com a senha nova.`,
