@@ -347,21 +347,9 @@ export const ReceitasTab: React.FC<ReceitasTabProps> = ({
         </Card>
       ) : (
         <>
-          <div className="flex items-center justify-between">
-            <p className="text-xs text-slate-500">
-              {receitas.length} receita{receitas.length > 1 ? 's' : ''} no histórico deste paciente
-            </p>
-            {isAdmin && (
-              <Button
-                size="sm"
-                className="bg-marca-vermelho hover:bg-marca-vermelho-escuro text-white text-xs"
-                onClick={abrirNova}
-              >
-                <Plus className="w-3.5 h-3.5 mr-1" />
-                Nova Receita
-              </Button>
-            )}
-          </div>
+          <p className="text-xs text-slate-500">
+            {receitas.length} receita{receitas.length > 1 ? 's' : ''} no histórico deste paciente
+          </p>
 
           <div className="space-y-3">
             {receitas.map((r) => (
@@ -454,6 +442,19 @@ export const ReceitasTab: React.FC<ReceitasTabProps> = ({
               </Card>
             ))}
           </div>
+
+          {/* Ação de adicionar no fim da lista, como nas outras abas */}
+          {isAdmin && (
+            <Button
+              size="sm"
+              variant="outline"
+              className="w-full border-dashed border-slate-300 text-slate-600 hover:text-marca-vermelho hover:border-marca-vermelho text-xs h-9"
+              onClick={abrirNova}
+            >
+              <Plus className="w-3.5 h-3.5 mr-1" />
+              Nova Receita
+            </Button>
+          )}
         </>
       )}
 

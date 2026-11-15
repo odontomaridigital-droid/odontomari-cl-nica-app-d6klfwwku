@@ -95,22 +95,9 @@ export const AnamneseTab: React.FC<AnamneseTabProps> = ({
         </Card>
       ) : (
         <>
-          <div className="flex items-center justify-between">
-            <p className="text-xs text-slate-500">
-              {anamneses.length} anamnese{anamneses.length > 1 ? 's' : ''} no histórico deste
-              paciente
-            </p>
-            {isAdmin && (
-              <Button
-                size="sm"
-                className="bg-marca-vermelho hover:bg-marca-vermelho-escuro text-white text-xs"
-                onClick={abrirNova}
-              >
-                <Plus className="w-3.5 h-3.5 mr-1" />
-                Nova Anamnese
-              </Button>
-            )}
-          </div>
+          <p className="text-xs text-slate-500">
+            {anamneses.length} anamnese{anamneses.length > 1 ? 's' : ''} no histórico deste paciente
+          </p>
 
           <div className="space-y-3">
             {anamneses.map((anm) => (
@@ -178,6 +165,19 @@ export const AnamneseTab: React.FC<AnamneseTabProps> = ({
               </Card>
             ))}
           </div>
+
+          {/* Ação de adicionar no fim da lista, como nas outras abas */}
+          {isAdmin && (
+            <Button
+              size="sm"
+              variant="outline"
+              className="w-full border-dashed border-slate-300 text-slate-600 hover:text-marca-vermelho hover:border-marca-vermelho text-xs h-9"
+              onClick={abrirNova}
+            >
+              <Plus className="w-3.5 h-3.5 mr-1" />
+              Nova Anamnese
+            </Button>
+          )}
         </>
       )}
 

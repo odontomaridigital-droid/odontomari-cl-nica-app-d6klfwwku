@@ -214,22 +214,10 @@ export const DocumentosTab: React.FC<DocumentosTabProps> = ({
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between gap-3">
-        <p className="text-xs text-slate-500">
-          Orientações, atestados e declarações prontos para imprimir, baixar em PDF ou enviar pelo
-          WhatsApp.
-        </p>
-        {isAdmin && (
-          <Button
-            size="sm"
-            className="bg-marca-vermelho hover:bg-marca-vermelho-escuro text-white text-xs shrink-0"
-            onClick={abrirNovo}
-          >
-            <Plus className="w-3.5 h-3.5 mr-1" />
-            Novo documento
-          </Button>
-        )}
-      </div>
+      <p className="text-xs text-slate-500">
+        Orientações, atestados e declarações prontos para imprimir, baixar em PDF ou enviar pelo
+        WhatsApp.
+      </p>
 
       {documentos.length === 0 ? (
         <Card className="border-dashed border-2 border-slate-200 shadow-none text-center p-8 bg-white">
@@ -309,6 +297,19 @@ export const DocumentosTab: React.FC<DocumentosTabProps> = ({
               </CardContent>
             </Card>
           ))}
+
+          {/* Ação de adicionar no fim da lista, como nas outras abas */}
+          {isAdmin && (
+            <Button
+              size="sm"
+              variant="outline"
+              className="w-full border-dashed border-slate-300 text-slate-600 hover:text-marca-vermelho hover:border-marca-vermelho text-xs h-9"
+              onClick={abrirNovo}
+            >
+              <Plus className="w-3.5 h-3.5 mr-1" />
+              Novo documento
+            </Button>
+          )}
         </div>
       )}
 
