@@ -72,6 +72,10 @@ export const ProntuarioPage: React.FC = () => {
   const [anamneses, setAnamneses] = useState<Anamnese[]>([])
   const [receitas, setReceitas] = useState<Receita[]>([])
   const [odontograma, setOdontograma] = useState<OdontogramaRegistro[]>([])
+  // Um odontograma por planejamento — cada tratamento tem o seu mapa.
+  const [odontogramaPorPlanejamento, setOdontogramaPorPlanejamento] = useState<
+    Record<string, OdontogramaRegistro[]>
+  >({})
   const [documentos, setDocumentos] = useState<DocumentoEmitido[]>([])
   const [loading, setLoading] = useState<boolean>(true)
 
@@ -117,6 +121,13 @@ export const ProntuarioPage: React.FC = () => {
       setAnamneses(anmList)
       setReceitas(recList)
       setOdontograma(odoList)
+      const porPlanejamento: Record<string, OdontogramaRegistro[]> = {}
+      for (const registro of odoList) {
+        const chave = (registro.orcamento as string) || ''
+        if (!chave) continue
+        porPlanejamento[chave] = [...(porPlanejamento[chave] || []), registro]
+      }
+      setOdontogramaPorPlanejamento(porPlanejamento)
       setDocumentos(docList)
     } catch (err: any) {
       toast({
@@ -388,9 +399,6 @@ export const ProntuarioPage: React.FC = () => {
       {/* Tabs: Prontuário Clínico vs Histórico de Consultas vs Planejamentos */}
       <Tabs defaultValue="prontuario" className="w-full">
         <TabsList className="bg-white border border-slate-200 p-1 flex w-full flex-wrap h-auto justify-start gap-y-1">
-          <TabsTrigger value="odontograma" className="text-xs sm:text-sm">
-            Odontograma
-          </TabsTrigger>
           <TabsTrigger value="prontuario" className="text-xs sm:text-sm">
             Evolução Clínica ({prontuarios.length})
           </TabsTrigger>
@@ -410,51 +418,6 @@ export const ProntuarioPage: React.FC = () => {
             Documentos ({documentos.length})
           </TabsTrigger>
         </TabsList>
-
-        {/* Tab 0: Odontograma */}
-        <TabsContent value="odontograma" className="space-y-4 pt-2">
-          <OdontogramaTab
-            registros={odontograma}
-            isAdmin={isAdmin}
-            pacienteNome={paciente.nome}
-            onAviso={(title, message) =>
-              toast({ title, description: message, variant: 'destructive' })
-            }
-            onSalvar={async ({ dente, condicao, faces, observacao }) => {
-              try {
-                await odontogramaService.salvar({
-                  paciente: id!,
-                  dente,
-                  condicao: condicao as CondicaoDente,
-                  faces: faces as FaceDente[],
-                  observacao,
-                  registrado_por: user?.id,
-                })
-                toast({ title: `Dente ${dente} atualizado no odontograma.` })
-                loadData()
-              } catch (err: any) {
-                toast({
-                  title: 'Erro ao salvar odontograma',
-                  description: err.message,
-                  variant: 'destructive',
-                })
-              }
-            }}
-            onRemover={async (registroId, dente) => {
-              try {
-                await odontogramaService.remover(registroId, dente)
-                toast({ title: `Registro do dente ${dente} removido.` })
-                loadData()
-              } catch (err: any) {
-                toast({
-                  title: 'Erro ao remover registro',
-                  description: err.message,
-                  variant: 'destructive',
-                })
-              }
-            }}
-          />
-        </TabsContent>
 
         {/* Tab 1: Prontuário Clínico */}
         <TabsContent value="prontuario" className="space-y-4 pt-2">
@@ -597,9 +560,9 @@ export const ProntuarioPage: React.FC = () => {
           ) : (
             orcamentos.map((orc) => (
               <Card key={orc.id} className="border-slate-200 bg-white">
-                <CardContent className="p-4 flex items-center justify-between">
-                  <div>
-                    <div className="flex items-center gap-2">
+                <CardContent className="p-4 flex items-center justify-between gap-2">
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
                       <span className="text-xs font-semibold text-slate-500">
                         {formatDateBr(orc.data)}
                       </span>
@@ -620,7 +583,7 @@ export const ProntuarioPage: React.FC = () => {
                       {orc.itens?.length || 0} procedimento(s) incluído(s)
                     </p>
                   </div>
-                  <div className="text-right">
+                  <div className="text-right shrink-0">
                     <span className="text-sm font-bold text-marca-vermelho block">
                       {formatCurrency(orc.valor_total)}
                     </span>
@@ -628,11 +591,60 @@ export const ProntuarioPage: React.FC = () => {
                       variant="ghost"
                       size="sm"
                       className="text-xs h-7 mt-1 text-slate-600"
-                      onClick={() => navigate('/orcamentos')}
+                      onClick={() =>
+                        navigate(`/pacientes/${paciente.id}/prontuario?planejamento=${orc.id}`)
+                      }
                     >
-                      Ver detalhes
+                      Abrir planejamento
                     </Button>
                   </div>
+                </CardContent>
+                {/* O odontograma pertence a ESTE planejamento, não ao paciente. */}
+                <CardContent className="p-4 pt-0">
+                  <OdontogramaTab
+                    registros={odontogramaPorPlanejamento[orc.id] || []}
+                    isAdmin={isAdmin}
+                    pacienteNome={paciente.nome}
+                    titulo={`Planejamento de ${formatDateBr(orc.data)}`}
+                    podeEditar
+                    onAviso={(title, message) =>
+                      toast({ title, description: message, variant: 'destructive' })
+                    }
+                    onSalvar={async ({ dente, condicao, faces, observacao }) => {
+                      try {
+                        await odontogramaService.salvar({
+                          orcamento: orc.id,
+                          paciente: id!,
+                          dente,
+                          condicao: condicao as CondicaoDente,
+                          faces: faces as FaceDente[],
+                          observacao,
+                          registrado_por: user?.id,
+                        })
+                        toast({ title: `Dente ${dente} atualizado neste planejamento.` })
+                        loadData()
+                      } catch (err: any) {
+                        toast({
+                          title: 'Erro ao salvar odontograma',
+                          description: err.message,
+                          variant: 'destructive',
+                        })
+                      }
+                    }}
+                    onRemover={async (registroId, dente) => {
+                      try {
+                        await odontogramaService.remover(registroId, dente)
+                        toast({ title: `Registro do dente ${dente} removido.` })
+                        loadData()
+                      } catch (err: any) {
+                        toast({
+                          title: 'Erro ao remover registro',
+                          description: err.message,
+                          variant: 'destructive',
+                        })
+                      }
+                    }}
+                  />
                 </CardContent>
               </Card>
             ))

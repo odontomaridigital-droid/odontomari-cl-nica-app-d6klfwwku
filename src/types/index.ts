@@ -139,10 +139,16 @@ export interface Prontuario {
   }
 }
 
-/** Estado atual de um dente no odontograma do paciente */
+/**
+ * Estado de um dente no odontograma de UM planejamento de tratamento.
+ * O mesmo paciente pode ter vários planejamentos, cada um com seu mapa.
+ */
 export interface OdontogramaRegistro {
   id: string
-  paciente: string
+  /** Planejamento dono deste mapa */
+  orcamento: string
+  /** Mantido para consulta e histórico */
+  paciente?: string
   dente: number
   condicao: string
   faces?: string[]

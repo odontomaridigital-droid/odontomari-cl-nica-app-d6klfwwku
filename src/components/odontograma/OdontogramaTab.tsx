@@ -30,6 +30,16 @@ interface OdontogramaTabProps {
   registros: OdontogramaRegistro[]
   isAdmin: boolean
   pacienteNome: string
+  /**
+   * Título do bloco. No planejamento é a data dele, deixando claro que este
+   * mapa é daquele tratamento e não do paciente para sempre.
+   */
+  titulo?: string
+  /**
+   * Quando falso, o mapa é só leitura: não existe planejamento escolhido, e
+   * odontograma sem planejamento não faz sentido (decisão do dono).
+   */
+  podeEditar?: boolean
   onSalvar: (data: {
     dente: number
     condicao: CondicaoDente
@@ -41,7 +51,7 @@ interface OdontogramaTabProps {
 }
 
 /**
- * Aba do prontuário com o mapa dos 32 dentes.
+ * Mapa dos 32 dentes de UM planejamento de tratamento.
  * Clique num dente para registrar/alterar a condição dele.
  * A recepção vê o mapa em modo leitura.
  */
@@ -49,6 +59,8 @@ export const OdontogramaTab: React.FC<OdontogramaTabProps> = ({
   registros,
   isAdmin,
   pacienteNome,
+  titulo,
+  podeEditar = true,
   onSalvar,
   onRemover,
   onAviso,
@@ -66,6 +78,13 @@ export const OdontogramaTab: React.FC<OdontogramaTabProps> = ({
       onAviso(
         'Acesso Restrito',
         'Apenas o dentista / administrador pode registrar o odontograma. A recepção tem acesso somente de leitura.',
+      )
+      return
+    }
+    if (!podeEditar) {
+      onAviso(
+        'Escolha um planejamento',
+        'O odontograma pertence ao planejamento. Abra um planejamento para registrar os dentes dele.',
       )
       return
     }
@@ -114,6 +133,7 @@ export const OdontogramaTab: React.FC<OdontogramaTabProps> = ({
   }
 
   const alterados = registros.filter((r) => r.condicao !== 'higido')
+  const somenteLeitura = !isAdmin || !podeEditar
 
   return (
     <div className="space-y-4">
@@ -125,16 +145,27 @@ export const OdontogramaTab: React.FC<OdontogramaTabProps> = ({
         </Card>
       )}
 
+      {isAdmin && !podeEditar && (
+        <Card className="border-amber-200 bg-amber-50 shadow-none">
+          <CardContent className="p-3 text-xs text-amber-800">
+            Selecione um planejamento para ver e registrar o odontograma deste tratamento.
+          </CardContent>
+        </Card>
+      )}
+
       <Card className="border-slate-200 shadow-sm bg-white">
         <CardHeader className="p-4 pb-2 border-b border-slate-100">
           <CardTitle className="text-sm font-bold text-slate-800 flex items-center gap-2">
             <Stethoscope className="w-4 h-4 text-marca-vermelho" />
             Odontograma — {pacienteNome}
           </CardTitle>
+          {titulo && (
+            <p className="text-[11px] font-medium text-marca-vermelho-escuro mt-0.5">{titulo}</p>
+          )}
           <p className="text-[11px] text-slate-500 mt-0.5">
-            {isAdmin
-              ? 'Clique em um dente para registrar a condição. Os números seguem a numeração FDI.'
-              : 'Mapa da situação atual dos dentes.'}
+            {somenteLeitura
+              ? 'Mapa da situação dos dentes neste planejamento.'
+              : 'Clique em um dente para registrar a condição. Os números seguem a numeração FDI.'}
           </p>
         </CardHeader>
         <CardContent className="p-4">
@@ -146,7 +177,7 @@ export const OdontogramaTab: React.FC<OdontogramaTabProps> = ({
             }))}
             selecionado={denteSelecionado}
             onSelecionar={abrirDente}
-            somenteLeitura={!isAdmin}
+            somenteLeitura={somenteLeitura}
           />
         </CardContent>
       </Card>
@@ -219,9 +250,9 @@ export const OdontogramaTab: React.FC<OdontogramaTabProps> = ({
         <Card className="border-dashed border-2 border-slate-200 shadow-none text-center p-6 bg-white">
           <Stethoscope className="w-8 h-8 text-slate-300 mx-auto mb-1.5" />
           <p className="text-xs text-slate-500">
-            {isAdmin
-              ? 'Nenhum dente registrado ainda. Clique num dente no mapa para começar.'
-              : 'Nenhum registro no odontograma até o momento.'}
+            {somenteLeitura
+              ? 'Nenhum dente registrado neste planejamento. O odontograma é opcional.'
+              : 'Nenhum dente registrado ainda neste planejamento. Clique num dente para começar — é opcional.'}
           </p>
         </Card>
       )}

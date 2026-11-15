@@ -742,6 +742,18 @@ export const anamneseModelosService = {
 
 // =================== ODONTOGRAMA ===================
 export const odontogramaService = {
+  /**
+   * Odontograma de UM planejamento. Cada planejamento tem o seu: um paciente
+   * que volta depois de um ano recebe um planejamento novo, com mapa novo.
+   */
+  async getByOrcamento(orcamentoId: string): Promise<OdontogramaRegistro[]> {
+    return await pb.collection('odontograma').getFullList<OdontogramaRegistro>({
+      filter: `orcamento = "${orcamentoId}"`,
+      sort: 'dente',
+    })
+  },
+
+  /** Todos os registros do paciente, para o histórico. */
   async getByPaciente(pacienteId: string): Promise<OdontogramaRegistro[]> {
     return await pb.collection('odontograma').getFullList<OdontogramaRegistro>({
       filter: `paciente = "${pacienteId}"`,
@@ -749,9 +761,10 @@ export const odontogramaService = {
     })
   },
 
-  /** Cria ou atualiza o estado de um dente (um registro por paciente+dente). */
+  /** Cria ou atualiza o estado de um dente dentro de um planejamento. */
   async salvar(data: {
-    paciente: string
+    orcamento: string
+    paciente?: string
     dente: number
     condicao: CondicaoDente
     faces?: FaceDente[]
@@ -760,7 +773,8 @@ export const odontogramaService = {
     data?: string
   }): Promise<OdontogramaRegistro> {
     const corpo: any = {
-      paciente: data.paciente,
+      orcamento: data.orcamento,
+      paciente: data.paciente || undefined,
       dente: data.dente,
       condicao: data.condicao,
       faces: data.faces || [],
@@ -777,7 +791,7 @@ export const odontogramaService = {
       existente = await pb
         .collection('odontograma')
         .getFirstListItem<OdontogramaRegistro>(
-          `paciente = "${data.paciente}" && dente = ${data.dente}`,
+          `orcamento = "${data.orcamento}" && dente = ${data.dente}`,
         )
     } catch {
       existente = null
