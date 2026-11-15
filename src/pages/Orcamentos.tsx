@@ -1,7 +1,22 @@
 import React, { useState, useEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { orcamentosService, pacientesService, procedimentosService } from '@/services/clinica'
-import { Orcamento, Paciente, ItemOrcamento, Procedimento } from '@/types'
+import {
+  orcamentosService,
+  pacientesService,
+  procedimentosService,
+  maquinasService,
+  condicoesPagamentoService,
+  contasReceberService,
+} from '@/services/clinica'
+import {
+  Orcamento,
+  Paciente,
+  ItemOrcamento,
+  Procedimento,
+  Maquina,
+  CondicaoPagamento,
+  ContaReceber,
+} from '@/types'
 import {
   formatCurrency,
   formatDateBr,
@@ -52,6 +67,9 @@ export const OrcamentosPage: React.FC = () => {
   const [orcamentos, setOrcamentos] = useState<Orcamento[]>([])
   const [pacientes, setPacientes] = useState<Paciente[]>([])
   const [procedimentos, setProcedimentos] = useState<Procedimento[]>([])
+  const [maquinas, setMaquinas] = useState<Maquina[]>([])
+  const [condicoes, setCondicoes] = useState<CondicaoPagamento[]>([])
+  const [contasDoPlanejamento, setContasDoPlanejamento] = useState<ContaReceber[]>([])
   const [loading, setLoading] = useState<boolean>(true)
   const [filterStatus, setFilterStatus] = useState<string>('todos')
   const [busca, setBusca] = useState<string>('')
@@ -78,14 +96,18 @@ export const OrcamentosPage: React.FC = () => {
   const loadData = async () => {
     setLoading(true)
     try {
-      const [orcs, pacs, tps] = await Promise.all([
+      const [orcs, pacs, tps, mqs, cds] = await Promise.all([
         orcamentosService.getAll(),
         pacientesService.getAll(),
         procedimentosService.getAll(true),
+        maquinasService.getAll(true),
+        condicoesPagamentoService.getAll(true),
       ])
       setOrcamentos(orcs)
       setPacientes(pacs)
       setProcedimentos(tps)
+      setMaquinas(mqs)
+      setCondicoes(cds)
 
       if (initialPacienteId && !createDialogOpen) {
         setSelectedPacienteId(initialPacienteId)
@@ -202,6 +224,96 @@ export const OrcamentosPage: React.FC = () => {
     } finally {
       setSaving(false)
     }
+  }
+
+  // ---------------- Pagamento no aceite ----------------
+  const [condicaoEscolhida, setCondicaoEscolhida] = useState<string>('')
+  const [maquinaEscolhida, setMaquinaEscolhida] = useState<string>('')
+  const [numParcelas, setNumParcelas] = useState<number>(1)
+  const [gerandoContas, setGerandoContas] = useState(false)
+
+  const condicaoAtual = condicoes.find((c) => c.id === condicaoEscolhida)
+  const ehCartaoAtual =
+    condicaoAtual?.tipo === 'cartao_credito' || condicaoAtual?.tipo === 'cartao_debito'
+
+  const carregarContas = async (orcamentoId: string) => {
+    try {
+      setContasDoPlanejamento(await contasReceberService.getByOrcamento(orcamentoId))
+    } catch {
+      setContasDoPlanejamento([])
+    }
+  }
+
+  /** Gera as contas a receber com a condição escolhida e marca como aceito. */
+  const aceitarComPagamento = async (id: string) => {
+    if (!condicaoAtual) {
+      toast({
+        title: 'Escolha a condição de pagamento',
+        description: 'Sem isso não dá para gerar o contas a receber.',
+        variant: 'destructive',
+      })
+      return
+    }
+    const maquina = maquinas.find((m) => m.id === maquinaEscolhida)
+    if (ehCartaoAtual && !maquina) {
+      toast({
+        title: 'Escolha a máquina',
+        description: 'É a máquina que define a data do repasse e a taxa.',
+        variant: 'destructive',
+      })
+      return
+    }
+
+    setGerandoContas(true)
+    try {
+      const orc = orcamentos.find((o) => o.id === id) || activeOrcamento
+      const valor = Number(orc?.valor_total) || 0
+
+      await orcamentosService.update(id, {
+        condicao_pagamento: condicaoAtual.id,
+        maquina: maquina?.id,
+        num_parcelas: numParcelas,
+      } as Partial<Orcamento>)
+
+      await contasReceberService.gerarParaOrcamento(id, {
+        valorTotal: valor,
+        condicao: condicaoAtual,
+        maquina,
+        dataBase: getTodayDateString(),
+        numParcelas,
+        pacienteId: orc?.paciente,
+      })
+
+      const atualizado = await orcamentosService.updateStatus(id, 'aceito', user?.id)
+      toast({
+        title: 'Planejamento aceito',
+        description: 'As contas a receber foram geradas.',
+      })
+      loadData()
+      if (activeOrcamento && activeOrcamento.id === id) {
+        setActiveOrcamento(atualizado)
+        carregarContas(id)
+      }
+    } catch (err: any) {
+      toast({
+        title: 'Erro ao aceitar com pagamento',
+        description: err.message,
+        variant: 'destructive',
+      })
+    } finally {
+      setGerandoContas(false)
+    }
+  }
+
+  /** Ao abrir o detalhe, traz as contas e pré-seleciona o que já foi escolhido. */
+  const abrirDetalhe = (orc: Orcamento) => {
+    setActiveOrcamento(orc)
+    setCondicaoEscolhida(orc.condicao_pagamento || '')
+    setMaquinaEscolhida(orc.maquina || '')
+    setNumParcelas(orc.num_parcelas || 1)
+    setContasDoPlanejamento([])
+    carregarContas(orc.id)
+    setViewDialogOpen(true)
   }
 
   const handleUpdateStatus = async (id: string, newStatus: Orcamento['status']) => {
@@ -443,8 +555,7 @@ export const OrcamentosPage: React.FC = () => {
                         size="sm"
                         className="text-xs h-7 px-2"
                         onClick={() => {
-                          setActiveOrcamento(orc)
-                          setViewDialogOpen(true)
+                          abrirDetalhe(orc)
                         }}
                       >
                         <Eye className="w-3 h-3 mr-1" />
@@ -764,6 +875,128 @@ export const OrcamentosPage: React.FC = () => {
                   <strong>Observações:</strong> {activeOrcamento.observacoes}
                 </div>
               )}
+
+              {/* ---------------- Pagamento e contas a receber ---------------- */}
+              <div className="space-y-2 pt-3 border-t border-slate-100">
+                <Label className="text-xs font-semibold text-slate-700">
+                  Pagamento e contas a receber
+                </Label>
+
+                {contasDoPlanejamento.length > 0 ? (
+                  <div className="space-y-1">
+                    {contasDoPlanejamento.map((conta) => (
+                      <div
+                        key={conta.id}
+                        className="flex items-center justify-between text-[11px] border border-slate-200 rounded px-2 py-1.5"
+                      >
+                        <span className="min-w-0">
+                          <span className="block text-slate-700 font-medium truncate">
+                            {conta.descricao}
+                          </span>
+                          <span className="text-slate-500">
+                            vence {formatDateBr(conta.vencimento)}
+                          </span>
+                        </span>
+                        <span className="text-right shrink-0 ml-2">
+                          <span className="block font-semibold text-slate-800">
+                            {formatCurrency(conta.valor)}
+                          </span>
+                          {conta.valor_liquido !== undefined &&
+                            conta.valor_liquido !== conta.valor && (
+                              <span className="text-slate-500">
+                                cai {formatCurrency(conta.valor_liquido)}
+                              </span>
+                            )}
+                          <Badge
+                            variant="outline"
+                            className={
+                              conta.status === 'recebido'
+                                ? 'text-[9px] border-emerald-300 text-emerald-700 mt-0.5'
+                                : conta.status === 'cancelado'
+                                  ? 'text-[9px] border-slate-300 text-slate-500 mt-0.5'
+                                  : 'text-[9px] border-amber-300 text-amber-700 mt-0.5'
+                            }
+                          >
+                            {conta.status}
+                          </Badge>
+                        </span>
+                      </div>
+                    ))}
+                    <p className="text-[10px] text-slate-400">
+                      Gerar de novo substitui as contas acima.
+                    </p>
+                  </div>
+                ) : (
+                  <p className="text-[11px] text-slate-500">
+                    Nenhuma conta gerada. Escolha a condição e marque como aceito.
+                  </p>
+                )}
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <div>
+                    <Label className="text-[10px] text-slate-500">Condição</Label>
+                    <select
+                      value={condicaoEscolhida}
+                      onChange={(e) => {
+                        setCondicaoEscolhida(e.target.value)
+                        setMaquinaEscolhida('')
+                        setNumParcelas(1)
+                      }}
+                      className="mt-0.5 w-full border border-slate-200 rounded px-2 py-1 text-xs bg-white"
+                    >
+                      <option value="">Escolha...</option>
+                      {condicoes.map((c) => (
+                        <option key={c.id} value={c.id}>
+                          {c.nome}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {ehCartaoAtual && (
+                    <div>
+                      <Label className="text-[10px] text-slate-500">Máquina</Label>
+                      <select
+                        value={maquinaEscolhida}
+                        onChange={(e) => setMaquinaEscolhida(e.target.value)}
+                        className="mt-0.5 w-full border border-slate-200 rounded px-2 py-1 text-xs bg-white"
+                      >
+                        <option value="">Escolha...</option>
+                        {maquinas.map((m) => (
+                          <option key={m.id} value={m.id}>
+                            {m.nome}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+
+                  {condicaoAtual?.permite_parcelamento && (
+                    <div>
+                      <Label className="text-[10px] text-slate-500">Parcelas</Label>
+                      <Input
+                        type="number"
+                        min="1"
+                        max={condicaoAtual.max_parcelas || 48}
+                        value={numParcelas}
+                        onChange={(e) => setNumParcelas(Number(e.target.value) || 1)}
+                        className="mt-0.5 h-7 text-xs"
+                      />
+                    </div>
+                  )}
+                </div>
+
+                <Button
+                  type="button"
+                  size="sm"
+                  disabled={gerandoContas || !condicaoEscolhida}
+                  onClick={() => activeOrcamento && aceitarComPagamento(activeOrcamento.id)}
+                  className="w-full text-xs bg-emerald-600 hover:bg-emerald-700 text-white"
+                >
+                  <CheckCircle2 className="w-3.5 h-3.5 mr-1" />
+                  {gerandoContas ? 'Gerando...' : 'Aceitar e gerar contas a receber'}
+                </Button>
+              </div>
 
               {/* Aceite e execução */}
               <div className="space-y-1.5 pt-2 border-t border-slate-100 pt-3">

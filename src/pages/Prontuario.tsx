@@ -542,6 +542,24 @@ export const ProntuarioPage: React.FC = () => {
 
         {/* Tab 3: Planejamentos */}
         <TabsContent value="orcamentos" className="space-y-3 pt-2">
+          {/*
+            O botao de novo planejamento fica SEMPRE visivel. Um paciente que
+            volta depois de um ano precisa de outro planejamento, e antes o
+            botao so existia quando a lista estava vazia.
+          */}
+          {orcamentos.length > 0 && (
+            <div className="flex justify-end">
+              <Button
+                size="sm"
+                className="bg-marca-vermelho hover:bg-marca-vermelho-escuro text-white text-xs"
+                onClick={() => navigate(`/orcamentos?pacienteId=${paciente.id}`)}
+              >
+                <Plus className="w-3.5 h-3.5 mr-1" />
+                Novo Planejamento
+              </Button>
+            </div>
+          )}
+
           {orcamentos.length === 0 ? (
             <Card className="border-dashed border-2 border-slate-200 shadow-none text-center p-8 bg-white">
               <DollarSign className="w-10 h-10 text-slate-300 mx-auto mb-2" />
