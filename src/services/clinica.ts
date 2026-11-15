@@ -133,6 +133,55 @@ export const tiposAtendimentoService = {
   },
 }
 
+// =================== PROCEDIMENTOS (catálogo clínico) ===================
+// Procedimento é o que se faz e se cobra; tipo de atendimento é como a agenda
+// abre o horário. São catálogos diferentes de propósito.
+export const procedimentosService = {
+  async getAll(onlyActive = false): Promise<Procedimento[]> {
+    return await pb.collection('procedimentos').getFullList<Procedimento>({
+      filter: onlyActive ? 'ativo = true' : '',
+      sort: 'categoria,nome',
+    })
+  },
+
+  async getById(id: string): Promise<Procedimento> {
+    return await pb.collection('procedimentos').getOne<Procedimento>(id)
+  },
+
+  async create(data: Omit<Procedimento, 'id' | 'created' | 'updated'>): Promise<Procedimento> {
+    const created = await pb.collection('procedimentos').create<Procedimento>(data)
+    registrarLog('criou', 'procedimento', `Criou procedimento ${created.nome}`, created.id)
+    return created
+  },
+
+  async update(id: string, data: Partial<Procedimento>): Promise<Procedimento> {
+    const updated = await pb.collection('procedimentos').update<Procedimento>(id, data)
+    registrarLog('editou', 'procedimento', `Editou procedimento ${updated.nome}`, updated.id)
+    return updated
+  },
+
+  async delete(id: string, nome?: string): Promise<boolean> {
+    const ok = await pb.collection('procedimentos').delete(id)
+    registrarLog('excluiu', 'procedimento', `Excluiu procedimento ${nome || ''}`, id)
+    return ok
+  },
+}
+
+/** Nome legível de cada categoria do catálogo de procedimentos. */
+export const NOMES_CATEGORIA_PROCEDIMENTO: Record<ProcedimentoCategoria, string> = {
+  diagnostico: 'Diagnóstico',
+  preventivo: 'Preventivo',
+  restaurador: 'Restaurador',
+  endodontia: 'Endodontia',
+  periodontia: 'Periodontia',
+  cirurgia: 'Cirurgia',
+  implante: 'Implante',
+  protese: 'Prótese',
+  estetica: 'Estética',
+  harmonizacao: 'Harmonização',
+  outro: 'Outros',
+}
+
 // =================== CONSULTAS ===================
 export const consultasService = {
   async getAll(): Promise<Consulta[]> {

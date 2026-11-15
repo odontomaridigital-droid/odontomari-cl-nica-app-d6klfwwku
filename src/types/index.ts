@@ -8,14 +8,46 @@ export interface User {
   updated: string
 }
 
+/**
+ * Tipo de atendimento = como a agenda abre o horário (avaliação, retorno,
+ * urgência). Tem duração, não tem preço: o valor vem do procedimento feito.
+ */
 export interface TipoAtendimento {
   id: string
   nome: string
   duracao_minutos: number
-  valor_padrao?: number
   descricao?: string
-  /** Retorno sugerido em dias ao usar este procedimento */
+  /** Retorno sugerido em dias ao usar este tipo */
   retorno_dias_padrao?: number
+  ativo?: boolean
+  created?: string
+  updated?: string
+}
+
+export type ProcedimentoCategoria =
+  | 'diagnostico'
+  | 'preventivo'
+  | 'restaurador'
+  | 'endodontia'
+  | 'periodontia'
+  | 'cirurgia'
+  | 'implante'
+  | 'protese'
+  | 'estetica'
+  | 'harmonizacao'
+  | 'outro'
+
+/**
+ * Procedimento clínico = o que se faz e se cobra (coroa, implante,
+ * endodontia). Vive no orçamento e no prontuário, e é o que tem valor.
+ */
+export interface Procedimento {
+  id: string
+  nome: string
+  categoria: ProcedimentoCategoria
+  valor?: number
+  codigo?: string
+  observacoes?: string
   ativo?: boolean
   created?: string
   updated?: string
@@ -226,6 +258,8 @@ export interface ItemOrcamento {
   procedimento: string
   valor: number
   dente?: string
+  /** id do procedimento do catálogo, quando escolhido de lá */
+  procedimento_id?: string
 }
 
 export type OrcamentoStatus = 'aberto' | 'aceito' | 'recusado'

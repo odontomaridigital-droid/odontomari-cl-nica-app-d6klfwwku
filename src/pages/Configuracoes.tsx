@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { configuracoesService, tiposAtendimentoService, bloqueiosService } from '@/services/clinica'
+import { CatalogoProcedimentos } from '@/components/config/CatalogoProcedimentos'
 import { ClinicaConfig, TipoAtendimento, BloqueioAgenda } from '@/types'
 import { formatCurrency, formatDateBr } from '@/lib/formatters'
 import { useAuth } from '@/contexts/AuthContext'
@@ -61,7 +62,7 @@ export const ConfiguracoesPage: React.FC = () => {
   const [editingTipo, setEditingTipo] = useState<TipoAtendimento | null>(null)
   const [tipoNome, setTipoNome] = useState('')
   const [tipoDuracao, setTipoDuracao] = useState(30)
-  const [tipoValor, setTipoValor] = useState(0)
+
   const [tipoDescricao, setTipoDescricao] = useState('')
   const [savingTipo, setSavingTipo] = useState(false)
 
@@ -146,7 +147,6 @@ export const ConfiguracoesPage: React.FC = () => {
     setEditingTipo(null)
     setTipoNome('')
     setTipoDuracao(30)
-    setTipoValor(0)
     setTipoDescricao('')
     setTipoDialogOpen(true)
   }
@@ -155,7 +155,6 @@ export const ConfiguracoesPage: React.FC = () => {
     setEditingTipo(t)
     setTipoNome(t.nome)
     setTipoDuracao(t.duracao_minutos)
-    setTipoValor(t.valor_padrao || 0)
     setTipoDescricao(t.descricao || '')
     setTipoDialogOpen(true)
   }
@@ -177,7 +176,6 @@ export const ConfiguracoesPage: React.FC = () => {
         await tiposAtendimentoService.update(editingTipo.id, {
           nome: tipoNome.trim(),
           duracao_minutos: Number(tipoDuracao),
-          valor_padrao: Number(tipoValor),
           descricao: tipoDescricao.trim(),
         })
         toast({ title: 'Tipo de atendimento atualizado!' })
@@ -185,7 +183,6 @@ export const ConfiguracoesPage: React.FC = () => {
         await tiposAtendimentoService.create({
           nome: tipoNome.trim(),
           duracao_minutos: Number(tipoDuracao),
-          valor_padrao: Number(tipoValor),
           descricao: tipoDescricao.trim(),
           ativo: true,
         })
@@ -297,6 +294,9 @@ export const ConfiguracoesPage: React.FC = () => {
           </TabsTrigger>
           <TabsTrigger value="tipos" className="text-xs sm:text-sm">
             Tipos de Atendimento ({tipos.length})
+          </TabsTrigger>
+          <TabsTrigger value="procedimentos" className="text-xs sm:text-sm">
+            Procedimentos
           </TabsTrigger>
           <TabsTrigger value="bloqueios" className="text-xs sm:text-sm">
             Bloqueios de Agenda ({bloqueios.length})
@@ -502,7 +502,6 @@ export const ConfiguracoesPage: React.FC = () => {
                         <Clock className="w-3.5 h-3.5" />
                         {t.duracao_minutos} minutos
                       </span>
-                      {t.valor_padrao ? <span>Valor: {formatCurrency(t.valor_padrao)}</span> : null}
                     </div>
                     {t.descricao && <p className="text-xs text-slate-500 mt-1">{t.descricao}</p>}
                   </div>
@@ -529,6 +528,11 @@ export const ConfiguracoesPage: React.FC = () => {
               </Card>
             ))}
           </div>
+        </TabsContent>
+
+        {/* Catálogo de procedimentos clínicos (o que se cobra) */}
+        <TabsContent value="procedimentos" className="space-y-4 pt-2">
+          <CatalogoProcedimentos />
         </TabsContent>
 
         {/* Tab 2.5: Catálogo de Medicamentos (para receitas) */}
@@ -637,18 +641,6 @@ export const ConfiguracoesPage: React.FC = () => {
                   value={tipoDuracao}
                   onChange={(e) => setTipoDuracao(Number(e.target.value))}
                   required
-                  className="mt-1 text-xs sm:text-sm"
-                />
-              </div>
-
-              <div>
-                <Label className="text-xs">Valor Padrão sugerido (R$)</Label>
-                <Input
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  value={tipoValor}
-                  onChange={(e) => setTipoValor(Number(e.target.value))}
                   className="mt-1 text-xs sm:text-sm"
                 />
               </div>

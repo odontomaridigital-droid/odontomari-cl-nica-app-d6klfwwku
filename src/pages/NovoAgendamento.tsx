@@ -449,7 +449,6 @@ export const NovoAgendamentoPage: React.FC = () => {
                         <Clock className="w-3 h-3" />
                         {t.duracao_minutos} minutos
                       </span>
-                      {t.valor_padrao ? <span>{formatCurrency(t.valor_padrao)}</span> : null}
                     </div>
                   </button>
                 )

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { orcamentosService, pacientesService, tiposAtendimentoService } from '@/services/clinica'
-import { Orcamento, Paciente, ItemOrcamento, TipoAtendimento } from '@/types'
+import { orcamentosService, pacientesService, procedimentosService } from '@/services/clinica'
+import { Orcamento, Paciente, ItemOrcamento, Procedimento } from '@/types'
 import {
   formatCurrency,
   formatDateBr,
@@ -46,7 +46,7 @@ export const OrcamentosPage: React.FC = () => {
 
   const [orcamentos, setOrcamentos] = useState<Orcamento[]>([])
   const [pacientes, setPacientes] = useState<Paciente[]>([])
-  const [tipos, setTipos] = useState<TipoAtendimento[]>([])
+  const [procedimentos, setProcedimentos] = useState<Procedimento[]>([])
   const [loading, setLoading] = useState<boolean>(true)
   const [filterStatus, setFilterStatus] = useState<string>('todos')
 
@@ -69,7 +69,7 @@ export const OrcamentosPage: React.FC = () => {
       const [orcs, pacs, tps] = await Promise.all([
         orcamentosService.getAll(),
         pacientesService.getAll(),
-        tiposAtendimentoService.getAll(true),
+        procedimentosService.getAll(true),
       ])
       setOrcamentos(orcs)
       setPacientes(pacs)
@@ -112,14 +112,17 @@ export const OrcamentosPage: React.FC = () => {
     setItens(updated)
   }
 
-  const handleSelectProcedimentoPredefinido = (index: number, tipoId: string) => {
-    const chosen = tipos.find((t) => t.id === tipoId)
+  // O atalho do catálogo guarda o id do procedimento junto com o texto, para o
+  // planejamento não virar texto solto e perder o vínculo com o catálogo.
+  const handleSelectProcedimentoPredefinido = (index: number, procedimentoId: string) => {
+    const chosen = procedimentos.find((p) => p.id === procedimentoId)
     if (!chosen) return
     const updated = [...itens]
     updated[index] = {
       ...updated[index],
       procedimento: chosen.nome,
-      valor: chosen.valor_padrao || 0,
+      valor: chosen.valor || 0,
+      procedimento_id: chosen.id,
     }
     setItens(updated)
   }
@@ -483,9 +486,9 @@ export const OrcamentosPage: React.FC = () => {
                           <option value="" disabled>
                             Predefinidos...
                           </option>
-                          {tipos.map((t) => (
-                            <option key={t.id} value={t.id}>
-                              {t.nome} ({formatCurrency(t.valor_padrao)})
+                          {procedimentos.map((p) => (
+                            <option key={p.id} value={p.id}>
+                              {p.nome} ({formatCurrency(p.valor || 0)})
                             </option>
                           ))}
                         </select>
