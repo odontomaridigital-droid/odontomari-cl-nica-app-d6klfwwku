@@ -61,6 +61,7 @@ export const OrcamentosPage: React.FC = () => {
   const [searchParams] = useSearchParams()
   const navigate = useNavigate()
   const initialPacienteId = searchParams.get('pacienteId') || ''
+  const abrirId = searchParams.get('abrir') || ''
   const { isAdmin, user } = useAuth()
   const { toast } = useToast()
 
@@ -109,9 +110,16 @@ export const OrcamentosPage: React.FC = () => {
       setMaquinas(mqs)
       setCondicoes(cds)
 
-      if (initialPacienteId && !createDialogOpen) {
+      // Veio do prontuário pedindo para criar: abre o formulário.
+      if (initialPacienteId && !createDialogOpen && !abrirId) {
         setSelectedPacienteId(initialPacienteId)
         setCreateDialogOpen(true)
+      }
+
+      // Veio do prontuário pedindo para abrir um planejamento existente.
+      if (abrirId) {
+        const alvo = orcs.find((o) => o.id === abrirId)
+        if (alvo) abrirDetalhe(alvo)
       }
     } catch (err: any) {
       toast({

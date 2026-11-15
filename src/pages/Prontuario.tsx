@@ -610,7 +610,7 @@ export const ProntuarioPage: React.FC = () => {
                       size="sm"
                       className="text-xs h-7 mt-1 text-slate-600"
                       onClick={() =>
-                        navigate(`/pacientes/${paciente.id}/prontuario?planejamento=${orc.id}`)
+                        navigate(`/orcamentos?pacienteId=${paciente.id}&abrir=${orc.id}`)
                       }
                     >
                       Abrir planejamento
