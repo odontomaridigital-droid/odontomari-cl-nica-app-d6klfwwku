@@ -8,6 +8,8 @@ import {
   formatPhone,
   getTodayDateString,
   createWhatsAppUrl,
+  formatValorInput,
+  parseValorInput,
 } from '@/lib/formatters'
 import { useAuth } from '@/contexts/AuthContext'
 import { Button } from '@/components/ui/button'
@@ -58,6 +60,9 @@ export const OrcamentosPage: React.FC = () => {
   const [observacoes, setObservacoes] = useState<string>('')
   const [itens, setItens] = useState<ItemOrcamento[]>([{ procedimento: '', valor: 0, dente: '' }])
   const [saving, setSaving] = useState<boolean>(false)
+  // Texto cru do campo de valor enquanto a pessoa digita: formatação automática
+  // a cada tecla embaralha o cursor, então o campo só é reformatado ao sair dele.
+  const [valorTexto, setValorTexto] = useState<Record<number, string>>({})
 
   // View dialog
   const [viewDialogOpen, setViewDialogOpen] = useState<boolean>(false)
@@ -96,6 +101,7 @@ export const OrcamentosPage: React.FC = () => {
 
   const handleAddItem = () => {
     setItens([...itens, { procedimento: '', valor: 0, dente: '' }])
+    setValorTexto({})
   }
 
   const handleRemoveItem = (index: number) => {
@@ -104,6 +110,7 @@ export const OrcamentosPage: React.FC = () => {
       return
     }
     setItens(itens.filter((_, i) => i !== index))
+    setValorTexto({})
   }
 
   const handleItemChange = (index: number, field: keyof ItemOrcamento, value: any) => {
@@ -125,6 +132,11 @@ export const OrcamentosPage: React.FC = () => {
       procedimento_id: chosen.id,
     }
     setItens(updated)
+    setValorTexto((prev) => {
+      const next = { ...prev }
+      delete next[index]
+      return next
+    })
   }
 
   const totalCalculado = itens.reduce((acc, curr) => acc + (Number(curr.valor) || 0), 0)
@@ -524,13 +536,34 @@ export const OrcamentosPage: React.FC = () => {
                       </div>
                       <div className="sm:col-span-3">
                         <Input
-                          type="number"
-                          step="0.01"
-                          min="0"
-                          placeholder="Valor R$"
-                          value={item.valor}
-                          onChange={(e) => handleItemChange(index, 'valor', Number(e.target.value))}
-                          className="bg-white text-xs h-8"
+                          inputMode="decimal"
+                          placeholder="0,00"
+                          value={
+                            valorTexto[index] !== undefined
+                              ? valorTexto[index]
+                              : item.valor
+                                ? formatValorInput(item.valor)
+                                : ''
+                          }
+                          onFocus={() =>
+                            setValorTexto((prev) => ({
+                              ...prev,
+                              [index]: item.valor ? formatValorInput(item.valor) : '',
+                            }))
+                          }
+                          onChange={(e) => {
+                            const texto = e.target.value
+                            setValorTexto((prev) => ({ ...prev, [index]: texto }))
+                            handleItemChange(index, 'valor', parseValorInput(texto))
+                          }}
+                          onBlur={() =>
+                            setValorTexto((prev) => {
+                              const next = { ...prev }
+                              delete next[index]
+                              return next
+                            })
+                          }
+                          className="bg-white text-xs h-8 text-right"
                           required
                         />
                       </div>
@@ -569,7 +602,7 @@ export const OrcamentosPage: React.FC = () => {
                     rows={2}
                     value={observacoes}
                     onChange={(e) => setObservacoes(e.target.value)}
-                    placeholder="Ex.: Parcelamento em até 6x no cartão de crédito sem juros..."
+                    placeholder="Ex.: Entrada de 40% + 60% em até 3x sem juros no cartão de crédito."
                     className="text-xs sm:text-sm pr-10"
                   />
                   <div className="absolute right-1.5 top-1.5">

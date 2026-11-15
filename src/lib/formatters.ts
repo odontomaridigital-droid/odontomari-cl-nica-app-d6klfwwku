@@ -6,6 +6,40 @@ export function formatCurrency(value?: number): string {
   }).format(value)
 }
 
+/**
+ * Valor para dentro do campo de digitação: sempre com duas casas decimais,
+ * separador de milhar no ponto e decimal na vírgula (pt-BR).
+ * Ex.: 1750 -> "1.750,00"
+ */
+export function formatValorInput(value?: number): string {
+  if (value === undefined || value === null || Number.isNaN(Number(value))) return ''
+  return Number(value).toLocaleString('pt-BR', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })
+}
+
+/**
+ * Lê o que a pessoa digitou no campo de valor e devolve número.
+ * Aceita "1.750,00", "1750,00", "1750.00" e "1750".
+ * Se o texto não tem nenhum dígito, devolve 0.
+ */
+export function parseValorInput(texto: string): number {
+  if (!texto) return 0
+  const limpo = texto.replace(/[^\d.,]/g, '')
+  if (!limpo) return 0
+  let normalizado: string
+  const temVirgula = limpo.includes(',')
+  if (temVirgula) {
+    // Formato brasileiro: o ponto é milhar e a vírgula é decimal.
+    normalizado = limpo.replace(/\./g, '').replace(',', '.')
+  } else {
+    normalizado = limpo
+  }
+  const n = Number(normalizado)
+  return Number.isFinite(n) ? n : 0
+}
+
 export function formatPhone(phone?: string): string {
   if (!phone) return ''
   const digits = phone.replace(/\D/g, '')
