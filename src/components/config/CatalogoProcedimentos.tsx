@@ -216,7 +216,7 @@ export const CatalogoProcedimentos: React.FC = () => {
           <Input
             value={busca}
             onChange={(e) => setBusca(e.target.value)}
-            placeholder="Buscar procedimento..."
+            placeholder="Buscar procedimento por nome ou código..."
             className="pl-8 text-xs sm:text-sm h-9"
           />
         </div>

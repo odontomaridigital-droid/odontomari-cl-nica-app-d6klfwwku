@@ -27,6 +27,7 @@ import {
   parseValorInput,
 } from '@/lib/formatters'
 import { useAuth } from '@/contexts/AuthContext'
+import { SeletorProcedimento } from '@/components/orcamentos/SeletorProcedimento'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -654,24 +655,12 @@ export const OrcamentosPage: React.FC = () => {
                     <div className="flex items-center justify-between text-xs font-medium text-slate-600">
                       <span>Item #{index + 1}</span>
                       <div className="flex items-center gap-2">
-                        {/* Quick fill from saved types */}
-                        <select
-                          className="text-[11px] border border-slate-200 rounded px-1.5 py-0.5 bg-white text-marca-vermelho-escuro"
-                          onChange={(e) => {
-                            if (e.target.value)
-                              handleSelectProcedimentoPredefinido(index, e.target.value)
-                          }}
-                          defaultValue=""
-                        >
-                          <option value="" disabled>
-                            Predefinidos...
-                          </option>
-                          {procedimentos.map((p) => (
-                            <option key={p.id} value={p.id}>
-                              {p.nome} ({formatCurrency(p.valor || 0)})
-                            </option>
-                          ))}
-                        </select>
+                        {/* Escolher do catálogo — com busca, no padrão do sistema */}
+                        <SeletorProcedimento
+                          procedimentos={procedimentos}
+                          formatarValor={(v) => formatCurrency(v)}
+                          onEscolher={(id) => handleSelectProcedimentoPredefinido(index, id)}
+                        />
 
                         <button
                           type="button"

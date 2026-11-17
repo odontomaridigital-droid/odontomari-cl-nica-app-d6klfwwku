@@ -8,6 +8,7 @@ import {
   configuracoesService,
 } from '@/services/clinica'
 import { Paciente, TipoAtendimento, ClinicaConfig } from '@/types'
+import { BuscaComLista, ItemBusca } from '@/components/busca/BuscaComLista'
 import {
   getTodayDateString,
   addMinutesToTime,
@@ -394,54 +395,23 @@ export const NovoAgendamentoPage: React.FC = () => {
                 </Button>
               </div>
             ) : (
-              <div className="space-y-2">
-                <div className="relative">
-                  <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
-                  <Input
-                    placeholder="Pesquisar por nome ou telefone..."
-                    value={pacienteSearch}
-                    onChange={(e) => setPacienteSearch(e.target.value)}
-                    className="pl-9 text-xs sm:text-sm"
-                  />
-                </div>
-
-                <div className="max-h-48 overflow-y-auto border border-slate-200 rounded-lg divide-y divide-slate-100">
-                  {filteredPacientes.length === 0 ? (
-                    <div className="p-4 text-center text-xs text-slate-500">
-                      Nenhum paciente encontrado com esse termo.
-                    </div>
-                  ) : (
-                    filteredPacientes.map((p) => (
-                      <button
-                        key={p.id}
-                        type="button"
-                        onClick={() => setSelectedPacienteId(p.id)}
-                        className="w-full text-left p-2.5 hover:bg-slate-50 flex items-center justify-between transition-colors"
-                      >
-                        <div className="flex items-center gap-2 min-w-0">
-                          <PacienteAvatar
-                            paciente={p}
-                            className="w-7 h-7"
-                            textClassName="text-[9px]"
-                          />
-                          <div className="min-w-0">
-                            <p className="text-xs sm:text-sm font-medium text-slate-900">
-                              {p.nome}
-                            </p>
-                            <p className="text-[11px] text-slate-500">{p.telefone}</p>
-                            {textoPreferenciaHorario(p) ? (
-                              <p className="text-[10px] text-amber-700">
-                                Prefere: {textoPreferenciaHorario(p)}
-                              </p>
-                            ) : null}
-                          </div>
-                        </div>
-                        <span className="text-xs text-marca-vermelho font-medium">Selecionar</span>
-                      </button>
-                    ))
-                  )}
-                </div>
-              </div>
+              <BuscaComLista
+                itens={pacientes.map<ItemBusca>((p) => ({
+                  id: p.id,
+                  nome: p.nome,
+                  detalhe: [
+                    p.telefone,
+                    textoPreferenciaHorario(p) ? `Prefere: ${textoPreferenciaHorario(p)}` : '',
+                  ]
+                    .filter(Boolean)
+                    .join(' · '),
+                  original: p,
+                }))}
+                placeholder="Buscar paciente por nome ou telefone..."
+                vazioTexto="Nenhum paciente encontrado com esse termo."
+                onSelecionar={(it) => setSelectedPacienteId(it.id)}
+                alturaMaxima={288}
+              />
             )}
           </CardContent>
         </Card>
