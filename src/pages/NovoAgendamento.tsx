@@ -45,6 +45,8 @@ export const NovoAgendamentoPage: React.FC = () => {
   const [duracaoMinutos, setDuracaoMinutos] = useState<number>(30)
   const [horaFim, setHoraFim] = useState<string>('09:30')
   const [selectedPacienteId, setSelectedPacienteId] = useState<string>(initialPacienteId)
+  /** Marca visualmente os campos obrigatórios que faltam depois de tentar salvar */
+  const [tentouSalvar, setTentouSalvar] = useState(false)
   const [selectedTipoId, setSelectedTipoId] = useState<string>('')
   const [observacoes, setObservacoes] = useState<string>('')
 
@@ -144,9 +146,22 @@ export const NovoAgendamentoPage: React.FC = () => {
     }
   }
 
+  /** O que ainda falta para poder agendar — usado no aviso e no botão */
+  const pendencias = React.useMemo(() => {
+    const faltas: string[] = []
+    if (!selectedPacienteId) faltas.push('paciente')
+    if (!selectedTipoId) faltas.push('tipo de atendimento')
+    if (!date) faltas.push('data')
+    if (!horaInicio) faltas.push('horário')
+    return faltas
+  }, [selectedPacienteId, selectedTipoId, date, horaInicio])
+
+  const podeSalvar = pendencias.length === 0 && !submitting
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError(null)
+    setTentouSalvar(true)
 
     if (!selectedPacienteId) {
       setError('Selecione o paciente para a consulta.')
@@ -252,12 +267,31 @@ export const NovoAgendamentoPage: React.FC = () => {
         </Alert>
       )}
 
+      {/* Aviso fixo quando falta preencher algo. Fica visível o tempo todo, e
+          não só no topo: antes o erro aparecia acima do formulário e quem
+          estava com o botão à vista não percebia. */}
+      {pendencias.length > 0 && (
+        <div className="sticky top-2 z-10 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2">
+          <p className="text-[11px] sm:text-xs text-amber-900 flex items-center gap-1.5">
+            <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+            <span>
+              Falta preencher: <strong className="font-semibold">{pendencias.join(', ')}</strong>
+            </span>
+          </p>
+        </div>
+      )}
+
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Step 1: Paciente */}
         <Card className="border-slate-200 shadow-sm bg-white">
-          <CardHeader className="pb-3">
+          <CardHeader
+            className={`pb-3 ${tentouSalvar && !selectedPacienteId ? 'bg-red-50/60 rounded-t-lg' : ''}`}
+          >
             <div className="flex items-center justify-between">
               <CardTitle className="text-base flex items-center gap-2">
+                {tentouSalvar && !selectedPacienteId && (
+                  <AlertCircle className="w-4 h-4 text-red-600" />
+                )}
                 <User className="w-4 h-4 text-marca-vermelho" />
                 1. Identificação do Paciente
               </CardTitle>
@@ -418,6 +452,7 @@ export const NovoAgendamentoPage: React.FC = () => {
             <CardTitle className="text-base flex items-center gap-2">
               <Sparkles className="w-4 h-4 text-marca-vermelho" />
               2. Procedimento / Tipo de Atendimento
+              <span className="text-marca-vermelho">*</span>
             </CardTitle>
             <CardDescription className="text-xs">
               A duração é preenchida automaticamente na agenda
@@ -576,13 +611,20 @@ export const NovoAgendamentoPage: React.FC = () => {
           >
             Cancelar
           </Button>
-          <Button
-            type="submit"
-            className="bg-marca-vermelho hover:bg-marca-vermelho-escuro text-white min-w-[140px]"
-            disabled={submitting}
-          >
-            {submitting ? 'Gravando...' : 'Confirmar Agendamento'}
-          </Button>
+          <div className="flex flex-col items-end gap-1">
+            <Button
+              type="submit"
+              className="bg-marca-vermelho hover:bg-marca-vermelho-escuro text-white min-w-[140px] disabled:bg-slate-300 disabled:text-slate-500 disabled:cursor-not-allowed"
+              disabled={!podeSalvar}
+            >
+              {submitting ? 'Gravando...' : 'Confirmar Agendamento'}
+            </Button>
+            {pendencias.length > 0 && (
+              <p className="text-[10px] text-slate-500">
+                Preencha os campos obrigatórios para liberar
+              </p>
+            )}
+          </div>
         </div>
       </form>
     </div>
