@@ -16,6 +16,7 @@ import { MarketingPage } from './pages/Marketing'
 import { ConfiguracoesPage } from './pages/Configuracoes'
 import { LogsPage } from './pages/Logs'
 import { ImportacaoPage } from './pages/Importacao'
+import { EsterilizacaoPage } from './pages/Esterilizacao'
 import { ResetPasswordPage } from './pages/ResetPassword'
 import NotFound from './pages/NotFound'
 
@@ -38,6 +39,7 @@ const App = () => (
             <Route path="/marketing" element={<MarketingPage />} />
             <Route path="/configuracoes" element={<ConfiguracoesPage />} />
             <Route path="/importacao" element={<ImportacaoPage />} />
+            <Route path="/esterilizacao" element={<EsterilizacaoPage />} />
             <Route path="/logs" element={<LogsPage />} />
           </Route>
           <Route path="/reset-password" element={<ResetPasswordPage />} />

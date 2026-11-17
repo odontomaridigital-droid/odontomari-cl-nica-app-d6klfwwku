@@ -19,6 +19,7 @@ import {
   ScrollText,
   TrendingUp,
   Upload,
+  ShieldCheck,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -87,6 +88,12 @@ export default function Layout() {
       title: 'Marketing & Vendas',
       href: '/marketing',
       icon: TrendingUp,
+      role: 'all',
+    },
+    {
+      title: 'Esterilização (RDC)',
+      href: '/esterilizacao',
+      icon: ShieldCheck,
       role: 'all',
     },
     {
