@@ -219,6 +219,17 @@ export const DocumentosTab: React.FC<DocumentosTabProps> = ({
         WhatsApp.
       </p>
 
+      {documentos.length > 0 && isAdmin && (
+        <Button
+          size="sm"
+          className="bg-marca-vermelho hover:bg-marca-vermelho-escuro text-white text-xs h-8"
+          onClick={abrirNovo}
+        >
+          <Plus className="w-3.5 h-3.5 mr-1" />
+          Novo Documento
+        </Button>
+      )}
+
       {documentos.length === 0 ? (
         <Card className="border-dashed border-2 border-slate-200 shadow-none text-center p-8 bg-white">
           <FileText className="w-10 h-10 text-slate-300 mx-auto mb-2" />
@@ -228,6 +239,16 @@ export const DocumentosTab: React.FC<DocumentosTabProps> = ({
               ? 'Emita orientações pós-cirúrgicas, atestados e declarações a partir dos modelos da clínica.'
               : 'Nenhum documento emitido pelo dentista até o momento.'}
           </p>
+          {isAdmin && (
+            <Button
+              size="sm"
+              className="bg-marca-vermelho hover:bg-marca-vermelho-escuro text-white text-xs mt-3"
+              onClick={abrirNovo}
+            >
+              <Plus className="w-3.5 h-3.5 mr-1" />
+              Emitir Documento
+            </Button>
+          )}
         </Card>
       ) : (
         <div className="space-y-2.5">
