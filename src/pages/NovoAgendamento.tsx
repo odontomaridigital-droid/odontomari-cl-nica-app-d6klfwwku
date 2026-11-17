@@ -9,6 +9,7 @@ import {
 } from '@/services/clinica'
 import { Paciente, TipoAtendimento, ClinicaConfig } from '@/types'
 import { BuscaComLista, ItemBusca } from '@/components/busca/BuscaComLista'
+import { CampoComIA } from '@/components/voz/CampoComIA'
 import {
   getTodayDateString,
   addMinutesToTime,
@@ -555,19 +556,15 @@ export const NovoAgendamentoPage: React.FC = () => {
               <span className="text-slate-400">Sem sobreposição</span>
             </div>
 
-            <div>
-              <Label htmlFor="obs" className="text-xs">
-                Observações / Queixa Principal (opcional)
-              </Label>
-              <Textarea
-                id="obs"
-                rows={2}
-                placeholder="Ex.: Paciente com dor no molar superior direito..."
-                value={observacoes}
-                onChange={(e) => setObservacoes(e.target.value)}
-                className="text-xs sm:text-sm mt-1"
-              />
-            </div>
+            <CampoComIA
+              label="Observações / Queixa Principal"
+              contexto="queixa principal do paciente, anotada pela recepção no agendamento de uma consulta odontológica"
+              placeholder="Ex.: Paciente com dor no molar superior direito..."
+              rows={2}
+              value={observacoes}
+              onChange={setObservacoes}
+              onErro={(title, description) => toast({ title, description, variant: 'destructive' })}
+            />
           </CardContent>
         </Card>
 
