@@ -44,6 +44,9 @@ import {
 } from '@/services/esterilizacao'
 import { gerarEtiquetas } from '@/lib/etiquetaEsterilizacao'
 import { CampoComIA } from '@/components/voz/CampoComIA'
+import { BuscaComLista } from '@/components/busca/BuscaComLista'
+import { pacientesService } from '@/services/clinica'
+import { Paciente } from '@/types'
 
 /**
  * Esterilização — módulo de conformidade da RDC Anvisa 1002/2025.
@@ -68,6 +71,8 @@ export const EsterilizacaoPage: React.FC = () => {
 
   const [cargas, setCargas] = useState<Esterilizacao[]>([])
   const [carregando, setCarregando] = useState(true)
+  /** Lista de pacientes para o vínculo de rastreabilidade */
+  const [pacientes, setPacientes] = useState<Paciente[]>([])
 
   // ---------- nova carga ----------
   const [novaAberta, setNovaAberta] = useState(false)
@@ -105,17 +110,40 @@ export const EsterilizacaoPage: React.FC = () => {
   const [loteBusca, setLoteBusca] = useState('')
   const [resultadoBusca, setResultadoBusca] = useState<PacoteEsterilizado[] | null>(null)
 
+  // ---------- vínculo com paciente ----------
+  const [pacoteVinculo, setPacoteVinculo] = useState<PacoteEsterilizado | null>(null)
+  const [pacienteVinculoId, setPacienteVinculoId] = useState('')
+
+  const vincular = async () => {
+    if (!pacoteVinculo || !pacienteVinculoId) return
+    try {
+      await esterilizacaoService.vincularAoPaciente(pacoteVinculo.id, pacienteVinculoId)
+      toast({
+        title: 'Pacote vinculado',
+        description: 'A rastreabilidade agora aponta para o paciente.',
+      })
+      setPacoteVinculo(null)
+      setPacienteVinculoId('')
+      if (cargaAberta) abrirCarga(cargaAberta)
+      if (resultadoBusca) buscar()
+    } catch (err: any) {
+      onError('Não foi possível vincular', err?.message)
+    }
+  }
+
   const carregar = async () => {
     setCarregando(true)
     try {
-      const [cs, ms, dias] = await Promise.all([
+      const [cs, ms, dias, pcs] = await Promise.all([
         esterilizacaoService.getCargas(),
         esterilizacaoService.getMonitoramentos(),
         esterilizacaoService.diasDesdeUltimoBiologico(),
+        pacientesService.getAll().catch(() => [] as Paciente[]),
       ])
       setCargas(cs)
       setMonitoramentos(ms)
       setDiasBiologico(dias)
+      setPacientes(pcs)
       // marca vencidos em segundo plano
       esterilizacaoService.atualizarVencidos().catch(() => {})
     } catch (err: any) {
@@ -506,6 +534,53 @@ export const EsterilizacaoPage: React.FC = () => {
         </>
       )}
 
+      {/* ---------- diálogo vínculo com paciente ---------- */}
+      <Dialog open={Boolean(pacoteVinculo)} onOpenChange={(o) => !o && setPacoteVinculo(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Vincular pacote ao paciente</DialogTitle>
+            <DialogDescription className="text-xs">
+              {pacoteVinculo?.identificacao} — a rastreabilidade passa a apontar para quem foi
+              atendido com este material.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-3 py-2">
+            <BuscaComLista
+              itens={pacientes.map((p) => ({
+                id: p.id,
+                nome: p.nome,
+                detalhe: p.telefone,
+                original: p,
+              }))}
+              placeholder="Buscar paciente por nome ou telefone..."
+              vazioTexto="Nenhum paciente encontrado."
+              onSelecionar={(it) => setPacienteVinculoId(it.id)}
+              alturaMaxima={220}
+            />
+            {pacienteVinculoId && (
+              <p className="text-xs text-emerald-700 font-medium">
+                Selecionado: {pacientes.find((p) => p.id === pacienteVinculoId)?.nome}
+              </p>
+            )}
+          </div>
+
+          <DialogFooter className="gap-2">
+            <Button variant="outline" size="sm" onClick={() => setPacoteVinculo(null)}>
+              Cancelar
+            </Button>
+            <Button
+              size="sm"
+              className="bg-marca-vermelho hover:bg-marca-vermelho-escuro text-white"
+              disabled={!pacienteVinculoId}
+              onClick={vincular}
+            >
+              Vincular ao paciente
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* ---------- diálogo nova carga ---------- */}
       <Dialog open={novaAberta} onOpenChange={setNovaAberta}>
         <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
@@ -713,9 +788,24 @@ export const EsterilizacaoPage: React.FC = () => {
                       Validade: {p.validade ? formatDateBr(p.validade) : '—'}
                     </p>
                   </div>
-                  <Badge variant="outline" className="text-[10px] shrink-0">
-                    {ROTULO_STATUS_PACOTE[p.status || 'disponivel']}
-                  </Badge>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <Badge variant="outline" className="text-[10px]">
+                      {ROTULO_STATUS_PACOTE[p.status || 'disponivel']}
+                    </Badge>
+                    {p.status !== 'usado' && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-6 text-[10px] text-marca-vermelho"
+                        onClick={() => {
+                          setPacoteVinculo(p)
+                          setPacienteVinculoId('')
+                        }}
+                      >
+                        Vincular
+                      </Button>
+                    )}
+                  </div>
                 </div>
               ))
             )}
