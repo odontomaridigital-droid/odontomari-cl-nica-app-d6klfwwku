@@ -16,6 +16,7 @@ import { useDebounce } from '@/hooks/use-debounce'
 import { pacienteFotoUrl } from '@/lib/pacienteFoto'
 import { PacienteAvatar } from '@/components/PacienteAvatar'
 import { BotaoDitar } from '@/components/voz/BotaoDitar'
+import { CampoComIA } from '@/components/voz/CampoComIA'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -758,32 +759,17 @@ export const PacientesPage: React.FC = () => {
               </div>
 
               <div className="sm:col-span-2">
-                <Label htmlFor="obs" className="text-xs">
-                  Observações Gerais / Alergias / Histórico
-                </Label>
-                <div className="relative mt-1">
-                  <Textarea
-                    id="obs"
-                    rows={3}
-                    value={formData.observacoes}
-                    onChange={(e) => setFormData({ ...formData, observacoes: e.target.value })}
-                    placeholder="Alergia a medicamentos, sensibilidade, histórico prévio..."
-                    className="text-xs sm:text-sm pr-10"
-                  />
-                  <div className="absolute right-1.5 top-1.5">
-                    <BotaoDitar
-                      titulo="Ditar as observações"
-                      onTexto={(texto) =>
-                        setFormData((f) => ({
-                          ...f,
-                          observacoes: f.observacoes?.trim()
-                            ? `${f.observacoes.trimEnd()} ${texto}`
-                            : texto,
-                        }))
-                      }
-                    />
-                  </div>
-                </div>
+                <CampoComIA
+                  label="Observações Gerais / Alergias / Histórico"
+                  contexto="observações gerais do cadastro de um paciente de clínica odontológica: alergias, sensibilidade, histórico prévio"
+                  rows={3}
+                  value={formData.observacoes || ''}
+                  onChange={(texto) => setFormData((f) => ({ ...f, observacoes: texto }))}
+                  placeholder="Alergia a medicamentos, sensibilidade, histórico prévio..."
+                  onErro={(title, description) =>
+                    toast({ title, description, variant: 'destructive' })
+                  }
+                />
               </div>
 
               {/* Foto do paciente */}

@@ -28,6 +28,7 @@ import {
 } from '@/lib/formatters'
 import { useAuth } from '@/contexts/AuthContext'
 import { SeletorProcedimento } from '@/components/orcamentos/SeletorProcedimento'
+import { CampoComIA } from '@/components/voz/CampoComIA'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -751,32 +752,19 @@ export const OrcamentosPage: React.FC = () => {
                   className="mt-1 text-xs sm:text-sm"
                 />
               </div>
-
               <div className="sm:col-span-2">
-                <Label className="text-xs">Observações / Condições de Pagamento</Label>
-                <div className="relative mt-1">
-                  <Textarea
-                    rows={2}
-                    value={observacoes}
-                    onChange={(e) => setObservacoes(e.target.value)}
-                    placeholder="Ex.: Entrada de 40% + 60% em até 3x sem juros no cartão de crédito."
-                    className="text-xs sm:text-sm pr-10"
-                  />
-                  <div className="absolute right-1.5 top-1.5">
-                    <BotaoDitar
-                      titulo="Ditar as observações"
-                      onErro={(m) =>
-                        toast({ title: 'Ditado', description: m, variant: 'destructive' })
-                      }
-                      onTexto={(texto) =>
-                        setObservacoes((atual) =>
-                          atual.trim() ? `${atual.trimEnd()} ${texto}` : texto,
-                        )
-                      }
-                    />
-                  </div>
-                </div>
-              </div>
+                <CampoComIA
+                  label="Observações / Condições de Pagamento"
+                  contexto="observações e condições de pagamento de um planejamento de tratamento odontológico"
+                  rows={2}
+                  value={observacoes}
+                  onChange={setObservacoes}
+                  placeholder="Ex.: Parcelamento em até 6x no cartão de crédito sem juros..."
+                  onErro={(title, description) =>
+                    toast({ title, description, variant: 'destructive' })
+                  }
+                />
+              </div>{' '}
             </div>
 
             <DialogFooter className="gap-2 pt-2">

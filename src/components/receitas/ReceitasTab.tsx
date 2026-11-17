@@ -670,27 +670,17 @@ export const ReceitasTab: React.FC<ReceitasTabProps> = ({
 
             {/* Orientações gerais */}
             <div>
-              <Label className="text-xs">Orientações gerais (opcional)</Label>
-              <div className="relative mt-1">
-                <Textarea
-                  rows={2}
-                  placeholder="Ex.: retornar em 7 dias para reavaliação; evitar alimentos muito quentes hoje."
-                  value={orientacoes}
-                  onChange={(e) => setOrientacoes(e.target.value)}
-                  className="text-xs sm:text-sm pr-10"
-                />
-                <div className="absolute right-1.5 top-1.5">
-                  <BotaoDitar
-                    titulo="Ditar as orientações"
-                    onErro={(m) =>
-                      toast({ title: 'Ditado', description: m, variant: 'destructive' })
-                    }
-                    onTexto={(texto) =>
-                      setOrientacoes((atual) => (atual.trim() ? `${atual.trim()} ${texto}` : texto))
-                    }
-                  />
-                </div>
-              </div>
+              <CampoComIA
+                label="Orientações gerais (opcional)"
+                contexto="orientações gerais de uma receita odontológica entregue ao paciente"
+                rows={2}
+                placeholder="Ex.: retornar em 7 dias para reavaliação; evitar alimentos muito quentes hoje."
+                value={orientacoes}
+                onChange={setOrientacoes}
+                onErro={(title, description) =>
+                  toast({ title, description, variant: 'destructive' })
+                }
+              />
             </div>
           </div>
 
