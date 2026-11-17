@@ -29,37 +29,29 @@ import { formatDateBr } from '@/lib/formatters'
  * Renderiza o código de barras Code 128 como PNG (data URL), pronto para o
  * jsPDF desenhar. Altura em pixels proporcional à altura física desejada.
  */
-function codigoBarrasPng(texto: string, larguraPx: number, alturaPx: number): string {
+function codigoBarrasPng(texto: string, alturaPx: number): { dataUrl: string; proporcao: number } {
   const canvas = document.createElement('canvas')
   try {
+    // width: 4 = 4px por módulo. Resolução alta de propósito: no PDF a imagem
+    // é reduzida, e reduzir mantém as barras nítidas. Ampliar borra — foi o
+    // que quebrou a leitura na primeira versão (eu redimensionava o canvas).
     JsBarcode(canvas, texto, {
       format: 'CODE128',
-      width: 2,
+      width: 4,
       height: alturaPx,
       displayValue: false,
       margin: 0,
       background: '#ffffff',
       lineColor: '#000000',
     })
-    // ajusta a largura final mantendo a proporção do código
-    if (canvas.width !== larguraPx) {
-      const proporcao = larguraPx / canvas.width
-      const novo = document.createElement('canvas')
-      novo.width = larguraPx
-      novo.height = canvas.height
-      const ctx = novo.getContext('2d')
-      if (ctx) {
-        ctx.fillStyle = '#ffffff'
-        ctx.fillRect(0, 0, novo.width, novo.height)
-        ctx.drawImage(canvas, 0, 0, canvas.width * proporcao, canvas.height)
-      }
-      return novo.toDataURL('image/png')
+    return {
+      dataUrl: canvas.toDataURL('image/png'),
+      proporcao: canvas.width / canvas.height,
     }
-    return canvas.toDataURL('image/png')
   } catch {
-    // lote com caractere que o Code 128B não aceita: devolve vazio e a
-    // etiqueta sai só com o lote em texto, sem barras.
-    return ''
+    // lote com caractere que o Code 128B não aceita: a etiqueta sai só com o
+    // lote em texto, sem barras, em vez de falhar.
+    return { dataUrl: '', proporcao: 0 }
   }
 }
 
@@ -92,7 +84,7 @@ export async function gerarEtiquetas(
   })
 
   // gera o código uma vez: é o mesmo lote para todas as etiquetas
-  const barras = codigoBarrasPng(carga.lote, 420, 70)
+  const barras = codigoBarrasPng(carga.lote, 160)
 
   const desenhar = (pacote: PacoteEsterilizado) => {
     const x0 = 2
@@ -126,9 +118,14 @@ export async function gerarEtiquetas(
     const resp = (carga.operador || '').slice(0, 30)
     doc.text(`Responsável: ${resp}`, x0, 17)
 
-    // código de barras (se o lote tiver caractere suportado)
-    if (barras) {
-      doc.addImage(barras, 'PNG', x0, 18.4, larguraUtil, 6.4)
+    // código de barras — largura calculada pela proporção natural do código,
+    // centralizada na etiqueta, sem esticar nem espremer as barras.
+    if (barras.dataUrl && barras.proporcao > 0) {
+      const alturaBarra = 6.2
+      let larguraBarra = alturaBarra * barras.proporcao
+      if (larguraBarra > larguraUtil) larguraBarra = larguraUtil
+      const xBarra = x0 + (larguraUtil - larguraBarra) / 2
+      doc.addImage(barras.dataUrl, 'PNG', xBarra, 18.2, larguraBarra, alturaBarra)
     }
 
     // lote em texto legível caso o leitor falhe
