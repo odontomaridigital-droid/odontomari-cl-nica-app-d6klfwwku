@@ -132,8 +132,10 @@ async function gerarLote(dataIso: string): Promise<string> {
 export const esterilizacaoService = {
   /** Todas as cargas, mais recentes primeiro. */
   async getCargas(): Promise<Esterilizacao[]> {
+    // `created` é um campo autodate e o PocketBase recusa ordenar por ele —
+    // ordenar por ele devolve 400 e a lista aparece vazia. Usar data e lote.
     return await pb.collection(COL_CARGAS).getFullList<Esterilizacao>({
-      sort: '-data,-created',
+      sort: '-data,-lote',
     })
   },
 
