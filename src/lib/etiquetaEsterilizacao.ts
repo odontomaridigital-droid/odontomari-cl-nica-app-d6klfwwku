@@ -1,4 +1,5 @@
 import { jsPDF } from 'jspdf'
+import JsBarcode from 'jsbarcode'
 import { Esterilizacao, PacoteEsterilizado } from '@/services/esterilizacao'
 import { formatDateBr } from '@/lib/formatters'
 
@@ -15,162 +16,51 @@ import { formatDateBr } from '@/lib/formatters'
  * exigido pela norma (P&R Anvisa 3.3.21) — está aqui porque no atendimento a
  * recepção bipa o pacote e o lote entra sozinho, sem digitação manual.
  *
+ * O código de barras é desenhado pela JsBarcode (biblioteca testada). Antes
+ * eu havia escrito a tabela Code 128 à mão e ela tinha 107 entradas quando o
+ * padrão tem 106 — gerava barras ilegíveis. Nunca escrever tabela de código
+ * de barras à mão: usar biblioteca.
+ *
  * Tamanho padrão: 50 x 30 mm (o mais usado em odontologia; cabe no envelope
- * de papel grau cirúrgico). Funciona em térmica e em impressora comum.
+ * de papel grau cirúrgico). Funciona em impressora térmica e comum.
  */
 
-/** Tabela Code 128B: 11 módulos por símbolo, larguras alternadas barra/espaço. */
-const TABELA_CODE128: number[][] = [
-  [2, 1, 2, 2, 2, 2],
-  [2, 2, 2, 1, 2, 2],
-  [2, 2, 2, 2, 2, 1],
-  [1, 2, 1, 2, 2, 3],
-  [1, 2, 1, 3, 2, 2],
-  [1, 3, 1, 2, 2, 2],
-  [1, 2, 2, 2, 1, 3],
-  [1, 2, 2, 3, 1, 2],
-  [1, 3, 2, 2, 1, 2],
-  [2, 2, 1, 2, 1, 3],
-  [2, 2, 1, 3, 1, 2],
-  [2, 3, 1, 2, 1, 2],
-  [1, 1, 2, 2, 3, 2],
-  [1, 2, 2, 1, 3, 2],
-  [1, 2, 2, 2, 3, 1],
-  [1, 1, 3, 2, 2, 2],
-  [1, 2, 3, 1, 2, 2],
-  [1, 2, 3, 2, 2, 1],
-  [2, 2, 3, 2, 1, 1],
-  [2, 2, 1, 1, 3, 2],
-  [2, 2, 1, 2, 3, 1],
-  [2, 1, 3, 2, 1, 2],
-  [2, 2, 3, 1, 1, 2],
-  [3, 1, 2, 1, 3, 1],
-  [3, 1, 1, 2, 2, 2],
-  [3, 2, 1, 1, 2, 2],
-  [3, 2, 1, 2, 2, 1],
-  [3, 1, 2, 2, 1, 2],
-  [3, 2, 2, 1, 1, 2],
-  [3, 2, 2, 2, 1, 1],
-  [2, 1, 2, 1, 2, 3],
-  [2, 1, 2, 3, 2, 1],
-  [2, 3, 2, 1, 2, 1],
-  [1, 1, 1, 3, 2, 3],
-  [1, 3, 1, 1, 2, 3],
-  [1, 3, 1, 3, 2, 1],
-  [1, 1, 2, 3, 1, 3],
-  [1, 3, 2, 1, 1, 3],
-  [1, 3, 2, 3, 1, 1],
-  [2, 1, 1, 3, 1, 3],
-  [2, 3, 1, 1, 1, 3],
-  [2, 3, 1, 3, 1, 1],
-  [1, 1, 2, 1, 3, 3],
-  [1, 1, 2, 3, 3, 1],
-  [1, 3, 2, 1, 3, 1],
-  [1, 1, 3, 1, 2, 3],
-  [1, 1, 3, 3, 2, 1],
-  [1, 3, 3, 1, 2, 1],
-  [3, 1, 3, 1, 2, 1],
-  [2, 1, 1, 3, 3, 1],
-  [2, 3, 1, 1, 3, 1],
-  [2, 1, 3, 1, 1, 3],
-  [2, 1, 3, 3, 1, 1],
-  [2, 1, 3, 1, 3, 1],
-  [3, 1, 1, 1, 2, 3],
-  [3, 1, 1, 3, 2, 1],
-  [3, 3, 1, 1, 2, 1],
-  [3, 1, 2, 1, 1, 3],
-  [3, 1, 2, 3, 1, 1],
-  [3, 3, 2, 1, 1, 1],
-  [3, 1, 4, 1, 1, 1],
-  [2, 2, 1, 4, 1, 1],
-  [4, 3, 1, 1, 1, 1],
-  [1, 1, 1, 2, 2, 4],
-  [1, 1, 1, 4, 2, 2],
-  [1, 2, 1, 1, 2, 4],
-  [1, 2, 1, 4, 2, 1],
-  [1, 4, 1, 1, 2, 2],
-  [1, 4, 1, 2, 2, 1],
-  [1, 1, 2, 2, 1, 4],
-  [1, 1, 2, 4, 1, 2],
-  [1, 2, 2, 1, 1, 4],
-  [1, 2, 2, 4, 1, 1],
-  [1, 4, 2, 1, 1, 2],
-  [1, 4, 2, 2, 1, 1],
-  [2, 4, 1, 2, 1, 1],
-  [2, 2, 1, 1, 1, 4],
-  [4, 1, 3, 1, 1, 1],
-  [2, 4, 1, 1, 1, 2],
-  [1, 3, 4, 1, 1, 1],
-  [1, 1, 1, 2, 4, 2],
-  [1, 2, 1, 1, 4, 2],
-  [1, 2, 1, 2, 4, 1],
-  [1, 1, 4, 2, 1, 2],
-  [1, 2, 4, 1, 1, 2],
-  [1, 2, 4, 2, 1, 1],
-  [4, 1, 1, 2, 1, 2],
-  [4, 2, 1, 1, 1, 2],
-  [4, 2, 1, 2, 1, 1],
-  [2, 1, 2, 1, 4, 1],
-  [2, 1, 4, 1, 2, 1],
-  [4, 1, 2, 1, 2, 1],
-  [1, 1, 1, 1, 4, 3],
-  [1, 1, 1, 3, 4, 1],
-  [1, 3, 1, 1, 4, 1],
-  [1, 1, 4, 1, 1, 3],
-  [1, 1, 4, 3, 1, 1],
-  [4, 1, 1, 1, 1, 3],
-  [4, 1, 1, 3, 1, 1],
-  [1, 1, 3, 1, 4, 1],
-  [1, 1, 4, 1, 3, 1],
-  [3, 1, 1, 1, 4, 1],
-  [4, 1, 1, 1, 3, 1],
-  [2, 1, 1, 4, 1, 2],
-  [2, 1, 1, 2, 1, 4],
-  [2, 1, 1, 2, 3, 2],
-  [2, 3, 3, 1, 1, 1],
-]
-
-const START_B = [2, 1, 1, 2, 1, 4]
-const STOP = [2, 3, 3, 1, 1, 1, 2]
-
-/** Desenha o Code 128B do texto, ajustado a uma largura máxima. */
-function desenharCodigoBarras(
-  doc: jsPDF,
-  texto: string,
-  x: number,
-  y: number,
-  altura: number,
-  larguraMaxima: number,
-) {
-  const valores: number[] = []
-  for (const ch of texto) {
-    const code = ch.charCodeAt(0)
-    valores.push(code >= 32 && code <= 126 ? code - 32 : 0)
-  }
-  // checksum do Code 128: 104 (start) + Σ(valor × posição), módulo 103
-  let soma = 104
-  valores.forEach((v, i) => {
-    soma += v * (i + 1)
-  })
-  const checksum = soma % 103
-
-  const simbolos: number[][] = [START_B]
-  valores.forEach((v) => simbolos.push(TABELA_CODE128[v] || TABELA_CODE128[0]))
-  simbolos.push(TABELA_CODE128[checksum])
-  simbolos.push(STOP)
-
-  const modulos = simbolos.reduce((acc, s) => acc + s.reduce((a, b) => a + b, 0), 0)
-  const m = larguraMaxima / modulos
-
-  doc.setFillColor(0, 0, 0)
-  let cx = x
-  simbolos.forEach((padrao) => {
-    padrao.forEach((largura, j) => {
-      const w = largura * m
-      if (j % 2 === 0) doc.rect(cx, y, w, altura, 'F')
-      cx += w
+/**
+ * Renderiza o código de barras Code 128 como PNG (data URL), pronto para o
+ * jsPDF desenhar. Altura em pixels proporcional à altura física desejada.
+ */
+function codigoBarrasPng(texto: string, larguraPx: number, alturaPx: number): string {
+  const canvas = document.createElement('canvas')
+  try {
+    JsBarcode(canvas, texto, {
+      format: 'CODE128',
+      width: 2,
+      height: alturaPx,
+      displayValue: false,
+      margin: 0,
+      background: '#ffffff',
+      lineColor: '#000000',
     })
-  })
+    // ajusta a largura final mantendo a proporção do código
+    if (canvas.width !== larguraPx) {
+      const proporcao = larguraPx / canvas.width
+      const novo = document.createElement('canvas')
+      novo.width = larguraPx
+      novo.height = canvas.height
+      const ctx = novo.getContext('2d')
+      if (ctx) {
+        ctx.fillStyle = '#ffffff'
+        ctx.fillRect(0, 0, novo.width, novo.height)
+        ctx.drawImage(canvas, 0, 0, canvas.width * proporcao, canvas.height)
+      }
+      return novo.toDataURL('image/png')
+    }
+    return canvas.toDataURL('image/png')
+  } catch {
+    // lote com caractere que o Code 128B não aceita: devolve vazio e a
+    // etiqueta sai só com o lote em texto, sem barras.
+    return ''
+  }
 }
 
 export interface OpcoesEtiqueta {
@@ -201,11 +91,14 @@ export async function gerarEtiquetas(
     orientation: 'landscape',
   })
 
+  // gera o código uma vez: é o mesmo lote para todas as etiquetas
+  const barras = codigoBarrasPng(carga.lote, 420, 70)
+
   const desenhar = (pacote: PacoteEsterilizado) => {
     const x0 = 2
     const larguraUtil = W - 4
 
-    // borda para recorte
+    // borda leve para recorte
     doc.setDrawColor(205, 205, 205)
     doc.setLineWidth(0.1)
     doc.rect(0.5, 0.5, W - 1, H - 1)
@@ -220,7 +113,7 @@ export async function gerarEtiquetas(
         : pacote.identificacao
     doc.text(conteudo, x0, 4.8)
 
-    // I, III e os complementos: data, lote, validade e responsável
+    // I, III e complementos
     doc.setFont('helvetica', 'normal')
     doc.setFontSize(5.6)
     doc.setTextColor(40, 45, 50)
@@ -233,28 +126,29 @@ export async function gerarEtiquetas(
     const resp = (carga.operador || '').slice(0, 30)
     doc.text(`Responsável: ${resp}`, x0, 17)
 
-    // código de barras do lote
-    desenharCodigoBarras(doc, carga.lote, x0, 18.6, 6.2, larguraUtil)
+    // código de barras (se o lote tiver caractere suportado)
+    if (barras) {
+      doc.addImage(barras, 'PNG', x0, 18.4, larguraUtil, 6.4)
+    }
 
-    // lote em texto legível, caso o leitor falhe
+    // lote em texto legível caso o leitor falhe
     doc.setFont('helvetica', 'normal')
     doc.setFontSize(5.4)
     doc.setTextColor(40, 45, 50)
     doc.text(carga.lote, x0 + larguraUtil / 2, 28, { align: 'center' })
   }
 
-  const lista =
+  const lista: PacoteEsterilizado[] =
     pacotes.length > 0
       ? pacotes
-      : ([
+      : [
           {
             id: '',
             esterilizacao: carga.id,
             identificacao: 'Kit odontológico',
             data_esterilizacao: carga.data,
-            validade: undefined,
           } as PacoteEsterilizado,
-        ] as PacoteEsterilizado[])
+        ]
 
   lista.forEach((p, i) => {
     if (i > 0) doc.addPage()
