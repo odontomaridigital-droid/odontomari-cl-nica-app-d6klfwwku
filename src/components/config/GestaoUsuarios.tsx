@@ -34,6 +34,7 @@ import {
 import { useToast } from '@/hooks/use-toast'
 import { usuariosService, UsuarioSistema } from '@/services/usuarios'
 import { useAuth } from '@/contexts/AuthContext'
+import { CampoSenha } from '@/components/CampoSenha'
 
 const ROTULO_PERFIL: Record<string, string> = {
   admin: 'Dentista / Administrador',
@@ -406,21 +407,19 @@ export const GestaoUsuarios: React.FC = () => {
               <>
                 <div>
                   <Label className="text-xs">Senha *</Label>
-                  <Input
-                    type="password"
+                  <CampoSenha
                     value={senha}
                     onChange={(e) => setSenha(e.target.value)}
                     placeholder="Mínimo de 8 caracteres"
-                    className="mt-1 text-xs sm:text-sm"
+                    className="mt-1"
                   />
                 </div>
                 <div>
                   <Label className="text-xs">Repita a senha *</Label>
-                  <Input
-                    type="password"
+                  <CampoSenha
                     value={confirmacao}
                     onChange={(e) => setConfirmacao(e.target.value)}
-                    className="mt-1 text-xs sm:text-sm"
+                    className="mt-1"
                   />
                 </div>
               </>
@@ -472,21 +471,19 @@ export const GestaoUsuarios: React.FC = () => {
 
             <div>
               <Label className="text-xs">Nova senha *</Label>
-              <Input
-                type="password"
+              <CampoSenha
                 value={novaSenha}
                 onChange={(e) => setNovaSenha(e.target.value)}
                 placeholder="Mínimo de 8 caracteres"
-                className="mt-1 text-xs sm:text-sm"
+                className="mt-1"
               />
             </div>
             <div>
               <Label className="text-xs">Repita a nova senha *</Label>
-              <Input
-                type="password"
+              <CampoSenha
                 value={novaConfirmacao}
                 onChange={(e) => setNovaConfirmacao(e.target.value)}
-                className="mt-1 text-xs sm:text-sm"
+                className="mt-1"
               />
             </div>
           </div>

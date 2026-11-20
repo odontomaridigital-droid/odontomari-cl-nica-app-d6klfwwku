@@ -13,6 +13,7 @@ import {
 } from '@/components/ui/card'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Calendar, AlertCircle, Sparkles } from 'lucide-react'
+import { CampoSenha } from '@/components/CampoSenha'
 import pb from '@/lib/pocketbase/client'
 import { OdontomariLogoCompleta, OdontomariSlogan } from '@/components/OdontomariLogo'
 
@@ -128,9 +129,8 @@ export const LoginPage: React.FC = () => {
                       Esqueceu a senha?
                     </button>
                   </div>
-                  <Input
+                  <CampoSenha
                     id="password"
-                    type="password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required

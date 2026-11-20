@@ -5,8 +5,9 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { AlertCircle, CheckCircle2, KeyRound, Eye, EyeOff } from 'lucide-react'
+import { AlertCircle, CheckCircle2, KeyRound } from 'lucide-react'
 import pb from '@/lib/pocketbase/client'
+import { CampoSenha } from '@/components/CampoSenha'
 import { OdontomariLogoCompleta, OdontomariSlogan } from '@/components/OdontomariLogo'
 
 /**
@@ -23,7 +24,6 @@ export const ResetPasswordPage: React.FC = () => {
   const token = params.get('token') || ''
   const [senha, setSenha] = useState('')
   const [confirmacao, setConfirmacao] = useState('')
-  const [mostrar, setMostrar] = useState(false)
   const [erro, setErro] = useState<string | null>(null)
   const [sucesso, setSucesso] = useState(false)
   const [enviando, setEnviando] = useState(false)
@@ -120,33 +120,20 @@ export const ResetPasswordPage: React.FC = () => {
                 <form onSubmit={handleSubmit} className="space-y-4">
                   <div className="space-y-2">
                     <Label htmlFor="nova-senha">Nova senha</Label>
-                    <div className="relative">
-                      <Input
-                        id="nova-senha"
-                        type={mostrar ? 'text' : 'password'}
-                        value={senha}
-                        onChange={(e) => setSenha(e.target.value)}
-                        placeholder="Mínimo de 8 caracteres"
-                        required
-                        autoComplete="new-password"
-                        className="pr-10"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setMostrar((v) => !v)}
-                        className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
-                        aria-label={mostrar ? 'Ocultar senha' : 'Mostrar senha'}
-                      >
-                        {mostrar ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                      </button>
-                    </div>
+                    <CampoSenha
+                      id="nova-senha"
+                      value={senha}
+                      onChange={(e) => setSenha(e.target.value)}
+                      placeholder="Mínimo de 8 caracteres"
+                      required
+                      autoComplete="new-password"
+                    />
                   </div>
 
                   <div className="space-y-2">
                     <Label htmlFor="confirma-senha">Repita a nova senha</Label>
-                    <Input
+                    <CampoSenha
                       id="confirma-senha"
-                      type={mostrar ? 'text' : 'password'}
                       value={confirmacao}
                       onChange={(e) => setConfirmacao(e.target.value)}
                       placeholder="Digite de novo"
