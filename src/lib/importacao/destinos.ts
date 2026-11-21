@@ -9,7 +9,17 @@ export interface DestinoCampo {
   rotulo: string
   /** Obrigatório para o registro ser gravado */
   obrigatorio?: boolean
-  tipo?: 'texto' | 'data' | 'telefone' | 'cpf' | 'email' | 'numero' | 'json'
+  tipo?:
+    | 'texto'
+    | 'data'
+    | 'telefone'
+    | 'cpf'
+    | 'email'
+    | 'numero'
+    | 'json'
+    | 'cep'
+    | 'cidade'
+    | 'uf'
 }
 
 export interface DestinoColecao {

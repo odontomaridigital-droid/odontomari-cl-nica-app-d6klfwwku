@@ -17,6 +17,8 @@ import {
   AnamneseModelo,
   Campanha,
   Conteudo,
+  Procedimento,
+  ProcedimentoCategoria,
   ReceitaModelo,
   Maquina,
   CondicaoPagamento,

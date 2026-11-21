@@ -1,4 +1,5 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { useEffect } from 'react'
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { Toaster } from '@/components/ui/toaster'
 import { Toaster as Sonner } from '@/components/ui/sonner'
 import { TooltipProvider } from '@/components/ui/tooltip'
@@ -20,8 +21,21 @@ import { EsterilizacaoPage } from './pages/Esterilizacao'
 import { ResetPasswordPage } from './pages/ResetPassword'
 import NotFound from './pages/NotFound'
 
+// Título padrão/base do app: a marca Odontomari em todas as telas. Nenhuma tela sobrescreve
+// document.title hoje, mas este guarda aplica o título a cada troca de rota caso algo passe a fazê-lo.
+const TITULO_BASE = 'Odontomari — Clínica Odontológica em Americana/SP'
+
+const TituloDaRota = () => {
+  const location = useLocation()
+  useEffect(() => {
+    document.title = TITULO_BASE
+  }, [location.pathname])
+  return null
+}
+
 const App = () => (
   <BrowserRouter>
+    <TituloDaRota />
     <AuthProvider>
       <TooltipProvider>
         <Toaster />

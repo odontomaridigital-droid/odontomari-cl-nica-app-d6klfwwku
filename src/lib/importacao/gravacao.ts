@@ -303,10 +303,8 @@ export async function gravarRegistrosVinculados(
             ]
           }
           if (!payload.valor_total) {
-            payload.valor_total = payload.itens.reduce(
-              (s: number, it: { valor?: number }) => s + (Number(it.valor) || 0),
-              0,
-            )
+            const itens = payload.itens as Array<{ valor?: number }>
+            payload.valor_total = itens.reduce((s, it) => s + (Number(it.valor) || 0), 0)
           }
         }
         await pb.collection(colecao).create(payload)

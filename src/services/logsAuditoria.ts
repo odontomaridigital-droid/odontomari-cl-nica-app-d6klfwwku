@@ -12,6 +12,12 @@ export type EntidadeLog =
   | 'tipo_atendimento'
   | 'configuracoes'
   | 'bloqueio'
+  | 'procedimento'
+  | 'mensagem'
+  | 'maquina'
+  | 'condicao'
+  | 'financeiro'
+  | 'prontuario'
 
 export interface LogAuditoria {
   id: string
